@@ -1,6 +1,15 @@
 {
   "name": "aws-portfoward",
+  "scripts": {
+    "format": "biome format",
+    "format:check": "biome format --check",
+    "lint": "biome lint",
+    "lint:fix": "biome lint --fix",
+    "check": "biome check",
+    "ci": "biome ci"
+  },
   "devDependencies": {
+    "@biomejs/biome": "^2.0.0",
     "@types/bun": "latest"
   },
   "peerDependencies": {
