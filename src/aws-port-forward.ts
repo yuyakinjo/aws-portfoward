@@ -1,3 +1,4 @@
+import { spawn } from "node:child_process";
 import {
 	DescribeClustersCommand,
 	DescribeTasksCommand,
@@ -7,9 +8,7 @@ import {
 	ListTasksCommand,
 } from "@aws-sdk/client-ecs";
 import { DescribeDBInstancesCommand, RDSClient } from "@aws-sdk/client-rds";
-import { SSMClient } from "@aws-sdk/client-ssm";
 import chalk from "chalk";
-import { spawn } from "child_process";
 import inquirer from "inquirer";
 
 interface ECSTask {
