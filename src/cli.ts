@@ -2,7 +2,7 @@
 
 import chalk from "chalk";
 import { Command } from "commander";
-import { connectToRDS } from "./aws-port-forward";
+import { connectToRDS } from "./aws-port-forward.ts";
 
 const program = new Command();
 
