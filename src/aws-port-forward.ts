@@ -8,7 +8,9 @@ import {
 	ListTasksCommand,
 } from "@aws-sdk/client-ecs";
 import { DescribeDBInstancesCommand, RDSClient } from "@aws-sdk/client-rds";
+import { search } from "@inquirer/prompts";
 import chalk from "chalk";
+import Fuse from "fuse.js";
 import inquirer from "inquirer";
 
 interface ECSTask {
@@ -69,17 +71,20 @@ export async function connectToRDS(): Promise<void> {
 			throw new Error("ECSクラスターが見つかりません");
 		}
 
-		const { selectedCluster } = await inquirer.prompt([
-			{
-				type: "list",
-				name: "selectedCluster",
-				message: "ECSクラスターを選択してください:",
-				choices: clusters.map((cluster) => ({
-					name: cluster.clusterName,
-					value: cluster,
-				})),
+		// zoxideスタイルのリアルタイム検索でECSクラスターを選択
+		console.log(
+			chalk.blue(
+				"💡 zoxideスタイル: 入力すると同時にリストが絞り込まれます（↑↓で選択、Enterで決定）",
+			),
+		);
+
+		const selectedCluster = (await search({
+			message: "🔍 ECSクラスターを検索・選択:",
+			source: async (input) => {
+				return await searchClusters(clusters, input || "");
 			},
-		]);
+			pageSize: 12,
+		})) as ECSCluster;
 
 		// ECSタスクの取得
 		console.log(chalk.yellow("🔍 ECSタスクを取得しています..."));
@@ -89,56 +94,14 @@ export async function connectToRDS(): Promise<void> {
 			throw new Error("実行中のECSタスクが見つかりません");
 		}
 
-		// 検索フィルター機能を追加
-		let filterText = "";
-		let filteredTasks = tasks;
-
-		if (tasks.length > 5) {
-			const { searchText } = await inquirer.prompt([
-				{
-					type: "input",
-					name: "searchText",
-					message:
-						"検索文字列を入力してください (サービス名、タスクID等で絞り込み、空白でスキップ):",
-				},
-			]);
-
-			if (searchText && searchText.trim()) {
-				filterText = searchText.trim().toLowerCase();
-				filteredTasks = tasks.filter(
-					(task) =>
-						task.displayName.toLowerCase().includes(filterText) ||
-						task.taskId.toLowerCase().includes(filterText) ||
-						task.serviceName.toLowerCase().includes(filterText),
-				);
-
-				if (filteredTasks.length === 0) {
-					console.log(
-						chalk.yellow(
-							`⚠️  検索条件 "${searchText}" に一致するタスクがありません。全てのタスクを表示します。`,
-						),
-					);
-					filteredTasks = tasks;
-				} else {
-					console.log(
-						chalk.green(`✅ ${filteredTasks.length}件のタスクが見つかりました`),
-					);
-				}
-			}
-		}
-
-		const { selectedTask } = await inquirer.prompt([
-			{
-				type: "list",
-				name: "selectedTask",
-				message: `ECSタスクを選択してください (${filteredTasks.length}件):`,
-				choices: filteredTasks.map((task) => ({
-					name: task.displayName,
-					value: task.taskArn,
-				})),
-				pageSize: 10, // 一度に表示する項目数を制限
+		// zoxideスタイルのリアルタイム検索でECSタスクを選択
+		const selectedTask = (await search({
+			message: "🔍 ECSタスクを検索・選択:",
+			source: async (input) => {
+				return await searchTasks(tasks, input || "");
 			},
-		]);
+			pageSize: 12,
+		})) as string;
 
 		// RDSインスタンスの取得
 		console.log(chalk.yellow("🔍 RDSインスタンスを取得しています..."));
@@ -148,55 +111,14 @@ export async function connectToRDS(): Promise<void> {
 			throw new Error("RDSインスタンスが見つかりません");
 		}
 
-		// RDS検索フィルター機能を追加
-		let filteredRDS = rdsInstances;
-
-		if (rdsInstances.length > 3) {
-			const { rdsSearchText } = await inquirer.prompt([
-				{
-					type: "input",
-					name: "rdsSearchText",
-					message:
-						"RDS検索文字列を入力してください (識別子、エンジン、エンドポイント等で絞り込み、空白でスキップ):",
-				},
-			]);
-
-			if (rdsSearchText && rdsSearchText.trim()) {
-				const filterText = rdsSearchText.trim().toLowerCase();
-				filteredRDS = rdsInstances.filter(
-					(rds) =>
-						rds.identifier.toLowerCase().includes(filterText) ||
-						rds.engine.toLowerCase().includes(filterText) ||
-						rds.endpoint.toLowerCase().includes(filterText),
-				);
-
-				if (filteredRDS.length === 0) {
-					console.log(
-						chalk.yellow(
-							`⚠️  検索条件 "${rdsSearchText}" に一致するRDSが見つかりません。全てのRDSを表示します。`,
-						),
-					);
-					filteredRDS = rdsInstances;
-				} else {
-					console.log(
-						chalk.green(`✅ ${filteredRDS.length}件のRDSが見つかりました`),
-					);
-				}
-			}
-		}
-
-		const { selectedRDS } = await inquirer.prompt([
-			{
-				type: "list",
-				name: "selectedRDS",
-				message: `RDSインスタンスを選択してください (${filteredRDS.length}件):`,
-				choices: filteredRDS.map((rds) => ({
-					name: `${rds.identifier} (${rds.engine}) - ${rds.endpoint}:${rds.port}`,
-					value: rds,
-				})),
-				pageSize: 10,
+		// zoxideスタイルのリアルタイム検索でRDSインスタンスを選択
+		const selectedRDS = (await search({
+			message: "🔍 RDSインスタンスを検索・選択:",
+			source: async (input) => {
+				return await searchRDS(rdsInstances, input || "");
 			},
-		]);
+			pageSize: 12,
+		})) as RDSInstance;
 
 		// ローカルポートの指定
 		const { localPort } = await inquirer.prompt([
@@ -407,4 +329,182 @@ async function startSSMSession(
 		console.log(chalk.yellow("\n🛑 セッションを終了しています..."));
 		child.kill("SIGINT");
 	});
+}
+
+// zoxideスタイルのファジー検索関数
+function fuzzySearchClusters(clusters: ECSCluster[], input: string) {
+	const fuseOptions = {
+		keys: ["clusterName"],
+		threshold: 0.5, // zoxideのように柔軟な検索
+		distance: 200,
+		includeScore: true,
+		minMatchCharLength: 1,
+		findAllMatches: true,
+	};
+
+	if (!input || input.trim() === "") {
+		return clusters.map((cluster) => ({
+			name: `${cluster.clusterName} ${chalk.dim(`(${cluster.clusterArn.split("/").pop()})`)}`,
+			value: cluster,
+		}));
+	}
+
+	const fuse = new Fuse(clusters, fuseOptions);
+	const results = fuse.search(input);
+
+	// zoxideスタイル: スコアが高い順に並べ替え、スコア表示
+	return results
+		.sort((a, b) => (a.score || 0) - (b.score || 0))
+		.map((result, index) => ({
+			name: `${index === 0 ? chalk.green("🎯") : "  "} ${result.item.clusterName} ${chalk.dim(`(${result.item.clusterArn.split("/").pop()}) [${((1 - (result.score || 0)) * 100).toFixed(0)}%]`)}`,
+			value: result.item,
+		}));
+}
+
+// ECSタスクのファジー検索関数（zoxideスタイル）
+function fuzzySearchTasks(tasks: ECSTask[], input: string) {
+	const fuseOptions = {
+		keys: ["serviceName", "taskId", "displayName"],
+		threshold: 0.5,
+		distance: 200,
+		includeScore: true,
+		minMatchCharLength: 1,
+		findAllMatches: true,
+	};
+
+	if (!input || input.trim() === "") {
+		return tasks.map((task) => ({
+			name: task.displayName,
+			value: task.taskArn,
+		}));
+	}
+
+	const fuse = new Fuse(tasks, fuseOptions);
+	const results = fuse.search(input);
+
+	return results
+		.sort((a, b) => (a.score || 0) - (b.score || 0))
+		.map((result, index) => ({
+			name: `${index === 0 ? chalk.green("🎯") : "  "} ${result.item.displayName} ${chalk.dim(`[${((1 - (result.score || 0)) * 100).toFixed(0)}%]`)}`,
+			value: result.item.taskArn,
+		}));
+}
+
+// RDSインスタンスのファジー検索関数（zoxideスタイル）
+function fuzzySearchRDS(rdsInstances: RDSInstance[], input: string) {
+	const fuseOptions = {
+		keys: ["identifier", "engine", "endpoint"],
+		threshold: 0.5,
+		distance: 200,
+		includeScore: true,
+		minMatchCharLength: 1,
+		findAllMatches: true,
+	};
+
+	if (!input || input.trim() === "") {
+		return rdsInstances.map((rds) => ({
+			name: `${rds.identifier} (${rds.engine}) - ${rds.endpoint}:${rds.port}`,
+			value: rds,
+		}));
+	}
+
+	const fuse = new Fuse(rdsInstances, fuseOptions);
+	const results = fuse.search(input);
+
+	return results
+		.sort((a, b) => (a.score || 0) - (b.score || 0))
+		.map((result, index) => ({
+			name: `${index === 0 ? chalk.green("🎯") : "  "} ${result.item.identifier} (${result.item.engine}) - ${result.item.endpoint}:${result.item.port} ${chalk.dim(`[${((1 - (result.score || 0)) * 100).toFixed(0)}%]`)}`,
+			value: result.item,
+		}));
+}
+
+// zoxideスタイルのリアルタイム検索関数
+async function searchClusters(clusters: ECSCluster[], input: string) {
+	const fuseOptions = {
+		keys: ["clusterName"],
+		threshold: 0.5,
+		distance: 200,
+		includeScore: true,
+		minMatchCharLength: 1,
+		findAllMatches: true,
+	};
+
+	// 入力が空の場合は全て表示
+	if (!input || input.trim() === "") {
+		return clusters.map((cluster) => ({
+			name: `${cluster.clusterName} ${chalk.dim(`(${cluster.clusterArn.split("/").pop()})`)}`,
+			value: cluster,
+		}));
+	}
+
+	// Fuseでリアルタイムファジー検索
+	const fuse = new Fuse(clusters, fuseOptions);
+	const results = fuse.search(input);
+
+	// zoxideスタイル: スコア順に並べ替え
+	return results
+		.sort((a, b) => (a.score || 0) - (b.score || 0))
+		.map((result, index) => ({
+			name: `${index === 0 ? chalk.green("🎯") : "  "} ${result.item.clusterName} ${chalk.dim(`(${result.item.clusterArn.split("/").pop()}) [${((1 - (result.score || 0)) * 100).toFixed(0)}%]`)}`,
+			value: result.item,
+		}));
+}
+
+// zoxideスタイルのリアルタイム検索関数 - ECSタスク用
+async function searchTasks(tasks: ECSTask[], input: string) {
+	const fuseOptions = {
+		keys: ["serviceName", "taskId", "displayName"],
+		threshold: 0.5,
+		distance: 200,
+		includeScore: true,
+		minMatchCharLength: 1,
+		findAllMatches: true,
+	};
+
+	if (!input || input.trim() === "") {
+		return tasks.map((task) => ({
+			name: task.displayName,
+			value: task.taskArn,
+		}));
+	}
+
+	const fuse = new Fuse(tasks, fuseOptions);
+	const results = fuse.search(input);
+
+	return results
+		.sort((a, b) => (a.score || 0) - (b.score || 0))
+		.map((result, index) => ({
+			name: `${index === 0 ? chalk.green("🎯") : "  "} ${result.item.displayName} ${chalk.dim(`[${((1 - (result.score || 0)) * 100).toFixed(0)}%]`)}`,
+			value: result.item.taskArn,
+		}));
+}
+
+// zoxideスタイルのリアルタイム検索関数 - RDS用
+async function searchRDS(rdsInstances: RDSInstance[], input: string) {
+	const fuseOptions = {
+		keys: ["identifier", "engine", "endpoint"],
+		threshold: 0.5,
+		distance: 200,
+		includeScore: true,
+		minMatchCharLength: 1,
+		findAllMatches: true,
+	};
+
+	if (!input || input.trim() === "") {
+		return rdsInstances.map((rds) => ({
+			name: `${rds.identifier} (${rds.engine}) - ${rds.endpoint}:${rds.port}`,
+			value: rds,
+		}));
+	}
+
+	const fuse = new Fuse(rdsInstances, fuseOptions);
+	const results = fuse.search(input);
+
+	return results
+		.sort((a, b) => (a.score || 0) - (b.score || 0))
+		.map((result, index) => ({
+			name: `${index === 0 ? chalk.green("🎯") : "  "} ${result.item.identifier} (${result.item.engine}) - ${result.item.endpoint}:${result.item.port} ${chalk.dim(`[${((1 - (result.score || 0)) * 100).toFixed(0)}%]`)}`,
+			value: result.item,
+		}));
 }
