@@ -1,14 +1,21 @@
+import { EC2Client } from "@aws-sdk/client-ec2";
 import { ECSClient } from "@aws-sdk/client-ecs";
 import { RDSClient } from "@aws-sdk/client-rds";
 import { search } from "@inquirer/prompts";
 import chalk from "chalk";
 import inquirer from "inquirer";
 import {
+	getAWSRegions,
 	getECSClusters,
 	getECSTasks,
 	getRDSInstances,
 } from "./aws-services.js";
-import { searchClusters, searchRDS, searchTasks } from "./search.js";
+import {
+	searchClusters,
+	searchRDS,
+	searchRegions,
+	searchTasks,
+} from "./search.js";
 import { startSSMSession } from "./session.js";
 import type { ECSCluster, RDSInstance } from "./types.js";
 import { getDefaultPortForEngine } from "./utils.js";
@@ -16,22 +23,30 @@ import { getDefaultPortForEngine } from "./utils.js";
 export async function connectToRDS(): Promise<void> {
 	console.log(chalk.yellow("📋 AWS設定を確認しています..."));
 
-	// AWS リージョンの選択
-	const { region } = await inquirer.prompt([
-		{
-			type: "list",
-			name: "region",
-			message: "AWSリージョンを選択してください:",
-			choices: [
-				"ap-northeast-1",
-				"ap-northeast-2",
-				"us-east-1",
-				"us-west-2",
-				"eu-west-1",
-			],
-			default: "ap-northeast-1",
+	// デフォルトリージョンでEC2クライアントを初期化してリージョン一覧を取得
+	const defaultEc2Client = new EC2Client({ region: "us-east-1" });
+
+	console.log(chalk.yellow("🌍 利用可能なAWSリージョンを取得しています..."));
+	const regions = await getAWSRegions(defaultEc2Client);
+
+	if (regions.length === 0) {
+		throw new Error("AWSリージョンが取得できませんでした");
+	}
+
+	// zoxideスタイルのリアルタイム検索でAWSリージョンを選択
+	console.log(
+		chalk.blue(
+			"💡 zoxideスタイル: 入力すると同時にリストが絞り込まれます（↑↓で選択、Enterで決定）",
+		),
+	);
+
+	const region = (await search({
+		message: "🌍 AWSリージョンを検索・選択:",
+		source: async (input) => {
+			return await searchRegions(regions, input || "");
 		},
-	]);
+		pageSize: 12,
+	})) as string;
 
 	console.log(chalk.green(`✅ リージョン: ${region}`));
 

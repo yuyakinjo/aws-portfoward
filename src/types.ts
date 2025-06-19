@@ -20,3 +20,8 @@ export interface RDSInstance {
 	port: number;
 	engine: string;
 }
+
+export interface AWSRegion {
+	regionName: string;
+	optInStatus: string;
+}

@@ -1,6 +1,6 @@
 import chalk from "chalk";
 import Fuse from "fuse.js";
-import type { ECSCluster, ECSTask, RDSInstance } from "./types.js";
+import type { AWSRegion, ECSCluster, ECSTask, RDSInstance } from "./types.js";
 
 // zoxideスタイルのファジー検索関数
 export function fuzzySearchClusters(clusters: ECSCluster[], input: string) {
@@ -177,5 +177,34 @@ export async function searchRDS(rdsInstances: RDSInstance[], input: string) {
 		.map((result, index) => ({
 			name: `${index === 0 ? chalk.green("🎯") : "  "} ${result.item.identifier} (${result.item.engine}) - ${result.item.endpoint}:${result.item.port} ${chalk.dim(`[${((1 - (result.score || 0)) * 100).toFixed(0)}%]`)}`,
 			value: result.item,
+		}));
+}
+
+// zoxideスタイルのリアルタイム検索関数 - AWSリージョン用
+export async function searchRegions(regions: AWSRegion[], input: string) {
+	const fuseOptions = {
+		keys: ["regionName"],
+		threshold: 0.5,
+		distance: 200,
+		includeScore: true,
+		minMatchCharLength: 1,
+		findAllMatches: true,
+	};
+
+	if (!input || input.trim() === "") {
+		return regions.map((region) => ({
+			name: `${region.regionName} ${chalk.dim(`(${region.optInStatus})`)}`,
+			value: region.regionName,
+		}));
+	}
+
+	const fuse = new Fuse(regions, fuseOptions);
+	const results = fuse.search(input);
+
+	return results
+		.sort((a, b) => (a.score || 0) - (b.score || 0))
+		.map((result, index) => ({
+			name: `${index === 0 ? chalk.green("🎯") : "  "} ${result.item.regionName} ${chalk.dim(`(${result.item.optInStatus}) [${((1 - (result.score || 0)) * 100).toFixed(0)}%]`)}`,
+			value: result.item.regionName,
 		}));
 }

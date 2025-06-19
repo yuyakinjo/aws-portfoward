@@ -1,3 +1,4 @@
+import { DescribeRegionsCommand, type EC2Client } from "@aws-sdk/client-ec2";
 import {
 	DescribeClustersCommand,
 	DescribeTasksCommand,
@@ -10,7 +11,7 @@ import {
 	DescribeDBInstancesCommand,
 	type RDSClient,
 } from "@aws-sdk/client-rds";
-import type { ECSCluster, ECSTask, RDSInstance } from "./types.js";
+import type { AWSRegion, ECSCluster, ECSTask, RDSInstance } from "./types.js";
 
 export async function getECSClusters(
 	ecsClient: ECSClient,
@@ -117,6 +118,50 @@ export async function getECSTasks(
 	}
 
 	return tasks;
+}
+
+export async function getAWSRegions(
+	ec2Client: EC2Client,
+): Promise<AWSRegion[]> {
+	const command = new DescribeRegionsCommand({});
+	const response = await ec2Client.send(command);
+
+	const regions: AWSRegion[] = [];
+
+	if (response.Regions) {
+		for (const region of response.Regions) {
+			if (region.RegionName) {
+				regions.push({
+					regionName: region.RegionName,
+					optInStatus: region.OptInStatus || "opt-in-not-required",
+				});
+			}
+		}
+	}
+
+	// よく使われるリージョンを先頭に配置
+	const priorityRegions = [
+		"ap-northeast-1",
+		"us-east-1",
+		"us-west-2",
+		"eu-west-1",
+		"ap-northeast-2",
+	];
+
+	return regions.sort((a, b) => {
+		const aIndex = priorityRegions.indexOf(a.regionName);
+		const bIndex = priorityRegions.indexOf(b.regionName);
+
+		if (aIndex !== -1 && bIndex !== -1) {
+			return aIndex - bIndex;
+		} else if (aIndex !== -1) {
+			return -1;
+		} else if (bIndex !== -1) {
+			return 1;
+		} else {
+			return a.regionName.localeCompare(b.regionName);
+		}
+	});
 }
 
 export async function getRDSInstances(
