@@ -16,174 +16,263 @@ import type { AWSRegion, ECSCluster, ECSTask, RDSInstance } from "./types.js";
 export async function getECSClusters(
 	ecsClient: ECSClient,
 ): Promise<ECSCluster[]> {
-	const listCommand = new ListClustersCommand({});
-	const listResponse = await ecsClient.send(listCommand);
+	try {
+		const listCommand = new ListClustersCommand({});
+		const listResponse = await ecsClient.send(listCommand);
 
-	if (!listResponse.clusterArns || listResponse.clusterArns.length === 0) {
-		return [];
-	}
+		if (!listResponse.clusterArns || listResponse.clusterArns.length === 0) {
+			return [];
+		}
 
-	// クラスターの詳細情報を取得
-	const describeCommand = new DescribeClustersCommand({
-		clusters: listResponse.clusterArns,
-	});
-	const describeResponse = await ecsClient.send(describeCommand);
+		// Get detailed cluster information
+		const describeCommand = new DescribeClustersCommand({
+			clusters: listResponse.clusterArns,
+		});
+		const describeResponse = await ecsClient.send(describeCommand);
 
-	const clusters: ECSCluster[] = [];
-	if (describeResponse.clusters) {
-		for (const cluster of describeResponse.clusters) {
-			if (cluster.clusterName && cluster.clusterArn) {
-				clusters.push({
-					clusterName: cluster.clusterName,
-					clusterArn: cluster.clusterArn,
-				});
+		const clusters: ECSCluster[] = [];
+		if (describeResponse.clusters) {
+			for (const cluster of describeResponse.clusters) {
+				if (cluster.clusterName && cluster.clusterArn) {
+					clusters.push({
+						clusterName: cluster.clusterName,
+						clusterArn: cluster.clusterArn,
+					});
+				}
 			}
 		}
-	}
 
-	return clusters;
+		return clusters;
+	} catch (error) {
+		if (error instanceof Error) {
+			// Provide more specific error messages
+			if (
+				error.name === "UnauthorizedOperation" ||
+				error.name === "AccessDenied"
+			) {
+				throw new Error(
+					"Access denied to ECS clusters. Please check your IAM policies.",
+				);
+			}
+			if (error.message.includes("region")) {
+				throw new Error(
+					"ECS service is not available in the specified region.",
+				);
+			}
+		}
+		throw new Error(
+			`Failed to get ECS clusters: ${error instanceof Error ? error.message : String(error)}`,
+		);
+	}
 }
 
 export async function getECSTasks(
 	ecsClient: ECSClient,
 	cluster: ECSCluster,
 ): Promise<ECSTask[]> {
-	// まずサービスを取得
-	const servicesCommand = new ListServicesCommand({
-		cluster: cluster.clusterName,
-	});
-	const servicesResponse = await ecsClient.send(servicesCommand);
+	try {
+		// Get services first
+		const servicesCommand = new ListServicesCommand({
+			cluster: cluster.clusterName,
+		});
+		const servicesResponse = await ecsClient.send(servicesCommand);
 
-	const tasks: ECSTask[] = [];
+		const tasks: ECSTask[] = [];
 
-	if (servicesResponse.serviceArns) {
-		// サービスごとにタスクを取得
-		for (const serviceArn of servicesResponse.serviceArns) {
-			const serviceName = serviceArn.split("/").pop() || serviceArn;
-			const tasksCommand = new ListTasksCommand({
-				cluster: cluster.clusterName,
-				serviceName,
-				desiredStatus: "RUNNING",
-			});
-			const tasksResponse = await ecsClient.send(tasksCommand);
-
-			if (tasksResponse.taskArns) {
-				// タスクの詳細を取得
-				const describeCommand = new DescribeTasksCommand({
+		if (servicesResponse.serviceArns) {
+			// Get tasks for each service
+			for (const serviceArn of servicesResponse.serviceArns) {
+				const serviceName = serviceArn.split("/").pop() || serviceArn;
+				const tasksCommand = new ListTasksCommand({
 					cluster: cluster.clusterName,
-					tasks: tasksResponse.taskArns,
+					serviceName,
+					desiredStatus: "RUNNING",
 				});
-				const describeResponse = await ecsClient.send(describeCommand);
+				const tasksResponse = await ecsClient.send(tasksCommand);
 
-				if (describeResponse.tasks) {
-					for (const task of describeResponse.tasks) {
-						if (
-							task.taskArn &&
-							task.containers &&
-							task.containers.length > 0 &&
-							task.lastStatus === "RUNNING"
-						) {
-							const taskId = task.taskArn.split("/").pop() || task.taskArn;
-							const clusterFullName =
-								cluster.clusterArn.split("/").pop() || cluster.clusterName;
-							// RuntimeIDを取得（最初のコンテナから）
-							const runtimeId = task.containers[0]?.runtimeId || "";
+				if (tasksResponse.taskArns) {
+					// Get task details
+					const describeCommand = new DescribeTasksCommand({
+						cluster: cluster.clusterName,
+						tasks: tasksResponse.taskArns,
+					});
+					const describeResponse = await ecsClient.send(describeCommand);
 
-							if (runtimeId) {
-								// ECS Exec用のフォーマット: ecs:クラスター名_タスクID_ランタイムID
-								const targetArn = `ecs:${clusterFullName}_${taskId}_${runtimeId}`;
+					if (describeResponse.tasks) {
+						for (const task of describeResponse.tasks) {
+							if (
+								task.taskArn &&
+								task.containers &&
+								task.containers.length > 0 &&
+								task.lastStatus === "RUNNING"
+							) {
+								const taskId = task.taskArn.split("/").pop() || task.taskArn;
+								const clusterFullName =
+									cluster.clusterArn.split("/").pop() || cluster.clusterName;
+								// Get RuntimeID (from first container)
+								const runtimeId = task.containers[0]?.runtimeId || "";
 
-								// より詳細な表示名を作成
-								const createdAt = task.createdAt
-									? new Date(task.createdAt).toLocaleString("ja-JP")
-									: "";
-								const displayName = `${serviceName} | ${taskId.substring(0, 8)} | ${task.lastStatus} | ${createdAt}`;
+								if (runtimeId) {
+									// Format for ECS Exec: ecs:cluster_name_task_id_runtime_id
+									const targetArn = `ecs:${clusterFullName}_${taskId}_${runtimeId}`;
 
-								tasks.push({
-									taskArn: targetArn,
-									displayName: displayName,
-									runtimeId: runtimeId,
-									taskId: taskId,
-									clusterName: clusterFullName,
-									serviceName: serviceName,
-									taskStatus: task.lastStatus || "UNKNOWN",
-									createdAt: task.createdAt,
-								});
+									// Create more detailed display name
+									const createdAt = task.createdAt
+										? new Date(task.createdAt).toLocaleString("en-US")
+										: "";
+									const displayName = `${serviceName} | ${taskId.substring(0, 8)} | ${task.lastStatus} | ${createdAt}`;
+
+									tasks.push({
+										taskArn: targetArn,
+										displayName: displayName,
+										runtimeId: runtimeId,
+										taskId: taskId,
+										clusterName: clusterFullName,
+										serviceName: serviceName,
+										taskStatus: task.lastStatus || "UNKNOWN",
+										createdAt: task.createdAt,
+									});
+								}
 							}
 						}
 					}
 				}
 			}
 		}
-	}
 
-	return tasks;
+		return tasks;
+	} catch (error) {
+		if (error instanceof Error) {
+			if (error.name === "ClusterNotFoundException") {
+				throw new Error(
+					`ECS cluster "${cluster.clusterName}" not found. Please verify the cluster exists.`,
+				);
+			}
+			if (
+				error.name === "UnauthorizedOperation" ||
+				error.name === "AccessDenied"
+			) {
+				throw new Error(
+					"Access denied to ECS tasks. Please check your IAM policies.",
+				);
+			}
+		}
+		throw new Error(
+			`Failed to get ECS tasks: ${error instanceof Error ? error.message : String(error)}`,
+		);
+	}
 }
 
 export async function getAWSRegions(
 	ec2Client: EC2Client,
 ): Promise<AWSRegion[]> {
-	const command = new DescribeRegionsCommand({});
-	const response = await ec2Client.send(command);
+	try {
+		const command = new DescribeRegionsCommand({});
+		const response = await ec2Client.send(command);
 
-	const regions: AWSRegion[] = [];
+		const regions: AWSRegion[] = [];
 
-	if (response.Regions) {
-		for (const region of response.Regions) {
-			if (region.RegionName) {
-				regions.push({
-					regionName: region.RegionName,
-					optInStatus: region.OptInStatus || "opt-in-not-required",
-				});
+		if (response.Regions) {
+			for (const region of response.Regions) {
+				if (region.RegionName) {
+					regions.push({
+						regionName: region.RegionName,
+						optInStatus: region.OptInStatus || "opt-in-not-required",
+					});
+				}
 			}
 		}
-	}
 
-	// よく使われるリージョンを先頭に配置
-	const priorityRegions = [
-		"ap-northeast-1",
-		"us-east-1",
-		"us-west-2",
-		"eu-west-1",
-		"ap-northeast-2",
-	];
+		// Place commonly used regions at the top
+		const priorityRegions = [
+			"ap-northeast-1",
+			"us-east-1",
+			"us-west-2",
+			"eu-west-1",
+			"ap-northeast-2",
+		];
 
-	return regions.sort((a, b) => {
-		const aIndex = priorityRegions.indexOf(a.regionName);
-		const bIndex = priorityRegions.indexOf(b.regionName);
+		return regions.sort((a, b) => {
+			const aIndex = priorityRegions.indexOf(a.regionName);
+			const bIndex = priorityRegions.indexOf(b.regionName);
 
-		if (aIndex !== -1 && bIndex !== -1) {
-			return aIndex - bIndex;
-		} else if (aIndex !== -1) {
-			return -1;
-		} else if (bIndex !== -1) {
-			return 1;
-		} else {
-			return a.regionName.localeCompare(b.regionName);
+			if (aIndex !== -1 && bIndex !== -1) {
+				return aIndex - bIndex;
+			} else if (aIndex !== -1) {
+				return -1;
+			} else if (bIndex !== -1) {
+				return 1;
+			} else {
+				return a.regionName.localeCompare(b.regionName);
+			}
+		});
+	} catch (error) {
+		if (error instanceof Error) {
+			if (
+				error.name === "UnauthorizedOperation" ||
+				error.name === "AccessDenied"
+			) {
+				throw new Error(
+					"Access denied to AWS regions. Please check your AWS credentials and IAM permissions.",
+				);
+			}
 		}
-	});
+		throw new Error(
+			`Failed to get AWS regions: ${error instanceof Error ? error.message : String(error)}`,
+		);
+	}
 }
 
 export async function getRDSInstances(
 	rdsClient: RDSClient,
 ): Promise<RDSInstance[]> {
-	const command = new DescribeDBInstancesCommand({});
-	const response = await rdsClient.send(command);
+	try {
+		const command = new DescribeDBInstancesCommand({});
+		const response = await rdsClient.send(command);
 
-	const instances: RDSInstance[] = [];
+		const rdsInstances: RDSInstance[] = [];
 
-	if (response.DBInstances) {
-		for (const instance of response.DBInstances) {
-			if (instance.DBInstanceIdentifier && instance.Endpoint) {
-				instances.push({
-					identifier: instance.DBInstanceIdentifier,
-					endpoint: instance.Endpoint.Address || "",
-					port: instance.Endpoint.Port || 5432,
-					engine: instance.Engine || "unknown",
-				});
+		if (response.DBInstances) {
+			for (const db of response.DBInstances) {
+				if (
+					db.DBInstanceIdentifier &&
+					db.Endpoint?.Address &&
+					db.Engine &&
+					db.DBInstanceStatus === "available"
+				) {
+					rdsInstances.push({
+						dbInstanceIdentifier: db.DBInstanceIdentifier,
+						endpoint: db.Endpoint.Address,
+						engine: db.Engine,
+						dbInstanceClass: db.DBInstanceClass || "unknown",
+						dbInstanceStatus: db.DBInstanceStatus,
+						allocatedStorage: db.AllocatedStorage || 0,
+						availabilityZone: db.AvailabilityZone || "unknown",
+						vpcSecurityGroups: db.VpcSecurityGroups || [],
+						dbSubnetGroup: db.DBSubnetGroup || undefined,
+						createdTime: db.InstanceCreateTime || undefined,
+					});
+				}
 			}
 		}
-	}
 
-	return instances;
+		// Sort by name
+		return rdsInstances.sort((a, b) =>
+			a.dbInstanceIdentifier.localeCompare(b.dbInstanceIdentifier),
+		);
+	} catch (error) {
+		if (error instanceof Error) {
+			if (
+				error.name === "UnauthorizedOperation" ||
+				error.name === "AccessDenied"
+			) {
+				throw new Error(
+					"Access denied to RDS instances. Please check your IAM policies.",
+				);
+			}
+		}
+		throw new Error(
+			`Failed to get RDS instances: ${error instanceof Error ? error.message : String(error)}`,
+		);
+	}
 }

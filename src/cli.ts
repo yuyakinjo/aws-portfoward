@@ -2,26 +2,53 @@
 
 import chalk from "chalk";
 import { Command } from "commander";
-import { connectToRDS } from "./aws-port-forward.ts";
+import { connectToRDS } from "./aws-port-forward.js";
+import { displayFriendlyError } from "./utils.js";
 
 const program = new Command();
 
 program
 	.name("aws-port-forward")
-	.description("AWS ECS経由でRDSにポートフォワーディング接続するCLI")
+	.description("CLI for port-forwarding to RDS via AWS ECS")
 	.version("1.0.0");
 
 program
 	.command("connect")
-	.description("ECS経由でRDSに接続")
+	.description("Connect to RDS via ECS")
 	.action(async () => {
 		try {
-			console.log(chalk.blue("🚀 AWS ECS経由RDS接続ツールを開始します..."));
+			console.log(chalk.blue("🚀 Starting AWS ECS RDS connection tool..."));
 			await connectToRDS();
+			console.log(chalk.green("✅ Process completed successfully"));
 		} catch (error) {
-			console.error(chalk.red("❌ エラーが発生しました:"), error);
+			// If error occurs during retry process, error is already displayed, so show brief message
+			if (
+				error instanceof Error &&
+				error.message.includes("maximum retry count")
+			) {
+				console.log(chalk.red("🚫 Terminating process"));
+			} else {
+				// For unexpected errors, display detailed error screen
+				displayFriendlyError(error);
+			}
 			process.exit(1);
 		}
 	});
+
+// Catch unhandled promise rejections
+process.on("unhandledRejection", (reason, promise) => {
+	console.log("");
+	console.log(chalk.red("❌ An unexpected error occurred"));
+	displayFriendlyError(reason);
+	process.exit(1);
+});
+
+// Catch uncaught exceptions
+process.on("uncaughtException", (error) => {
+	console.log("");
+	console.log(chalk.red("❌ A critical error occurred"));
+	displayFriendlyError(error);
+	process.exit(1);
+});
 
 program.parse();

@@ -15,10 +15,16 @@ export interface ECSCluster {
 }
 
 export interface RDSInstance {
-	identifier: string;
+	dbInstanceIdentifier: string;
 	endpoint: string;
-	port: number;
 	engine: string;
+	dbInstanceClass: string;
+	dbInstanceStatus: string;
+	allocatedStorage: number;
+	availabilityZone: string;
+	vpcSecurityGroups: any[];
+	dbSubnetGroup?: any;
+	createdTime?: Date;
 }
 
 export interface AWSRegion {

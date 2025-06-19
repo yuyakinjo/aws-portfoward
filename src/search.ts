@@ -2,11 +2,11 @@ import chalk from "chalk";
 import Fuse from "fuse.js";
 import type { AWSRegion, ECSCluster, ECSTask, RDSInstance } from "./types.js";
 
-// zoxideスタイルのファジー検索関数
+// zoxide-style fuzzy search function
 export function fuzzySearchClusters(clusters: ECSCluster[], input: string) {
 	const fuseOptions = {
 		keys: ["clusterName"],
-		threshold: 0.5, // zoxideのように柔軟な検索
+		threshold: 0.5, // Flexible search like zoxide
 		distance: 200,
 		includeScore: true,
 		minMatchCharLength: 1,
@@ -23,7 +23,7 @@ export function fuzzySearchClusters(clusters: ECSCluster[], input: string) {
 	const fuse = new Fuse(clusters, fuseOptions);
 	const results = fuse.search(input);
 
-	// zoxideスタイル: スコアが高い順に並べ替え、スコア表示
+	// zoxide-style: Sort by score with score display
 	return results
 		.sort((a, b) => (a.score || 0) - (b.score || 0))
 		.map((result, index) => ({
@@ -32,7 +32,7 @@ export function fuzzySearchClusters(clusters: ECSCluster[], input: string) {
 		}));
 }
 
-// ECSタスクのファジー検索関数（zoxideスタイル）
+// ECS task fuzzy search function (zoxide-style)
 export function fuzzySearchTasks(tasks: ECSTask[], input: string) {
 	const fuseOptions = {
 		keys: ["serviceName", "taskId", "displayName"],
@@ -61,10 +61,10 @@ export function fuzzySearchTasks(tasks: ECSTask[], input: string) {
 		}));
 }
 
-// RDSインスタンスのファジー検索関数（zoxideスタイル）
+// RDS instance fuzzy search function (zoxide-style)
 export function fuzzySearchRDS(rdsInstances: RDSInstance[], input: string) {
 	const fuseOptions = {
-		keys: ["identifier", "engine", "endpoint"],
+		keys: ["dbInstanceIdentifier", "engine", "endpoint"],
 		threshold: 0.5,
 		distance: 200,
 		includeScore: true,
@@ -74,7 +74,7 @@ export function fuzzySearchRDS(rdsInstances: RDSInstance[], input: string) {
 
 	if (!input || input.trim() === "") {
 		return rdsInstances.map((rds) => ({
-			name: `${rds.identifier} (${rds.engine}) - ${rds.endpoint}:${rds.port}`,
+			name: `${rds.dbInstanceIdentifier} (${rds.engine}) - ${rds.endpoint}`,
 			value: rds,
 		}));
 	}
@@ -85,12 +85,12 @@ export function fuzzySearchRDS(rdsInstances: RDSInstance[], input: string) {
 	return results
 		.sort((a, b) => (a.score || 0) - (b.score || 0))
 		.map((result, index) => ({
-			name: `${index === 0 ? chalk.green("🎯") : "  "} ${result.item.identifier} (${result.item.engine}) - ${result.item.endpoint}:${result.item.port} ${chalk.dim(`[${((1 - (result.score || 0)) * 100).toFixed(0)}%]`)}`,
+			name: `${index === 0 ? chalk.green("🎯") : "  "} ${result.item.dbInstanceIdentifier} (${result.item.engine}) - ${result.item.endpoint} ${chalk.dim(`[${((1 - (result.score || 0)) * 100).toFixed(0)}%]`)}`,
 			value: result.item,
 		}));
 }
 
-// zoxideスタイルのリアルタイム検索関数
+// zoxide-style real-time search function
 export async function searchClusters(clusters: ECSCluster[], input: string) {
 	const fuseOptions = {
 		keys: ["clusterName"],
@@ -101,7 +101,7 @@ export async function searchClusters(clusters: ECSCluster[], input: string) {
 		findAllMatches: true,
 	};
 
-	// 入力が空の場合は全て表示
+	// Show all if input is empty
 	if (!input || input.trim() === "") {
 		return clusters.map((cluster) => ({
 			name: `${cluster.clusterName} ${chalk.dim(`(${cluster.clusterArn.split("/").pop()})`)}`,
@@ -109,11 +109,11 @@ export async function searchClusters(clusters: ECSCluster[], input: string) {
 		}));
 	}
 
-	// Fuseでリアルタイムファジー検索
+	// Real-time fuzzy search with Fuse
 	const fuse = new Fuse(clusters, fuseOptions);
 	const results = fuse.search(input);
 
-	// zoxideスタイル: スコア順に並べ替え
+	// zoxide-style: Sort by score
 	return results
 		.sort((a, b) => (a.score || 0) - (b.score || 0))
 		.map((result, index) => ({
@@ -122,7 +122,7 @@ export async function searchClusters(clusters: ECSCluster[], input: string) {
 		}));
 }
 
-// zoxideスタイルのリアルタイム検索関数 - ECSタスク用
+// zoxide-style real-time search function - for ECS tasks
 export async function searchTasks(tasks: ECSTask[], input: string) {
 	const fuseOptions = {
 		keys: ["serviceName", "taskId", "displayName"],
@@ -151,10 +151,10 @@ export async function searchTasks(tasks: ECSTask[], input: string) {
 		}));
 }
 
-// zoxideスタイルのリアルタイム検索関数 - RDS用
+// zoxide-style real-time search function - for RDS
 export async function searchRDS(rdsInstances: RDSInstance[], input: string) {
 	const fuseOptions = {
-		keys: ["identifier", "engine", "endpoint"],
+		keys: ["dbInstanceIdentifier", "engine", "endpoint"],
 		threshold: 0.5,
 		distance: 200,
 		includeScore: true,
@@ -164,7 +164,7 @@ export async function searchRDS(rdsInstances: RDSInstance[], input: string) {
 
 	if (!input || input.trim() === "") {
 		return rdsInstances.map((rds) => ({
-			name: `${rds.identifier} (${rds.engine}) - ${rds.endpoint}:${rds.port}`,
+			name: `${rds.dbInstanceIdentifier} (${rds.engine}) - ${rds.endpoint}`,
 			value: rds,
 		}));
 	}
@@ -175,12 +175,12 @@ export async function searchRDS(rdsInstances: RDSInstance[], input: string) {
 	return results
 		.sort((a, b) => (a.score || 0) - (b.score || 0))
 		.map((result, index) => ({
-			name: `${index === 0 ? chalk.green("🎯") : "  "} ${result.item.identifier} (${result.item.engine}) - ${result.item.endpoint}:${result.item.port} ${chalk.dim(`[${((1 - (result.score || 0)) * 100).toFixed(0)}%]`)}`,
+			name: `${index === 0 ? chalk.green("🎯") : "  "} ${result.item.dbInstanceIdentifier} (${result.item.engine}) - ${result.item.endpoint} ${chalk.dim(`[${((1 - (result.score || 0)) * 100).toFixed(0)}%]`)}`,
 			value: result.item,
 		}));
 }
 
-// zoxideスタイルのリアルタイム検索関数 - AWSリージョン用
+// zoxide-style real-time search function - for AWS regions
 export async function searchRegions(regions: AWSRegion[], input: string) {
 	const fuseOptions = {
 		keys: ["regionName"],
