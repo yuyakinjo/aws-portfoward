@@ -1,12 +1,5 @@
-[![CI](https://github.com/yuyakinjo/aws-portfoward/actio## インストール
-
-```bash
-# 依存関係のインストール
-npm install
-
-# ビルド
-npm run build
-```
+[![CI](https://github.com/yuyakinjo/aws-portfoward/actions/workflows/ci.yml/badge.svg)](https://github.com/yuyakinjo/aws-portfoward/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/ecs-pf)](https://www.npmjs.com/package/ecs-pf)
 
 ## 使用方法
 
@@ -14,10 +7,7 @@ npm run build
 
 ```bash
 # 開発環境での実行
-npm run dev
-
-# または直接実行
-npm run connect
+npx ecs-pf connect
 ```
 
 ### 2. コマンドライン引数での指定（推奨）
@@ -53,7 +43,7 @@ npx ecs-pf connect --help
 ## 使用例
 
 ```bash
-$ npm run dev
+$ npx ecs-pf connect
 
 🚀 AWS ECS経由RDS接続ツールを開始します...
 📋 AWS設定を確認しています...
@@ -156,18 +146,6 @@ npx ecs-pf connect
 - **パッケージ名**: `ecs-pf`
 - **実行ファイル**: `dist/cli.js` (Node.js用にビルド済み)
 - **対象環境**: Node.js (ESモジュール対応)
-
-#### GitHub Actionsによる自動公開
-
-新しいリリースを作成すると自動的に以下が実行されます：
-
-1. **依存関係のインストール**: `npm ci`
-2. **型チェック**: `npm run type-check`
-3. **コード品質チェック**: `npm run ci`
-4. **ビルド**: `npm run build`
-5. **バージョン更新**: リリースタグに合わせてpackage.jsonを更新
-6. **npm公開**: `npm publish --access public`
-
 
 ## ライセンス
 
