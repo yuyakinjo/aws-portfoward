@@ -1,7 +1,7 @@
-# AWS ECS経由RDS接続ツール
+[![CI](https://github.com/yuyakinjo/aws-portfoward/actions/workflows/ci.yml/badge.svg)](https://github.com/yuyakinjo/aws-portfoward/actions/workflows/ci.yml)
+[![Security](https://github.com/yuyakinjo/aws-portfoward/actions/workflows/security.yml/badge.svg)](https://github.com/yuyakinjo/aws-portfoward/actions/workflows/security.yml)
 
-[![CI](https://github.com/YOUR_USERNAME/aws-portfoward/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/aws-portfoward/actions/workflows/ci.yml)
-[![Security](https://github.com/YOUR_USERNAME/aws-portfoward/actions/workflows/security.yml/badge.svg)](https://github.com/YOUR_USERNAME/aws-portfoward/actions/workflows/security.yml)
+# AWS ECS経由RDS接続ツール
 
 AWS ECSコンテナを通してポートフォワーディングし、RDSに接続できるインタラクティブなCLIツールです。
 
