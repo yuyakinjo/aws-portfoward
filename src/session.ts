@@ -51,14 +51,14 @@ export async function startSSMSession(
 		child.on("close", (code, signal) => {
 			// Clear timeout when session closes
 			clearTimeout(timeout);
-			
+
 			// Handle user termination (SIGINT/Ctrl+C) as normal termination
 			if (signal === "SIGINT" || code === 130 || isUserTermination) {
 				console.log(chalk.green("✅ Session terminated by user"));
 				resolve();
 				return;
 			}
-			
+
 			if (code === 0) {
 				console.log(chalk.green("✅ Session terminated successfully"));
 				resolve();

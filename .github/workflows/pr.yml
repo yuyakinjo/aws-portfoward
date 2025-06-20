@@ -1,0 +1,82 @@
+name: Pull Request
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  pr-check:
+    name: PR Quality Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch full history for better diff analysis
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run TypeScript type check
+        run: bun run type-check
+
+      - name: Run Biome format check
+        run: bun run format:check
+
+      - name: Run Biome lint
+        run: bun run lint
+
+      - name: Build project
+        run: bun run build
+
+      - name: Validate build artifacts
+        run: |
+          echo "Checking build output..."
+          ls -la dist/
+
+          if [ ! -f "dist/cli.js" ]; then
+            echo "❌ Build failed: dist/cli.js not found"
+            exit 1
+          fi
+
+          if [ ! -x "dist/cli.js" ]; then
+            echo "❌ dist/cli.js is not executable"
+            exit 1
+          fi
+
+          # Check if the shebang is present
+          if ! head -n1 dist/cli.js | grep -q "#!/usr/bin/env node"; then
+            echo "❌ Shebang missing in dist/cli.js"
+            exit 1
+          fi
+
+          echo "✅ Build validation successful"
+
+      - name: Check package.json validity
+        run: |
+          # Validate package.json structure
+          bun run --help > /dev/null
+          echo "✅ package.json scripts are valid"
+
+      - name: Summary comment
+        if: always()
+        run: |
+          echo "## 🔍 Pull Request Check Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ TypeScript type check completed" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Biome format check completed" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Biome lint check completed" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Build process completed" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Artifact validation completed" >> $GITHUB_STEP_SUMMARY

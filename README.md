@@ -1,5 +1,8 @@
 # AWS ECS経由RDS接続ツール
 
+[![CI](https://github.com/YOUR_USERNAME/aws-portfoward/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/aws-portfoward/actions/workflows/ci.yml)
+[![Security](https://github.com/YOUR_USERNAME/aws-portfoward/actions/workflows/security.yml/badge.svg)](https://github.com/YOUR_USERNAME/aws-portfoward/actions/workflows/security.yml)
+
 AWS ECSコンテナを通してポートフォワーディングし、RDSに接続できるインタラクティブなCLIツールです。
 
 ## 機能
