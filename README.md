@@ -10,110 +10,74 @@ npm run build
 
 ## 使用方法
 
-### 基本的な使用方法
+### 1. インタラクティブモード（従来の方法）
 
 ```bash
 # 開発環境での実行
 npm run dev
 
-# 直接実行
-npm run connectbadge.svg)](https://github.com/yuyakinjo/aws-portfoward/actions/workflows/ci.yml)
-[![Security](https://github.com/yuyakinjo/aws-portfoward/actions/workflows/security.yml/badge.svg)](https://github.com/yuyakinjo/aws-portfoward/actions/workflows/security.yml)
-
-# AWS ECS経由RDS接続ツール
-
-AWS ECSコンテナを通してポートフォワーディングし、RDSに接続できるインタラクティブなCLIツールです。
-
-## 機能
-
-- ✅ AWS ECSクラスター、サービス、タスクの自動取得
-- ✅ RDSインスタンスの自動取得
-- ✅ インタラクティブな設定入力
-- ✅ AWS SSM Session Managerを使用したセキュアな接続
-- ✅ 自動的なポートフォワーディング設定
-
-## 必要な環境
-
-### 1. AWS CLI
-```bash
-# AWS CLIのインストール（macOS）
-brew install awscli
-
-# AWS CLIの設定
-aws configure
-```
-
-### 2. Session Manager Plugin
-```bash
-# Session Manager Pluginのインストール（macOS）
-brew install session-manager-plugin
-```
-
-## AWS権限
-
-このツールを使用するには、以下のAWS権限が必要です：
-
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "ecs:ListClusters",
-        "ecs:ListServices",
-        "ecs:ListTasks",
-        "ecs:DescribeTasks",
-        "rds:DescribeDBInstances",
-        "ssm:StartSession"
-      ],
-      "Resource": "*"
-    }
-  ]
-}
-```
-
-## インストール
-
-```bash
-# 依存関係のインストール
-bun install
-
-# CLIの実行権限を付与
-chmod +x src/cli.ts
-```
-
-## 使用方法
-
-### 基本的な使用方法
-
-```bash
-# 開発環境での実行
-bun run dev
-
 # または直接実行
-bun src/cli.ts connect
+npm run connect
 ```
 
-### 実行手順
+### 2. コマンドライン引数での指定（推奨）
 
-1. **AWSリージョンの選択**
-   - 利用可能なリージョンから選択
+```bash
+# すべての値を引数で指定
+npx ecs-pf connect --region ap-northeast-1 --cluster production-cluster --task arn:aws:ecs:ap-northeast-1:123456789:task/production-cluster/abcdef123456 --rds production-db --rds-port 5432 --local-port 8888
 
-2. **ECSクラスターの選択**
-   - アカウント内のECSクラスターから選択
+# 一部のみ指定（残りは対話的に選択）
+npx ecs-pf connect --region ap-northeast-1 --cluster production-cluster
 
-3. **ECSタスクの選択**
-   - 実行中のECSタスクから選択
+# クラスターのみ指定
+npx ecs-pf connect --cluster production-cluster
+```
 
-4. **RDSインスタンスの選択**
-   - アカウント内のRDSインスタンスから選択
+### 利用可能なオプション
 
-5. **ローカルポートの指定**
-   - ローカルマシンで使用するポート番号を入力（デフォルト: 8888）
+| オプション | 短縮形 | 説明 | 例 |
+|-----------|-------|------|-------|
+| `--region` | `-r` | AWSリージョン | `ap-northeast-1` |
+| `--cluster` | `-c` | ECSクラスター名 | `production-cluster` |
+| `--task` | `-t` | ECSタスクARN | `arn:aws:ecs:...` |
+| `--rds` | | RDSインスタンス識別子 | `production-db` |
+| `--rds-port` | | RDSポート番号 | `5432` |
+| `--local-port` | `-p` | ローカルポート番号 | `8888` |
 
-6. **接続開始**
-   - 自動的にSSMセッションが開始され、ポートフォワーディングが設定されます
+### ヘルプの表示
+
+```bash
+npx ecs-pf connect --help
+```
+
+### バリデーション機能
+
+CLIオプションは自動的に検証され、不正な値が指定された場合はエラーメッセージが表示されます：
+
+```bash
+# 不正なポート番号
+$ npx ecs-pf connect --rds-port abc
+❌ Invalid CLI options:
+  • rdsPort: RDS port must be a number
+
+# 範囲外のポート番号
+$ npx ecs-pf connect --rds-port 70000
+❌ Invalid CLI options:
+  • rdsPort: RDS port must be less than 65536
+
+# 空文字列
+$ npx ecs-pf connect --cluster ""
+❌ Invalid CLI options:
+  • cluster: Cluster name cannot be empty
+```
+
+#### バリデーションルール
+
+- **region, cluster, task, rds**: 空文字列は無効
+- **rds-port, local-port**:
+  - 数値のみ受け付け
+  - 1-65535の範囲内である必要がある
+  - 整数である必要がある
 
 ## 使用例
 
