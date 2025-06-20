@@ -7,6 +7,7 @@ export async function startSSMSession(
 	rdsInstance: RDSInstance,
 	rdsPort: string,
 	localPort: string,
+	reproducibleCommand?: string,
 ): Promise<void> {
 	const parameters = {
 		host: [rdsInstance.endpoint],
@@ -20,6 +21,14 @@ export async function startSSMSession(
 
 	messages.info("Command to execute:");
 	messages.cyan(commandString);
+
+	// Display reproducible command if provided
+	if (reproducibleCommand) {
+		messages.empty();
+		messages.info("💡 To reproduce this connection, use:");
+		messages.cyan(reproducibleCommand);
+	}
+
 	messages.empty();
 	messages.success(
 		`🎯 RDS connection will be available at localhost:${localPort}`,
