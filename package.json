@@ -5,10 +5,11 @@
 	"type": "module",
 	"main": "dist/cli.js",
 	"bin": {
-		"ecs-pf": "./dist/cli.js"
+		"ecs-pf": "./dist/ecs-pf"
 	},
 	"files": [
 		"dist/**/*",
+		"src/**/*",
 		"README.md"
 	],
 	"keywords": [
