@@ -203,8 +203,8 @@ npx ecs-pf connect
 
 #### パッケージ設定
 - **パッケージ名**: `ecs-pf`
-- **実行ファイル**: `dist/ecs-pf` (ユニバーサルランチャー)
-- **対象環境**: Node.js・Bun両対応
+- **実行ファイル**: `dist/cli.js` (Node.js用にビルド済み)
+- **対象環境**: Node.js (ESモジュール対応)
 
 #### GitHub Actionsによる自動公開
 
