@@ -1,14 +1,31 @@
 {
-	"name": "aws-portfoward",
+	"name": "ecs-pf",
 	"version": "1.0.0",
-	"main": "src/cli.ts",
+	"description": "CLI for port-forwarding to RDS via AWS ECS",
+	"type": "module",
+	"main": "dist/cli.js",
 	"bin": {
-		"aws-port-forward": "./src/cli.ts"
+		"ecs-pf": "./dist/cli.js"
 	},
+	"files": [
+		"dist/**/*",
+		"README.md"
+	],
+	"keywords": [
+		"aws",
+		"ecs",
+		"rds",
+		"port-forwarding",
+		"cli"
+	],
+	"author": "",
+	"license": "MIT",
 	"scripts": {
+		"connect": "bun src/cli.ts connect",
 		"dev": "bun run src/cli.ts connect",
 		"build": "bun build src/cli.ts --outdir dist --target bun",
 		"start": "bun run dist/cli.js connect",
+		"prepublishOnly": "bun run check && bun run build",
 		"format": "biome format",
 		"format:check": "biome format --check",
 		"lint": "biome lint",
