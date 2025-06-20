@@ -19,11 +19,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
       - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
@@ -31,22 +26,19 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: npm ci
 
       - name: Run TypeScript type check
-        run: bun run type-check
+        run: npm run type-check
 
-      - name: Run Biome format check
-        run: bun run format:check
+      - name: Run Biome check (format + lint + organize imports)
+        run: npm run check:dry
 
-      - name: Run Biome lint
-        run: bun run lint
-
-      - name: Run Biome check (combined)
-        run: bun run ci
+      - name: Run Biome CI optimized check
+        run: npm run ci
 
       - name: Build project
-        run: bun run build
+        run: npm run build
 
       - name: Check build output
         run: |
