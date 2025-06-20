@@ -2,10 +2,13 @@
 
 import chalk from "chalk";
 import { Command } from "commander";
-import * as v from "valibot";
+import { safeParse } from "valibot";
 import { connectToRDS } from "./aws-port-forward.js";
 import { ConnectOptionsSchema } from "./types.js";
-import { displayFriendlyError } from "./utils/index.js";
+import {
+	displayFriendlyError,
+	displayValidationErrors,
+} from "./utils/index.js";
 
 const program = new Command();
 
@@ -13,20 +16,6 @@ program
 	.name("aws-port-forward")
 	.description("CLI for port-forwarding to RDS via AWS ECS")
 	.version("1.0.0");
-
-/**
- * Display validation errors in a user-friendly format
- */
-function displayValidationErrors(
-	issues: v.InferIssue<typeof ConnectOptionsSchema>[],
-): void {
-	console.log(chalk.red("❌ Invalid CLI options:"));
-	for (const issue of issues) {
-		console.log(
-			chalk.red(`  • ${issue.path?.[0]?.key || "Unknown"}: ${issue.message}`),
-		);
-	}
-}
 
 program
 	.command("connect")
@@ -40,7 +29,7 @@ program
 	.action(async (rawOptions: unknown) => {
 		try {
 			// Validate options using Valibot
-			const { success, issues, output } = v.safeParse(
+			const { success, issues, output } = safeParse(
 				ConnectOptionsSchema,
 				rawOptions,
 			);

@@ -4,18 +4,12 @@ import { Command } from "commander";
 import * as v from "valibot";
 import { connectToRDS } from "./aws-port-forward.js";
 import { ConnectOptionsSchema } from "./types.js";
-import { displayFriendlyError } from "./utils/index.js";
+import { displayFriendlyError, displayValidationErrors, } from "./utils/index.js";
 const program = new Command();
 program
     .name("aws-port-forward")
     .description("CLI for port-forwarding to RDS via AWS ECS")
     .version("1.0.0");
-function displayValidationErrors(issues) {
-    console.log(chalk.red("❌ Invalid CLI options:"));
-    for (const issue of issues) {
-        console.log(chalk.red(`  • ${issue.path?.[0]?.key || "Unknown"}: ${issue.message}`));
-    }
-}
 program
     .command("connect")
     .description("Connect to RDS via ECS")
