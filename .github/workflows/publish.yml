@@ -5,9 +5,9 @@ on:
   release:
     types: [published]
 
-# リポジトリへの書き込み権限を付与
+# 読み取り権限のみ必要
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   publish:
@@ -17,9 +17,6 @@ jobs:
       # コードをチェックアウト
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          ref: ${{ github.event.repository.default_branch }}
 
       # Node.js環境のセットアップ
       - name: Setup Node.js
@@ -44,7 +41,7 @@ jobs:
       - name: Build project
         run: npm run build
 
-      # ビルド結果の確認
+            # ビルド結果の確認
       - name: Verify build output
         run: |
           if [ ! -f "dist/cli.js" ]; then
@@ -52,25 +49,6 @@ jobs:
             exit 1
           fi
           echo "✅ Build successful: dist/cli.js exists"
-
-      # package.jsonのバージョンをリリースタグに合わせて更新
-      - name: Update package.json version
-        run: |
-          TAG="${{ github.event.release.tag_name }}"
-          echo "📦 Updating package.json version to $TAG"
-          npm version "$TAG" --no-git-tag-version
-
-      # 更新されたpackage.jsonをコミット・プッシュ
-      - name: Commit version update
-        run: |
-          TAG="${{ github.event.release.tag_name }}"
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git add package.json package-lock.json
-          git commit -m "🔖 Update package.json to version $TAG"
-          git push origin ${{ github.event.repository.default_branch }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # npmに公開
       - name: Publish to npm
