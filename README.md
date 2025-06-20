@@ -168,6 +168,44 @@ session-manager-plugin --version
 ### エラー: ECS Execが無効
 ECSサービスでECS Execが有効になっているか確認してください。
 
+## 開発者向け情報
+
+### npm配布用パッケージの公開
+
+このツールを npm パッケージとして公開し、`npx ecs-pf` で実行できるようにする手順：
+
+#### 1. ローカルでのテスト
+```bash
+# 依存関係のインストール
+bun install
+
+# Node.js用にビルド
+bun run build
+
+# ローカルでテスト実行
+node dist/cli.js connect
+```
+
+#### 2. npm公開手順
+```bash
+# npmアカウントでログイン
+npm login
+
+# パッケージを公開
+npm publish
+```
+
+#### 3. 公開後の使用方法
+```bash
+# 誰でも以下のコマンドで実行可能
+npx ecs-pf connect
+```
+
+#### パッケージ設定
+- **パッケージ名**: `ecs-pf`
+- **実行ファイル**: `dist/cli.js` (Node.js用にビルド済み)
+- **対象環境**: Node.js (ESモジュール対応)
+
 ## ライセンス
 
 MIT License
