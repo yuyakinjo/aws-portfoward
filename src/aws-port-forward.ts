@@ -28,6 +28,17 @@ import {
 	messages,
 } from "./utils/index.js";
 
+function generateReproducibleCommand(
+	region: string,
+	cluster: string,
+	task: string,
+	rds: string,
+	rdsPort: string,
+	localPort: string,
+): string {
+	return `npx ecs-pf connect --region ${region} --cluster ${cluster} --task ${task} --rds ${rds} --rds-port ${rdsPort} --local-port ${localPort}`;
+}
+
 export async function connectToRDS(
 	options: ValidatedConnectOptions = {},
 ): Promise<void> {
@@ -191,23 +202,17 @@ async function connectToRDSInternal(
 		})) as RDSInstance;
 	}
 
-	// Specify RDS port
+	// Use RDS port automatically
 	let rdsPort: string;
 	if (options.rdsPort !== undefined) {
 		rdsPort = `${options.rdsPort}`;
 		messages.success(`✅ RDS Port (from CLI): ${rdsPort}`);
 	} else {
-		const defaultRDSPort = getDefaultPortForEngine(selectedRDS.engine);
-		rdsPort = await input({
-			message: `Enter RDS port number (${selectedRDS.engine}):`,
-			default: `${defaultRDSPort}`,
-			validate: (inputValue: string) => {
-				const port = parseInt(inputValue || `${defaultRDSPort}`);
-				return port > 0 && port < 65536
-					? true
-					: "Please enter a valid port number (1-65535)";
-			},
-		});
+		// Automatically use the port from RDS instance, fallback to engine default
+		const actualRDSPort = selectedRDS.port;
+		const fallbackPort = getDefaultPortForEngine(selectedRDS.engine);
+		rdsPort = `${actualRDSPort || fallbackPort}`;
+		messages.success(`✅ RDS Port (auto-detected): ${rdsPort}`);
 	}
 
 	// Specify local port
@@ -228,9 +233,25 @@ async function connectToRDSInternal(
 		});
 	}
 
+	// Generate reproducible command
+	const reproducibleCommand = generateReproducibleCommand(
+		region,
+		selectedCluster.clusterName,
+		selectedTask,
+		selectedRDS.dbInstanceIdentifier,
+		rdsPort,
+		localPort,
+	);
+
 	// Start SSM session
 	messages.success("🚀 Starting port forwarding session...");
 	messages.info("Selected task:");
 	messages.info(selectedTask);
-	await startSSMSession(selectedTask, selectedRDS, rdsPort, localPort);
+	await startSSMSession(
+		selectedTask,
+		selectedRDS,
+		rdsPort,
+		localPort,
+		reproducibleCommand,
+	);
 }

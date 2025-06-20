@@ -1,4 +1,4 @@
-import chalk from "chalk";
+import { messages } from "./messages.js";
 
 interface ErrorDetails {
 	title: string;
@@ -11,42 +11,42 @@ interface ErrorDetails {
 export function displayFriendlyError(error: unknown): void {
 	const errorDetails = getErrorDetails(error);
 
-	console.log("");
-	console.log(chalk.red("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
-	console.log(chalk.red.bold(`❌ ${errorDetails.title}`));
-	console.log(chalk.red("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
-	console.log("");
+	messages.empty();
+	messages.error("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+	messages.bold.error(`❌ ${errorDetails.title}`);
+	messages.error("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+	messages.empty();
 
 	// Main message
-	console.log(chalk.white.bold("🔍 Problem:"));
-	console.log(chalk.white(`   ${errorDetails.message}`));
-	console.log("");
+	messages.bold.white("🔍 Problem:");
+	messages.white(`   ${errorDetails.message}`);
+	messages.empty();
 
 	// Present solutions
 	if (errorDetails.suggestions.length > 0) {
-		console.log(chalk.yellow.bold("💡 Hint:"));
+		messages.bold.warning("💡 Hint:");
 		for (let i = 0; i < errorDetails.suggestions.length; i++) {
-			console.log(chalk.yellow(`   ${i + 1}. ${errorDetails.suggestions[i]}`));
+			messages.warning(`   ${i + 1}. ${errorDetails.suggestions[i]}`);
 		}
-		console.log("");
+		messages.empty();
 	}
 
 	// Technical details (for developers)
 	if (errorDetails.technicalDetails) {
-		console.log(chalk.gray.bold("🔧 Details:"));
-		console.log(chalk.gray(`   ${errorDetails.technicalDetails}`));
-		console.log("");
+		messages.bold.gray("🔧 Details:");
+		messages.gray(`   ${errorDetails.technicalDetails}`);
+		messages.empty();
 	}
 
 	// Documentation links
 	if (errorDetails.documentation) {
-		console.log(chalk.blue.bold("📚 Reference:"));
-		console.log(chalk.blue(`   ${errorDetails.documentation}`));
-		console.log("");
+		messages.bold.info("📚 Reference:");
+		messages.info(`   ${errorDetails.documentation}`);
+		messages.empty();
 	}
 
-	console.log(chalk.red("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
-	console.log("");
+	messages.error("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+	messages.empty();
 }
 
 function getErrorDetails(error: unknown): ErrorDetails {

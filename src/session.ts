@@ -7,6 +7,7 @@ export async function startSSMSession(
 	rdsInstance: RDSInstance,
 	rdsPort: string,
 	localPort: string,
+	reproducibleCommand?: string,
 ): Promise<void> {
 	const parameters = {
 		host: [rdsInstance.endpoint],
@@ -18,8 +19,23 @@ export async function startSSMSession(
 	const parametersJson = JSON.stringify(parameters);
 	const commandString = `aws ssm start-session --target ${taskArn} --parameters '${parametersJson}' --document-name AWS-StartPortForwardingSessionToRemoteHost`;
 
+	messages.empty();
 	messages.info("Command to execute:");
-	messages.cyan(commandString);
+	messages.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+	messages.info(commandString);
+	messages.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+	messages.empty();
+
+	// Display reproducible command if provided
+	if (reproducibleCommand) {
+		messages.empty();
+		messages.info("💡 To reproduce this connection, use:");
+		messages.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+		messages.info(reproducibleCommand);
+		messages.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+		messages.empty();
+	}
+
 	messages.empty();
 	messages.success(
 		`🎯 RDS connection will be available at localhost:${localPort}`,

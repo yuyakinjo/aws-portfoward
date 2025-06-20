@@ -31,6 +31,7 @@ export interface ECSCluster {
 export interface RDSInstance {
 	dbInstanceIdentifier: string;
 	endpoint: string;
+	port: number;
 	engine: string;
 	dbInstanceClass: string;
 	dbInstanceStatus: string;
