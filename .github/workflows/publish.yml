@@ -5,9 +5,10 @@ on:
   release:
     types: [published]
 
-# 読み取り権限のみ必要
+# npm publish に必要な権限
 permissions:
   contents: read
+  id-token: write
 
 jobs:
   publish:
@@ -52,6 +53,6 @@ jobs:
 
       # npmに公開
       - name: Publish to npm
-        run: npm publish --access public
+        run: npm publish --access public --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
