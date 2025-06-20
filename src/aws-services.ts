@@ -243,6 +243,7 @@ export async function getRDSInstances(
 					rdsInstances.push({
 						dbInstanceIdentifier: db.DBInstanceIdentifier,
 						endpoint: db.Endpoint.Address,
+						port: db.Endpoint.Port || 5432, // Default to PostgreSQL port if not available
 						engine: db.Engine,
 						dbInstanceClass: db.DBInstanceClass || "unknown",
 						dbInstanceStatus: db.DBInstanceStatus,
