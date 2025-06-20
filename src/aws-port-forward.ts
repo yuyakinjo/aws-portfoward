@@ -17,20 +17,26 @@ import {
 	searchTasks,
 } from "./search.js";
 import { startSSMSession } from "./session.js";
-import type { ECSCluster, RDSInstance } from "./types.js";
+import type {
+	ECSCluster,
+	RDSInstance,
+	ValidatedConnectOptions,
+} from "./types.js";
 import {
 	askRetry,
 	displayFriendlyError,
 	getDefaultPortForEngine,
 } from "./utils.js";
 
-export async function connectToRDS(): Promise<void> {
+export async function connectToRDS(
+	options: ValidatedConnectOptions = {},
+): Promise<void> {
 	let retryCount = 0;
 	const maxRetries = 3;
 
 	while (retryCount <= maxRetries) {
 		try {
-			await connectToRDSInternal();
+			await connectToRDSInternal(options);
 			return; // Exit if successful
 		} catch (error) {
 			retryCount++;
@@ -64,121 +70,173 @@ export async function connectToRDS(): Promise<void> {
 	}
 }
 
-async function connectToRDSInternal(): Promise<void> {
+async function connectToRDSInternal(
+	options: ValidatedConnectOptions,
+): Promise<void> {
 	console.log(chalk.yellow("📋 Checking AWS configuration..."));
 
 	// Initialize EC2 client with default region to get region list
 	const defaultEc2Client = new EC2Client({ region: "us-east-1" });
 
-	console.log(chalk.yellow("🌍 Getting available AWS regions..."));
-	const regions = await getAWSRegions(defaultEc2Client);
+	// Get region
+	let region: string;
+	if (options.region) {
+		region = options.region;
+		console.log(chalk.green(`✅ Region (from CLI): ${region}`));
+	} else {
+		console.log(chalk.yellow("🌍 Getting available AWS regions..."));
+		const regions = await getAWSRegions(defaultEc2Client);
 
-	if (isEmpty(regions)) {
-		throw new Error("Failed to get AWS regions");
+		if (isEmpty(regions)) {
+			throw new Error("Failed to get AWS regions");
+		}
+
+		// Select AWS region with zoxide-style real-time search
+		console.log(
+			chalk.blue(
+				"💡 zoxide-style: List is filtered as you type (↑↓ to select, Enter to confirm)",
+			),
+		);
+
+		region = await search({
+			message: "🌍 Search and select AWS region:",
+			source: async (input) => {
+				return await searchRegions(regions, input || "");
+			},
+			pageSize: 12,
+		});
+		console.log(chalk.green(`✅ Region: ${region}`));
 	}
-
-	// Select AWS region with zoxide-style real-time search
-	console.log(
-		chalk.blue(
-			"💡 zoxide-style: List is filtered as you type (↑↓ to select, Enter to confirm)",
-		),
-	);
-
-	const region = await search({
-		message: "🌍 Search and select AWS region:",
-		source: async (input) => {
-			return await searchRegions(regions, input || "");
-		},
-		pageSize: 12,
-	});
-
-	console.log(chalk.green(`✅ Region: ${region}`));
 
 	// Initialize AWS clients
 	const ecsClient = new ECSClient({ region });
 	const rdsClient = new RDSClient({ region });
 
-	// Get ECS clusters
-	console.log(chalk.yellow("🔍 Getting ECS clusters..."));
-	const clusters = await getECSClusters(ecsClient);
+	// Get ECS cluster
+	let selectedCluster: ECSCluster;
+	if (options.cluster) {
+		console.log(chalk.yellow("🔍 Getting ECS clusters..."));
+		const clusters = await getECSClusters(ecsClient);
+		const cluster = clusters.find((c) => c.clusterName === options.cluster);
+		if (!cluster) {
+			throw new Error(`ECS cluster not found: ${options.cluster}`);
+		}
+		selectedCluster = cluster;
+		console.log(chalk.green(`✅ Cluster (from CLI): ${options.cluster}`));
+	} else {
+		console.log(chalk.yellow("🔍 Getting ECS clusters..."));
+		const clusters = await getECSClusters(ecsClient);
 
-	if (clusters.length === 0) {
-		throw new Error("No ECS clusters found");
+		if (clusters.length === 0) {
+			throw new Error("No ECS clusters found");
+		}
+
+		// Select ECS cluster with zoxide-style real-time search
+		console.log(
+			chalk.blue(
+				"💡 zoxide-style: List is filtered as you type (↑↓ to select, Enter to confirm)",
+			),
+		);
+
+		selectedCluster = (await search({
+			message: "🔍 Search and select ECS cluster:",
+			source: async (input) => {
+				return await searchClusters(clusters, input || "");
+			},
+			pageSize: 12,
+		})) as ECSCluster;
 	}
 
-	// Select ECS cluster with zoxide-style real-time search
-	console.log(
-		chalk.blue(
-			"💡 zoxide-style: List is filtered as you type (↑↓ to select, Enter to confirm)",
-		),
-	);
+	// Get ECS task
+	let selectedTask: string;
+	if (options.task) {
+		selectedTask = options.task;
+		console.log(chalk.green(`✅ Task (from CLI): ${options.task}`));
+	} else {
+		console.log(chalk.yellow("🔍 Getting ECS tasks..."));
+		const tasks = await getECSTasks(ecsClient, selectedCluster);
 
-	const selectedCluster = (await search({
-		message: "🔍 Search and select ECS cluster:",
-		source: async (input) => {
-			return await searchClusters(clusters, input || "");
-		},
-		pageSize: 12,
-	})) as ECSCluster;
+		if (tasks.length === 0) {
+			throw new Error("No running ECS tasks found");
+		}
 
-	// Get ECS tasks
-	console.log(chalk.yellow("🔍 Getting ECS tasks..."));
-	const tasks = await getECSTasks(ecsClient, selectedCluster);
-
-	if (tasks.length === 0) {
-		throw new Error("No running ECS tasks found");
+		// Select ECS task with zoxide-style real-time search
+		selectedTask = (await search({
+			message: "🔍 Search and select ECS task:",
+			source: async (input) => {
+				return await searchTasks(tasks, input || "");
+			},
+			pageSize: 12,
+		})) as string;
 	}
 
-	// Select ECS task with zoxide-style real-time search
-	const selectedTask = (await search({
-		message: "🔍 Search and select ECS task:",
-		source: async (input) => {
-			return await searchTasks(tasks, input || "");
-		},
-		pageSize: 12,
-	})) as string;
+	// Get RDS instance
+	let selectedRDS: RDSInstance;
+	if (options.rds) {
+		console.log(chalk.yellow("🔍 Getting RDS instances..."));
+		const rdsInstances = await getRDSInstances(rdsClient);
+		const rdsInstance = rdsInstances.find(
+			(r) => r.dbInstanceIdentifier === options.rds,
+		);
+		if (!rdsInstance) {
+			throw new Error(`RDS instance not found: ${options.rds}`);
+		}
+		selectedRDS = rdsInstance;
+		console.log(chalk.green(`✅ RDS (from CLI): ${options.rds}`));
+	} else {
+		console.log(chalk.yellow("🔍 Getting RDS instances..."));
+		const rdsInstances = await getRDSInstances(rdsClient);
 
-	// Get RDS instances
-	console.log(chalk.yellow("🔍 Getting RDS instances..."));
-	const rdsInstances = await getRDSInstances(rdsClient);
+		if (rdsInstances.length === 0) {
+			throw new Error("No RDS instances found");
+		}
 
-	if (rdsInstances.length === 0) {
-		throw new Error("No RDS instances found");
+		// Select RDS instance with zoxide-style real-time search
+		selectedRDS = (await search({
+			message: "🔍 Search and select RDS instance:",
+			source: async (input) => {
+				return await searchRDS(rdsInstances, input || "");
+			},
+			pageSize: 12,
+		})) as RDSInstance;
 	}
-
-	// Select RDS instance with zoxide-style real-time search
-	const selectedRDS = (await search({
-		message: "🔍 Search and select RDS instance:",
-		source: async (input) => {
-			return await searchRDS(rdsInstances, input || "");
-		},
-		pageSize: 12,
-	})) as RDSInstance;
 
 	// Specify RDS port
-	const defaultRDSPort = getDefaultPortForEngine(selectedRDS.engine);
-	const rdsPort = await input({
-		message: `Enter RDS port number (${selectedRDS.engine}):`,
-		default: defaultRDSPort.toString(),
-		validate: (inputValue: string) => {
-			const port = parseInt(inputValue || defaultRDSPort.toString());
-			return port > 0 && port < 65536
-				? true
-				: "Please enter a valid port number (1-65535)";
-		},
-	});
+	let rdsPort: string;
+	if (options.rdsPort !== undefined) {
+		rdsPort = options.rdsPort.toString();
+		console.log(chalk.green(`✅ RDS Port (from CLI): ${rdsPort}`));
+	} else {
+		const defaultRDSPort = getDefaultPortForEngine(selectedRDS.engine);
+		rdsPort = await input({
+			message: `Enter RDS port number (${selectedRDS.engine}):`,
+			default: defaultRDSPort.toString(),
+			validate: (inputValue: string) => {
+				const port = parseInt(inputValue || defaultRDSPort.toString());
+				return port > 0 && port < 65536
+					? true
+					: "Please enter a valid port number (1-65535)";
+			},
+		});
+	}
 
 	// Specify local port
-	const localPort = await input({
-		message: "Enter local port number:",
-		default: "8888",
-		validate: (inputValue: string) => {
-			const port = parseInt(inputValue || "8888");
-			return port > 0 && port < 65536
-				? true
-				: "Please enter a valid port number (1-65535)";
-		},
-	});
+	let localPort: string;
+	if (options.localPort !== undefined) {
+		localPort = options.localPort.toString();
+		console.log(chalk.green(`✅ Local Port (from CLI): ${localPort}`));
+	} else {
+		localPort = await input({
+			message: "Enter local port number:",
+			default: "8888",
+			validate: (inputValue: string) => {
+				const port = parseInt(inputValue || "8888");
+				return port > 0 && port < 65536
+					? true
+					: "Please enter a valid port number (1-65535)";
+			},
+		});
+	}
 
 	// Start SSM session
 	console.log(chalk.green("🚀 Starting port forwarding session..."));
