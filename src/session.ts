@@ -48,7 +48,17 @@ export async function startSSMSession(
 			}
 		});
 
-		child.on("close", (code) => {
+		child.on("close", (code, signal) => {
+			// Clear timeout when session closes
+			clearTimeout(timeout);
+			
+			// Handle user termination (SIGINT/Ctrl+C) as normal termination
+			if (signal === "SIGINT" || code === 130 || isUserTermination) {
+				console.log(chalk.green("✅ Session terminated by user"));
+				resolve();
+				return;
+			}
+			
 			if (code === 0) {
 				console.log(chalk.green("✅ Session terminated successfully"));
 				resolve();
@@ -68,10 +78,6 @@ export async function startSSMSession(
 						errorMessage +=
 							"\n💡 Connection error or timeout. Please check network connection and target status";
 						break;
-					case 130:
-						errorMessage += "\n💡 User interruption (Ctrl+C)";
-						resolve(); // Treat user interruption as normal termination
-						return;
 					default:
 						errorMessage += "\n💡 Unexpected error. Please check AWS CLI logs";
 				}
@@ -124,8 +130,10 @@ export async function startSSMSession(
 		});
 
 		// Process termination handling
+		let isUserTermination = false;
 		process.on("SIGINT", () => {
 			console.log(chalk.yellow("\n🛑 Terminating session..."));
+			isUserTermination = true;
 			child.kill("SIGINT");
 		});
 
@@ -142,10 +150,5 @@ export async function startSSMSession(
 				reject(new Error("Session start timed out"));
 			}
 		}, 30000);
-
-		// Clear timeout when session start is confirmed
-		child.on("close", () => {
-			clearTimeout(timeout);
-		});
 	});
 }
