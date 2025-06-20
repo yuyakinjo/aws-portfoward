@@ -36,7 +36,7 @@ function generateReproducibleCommand(
 	rdsPort: string,
 	localPort: string,
 ): string {
-	return `ecs-pf connect --region ${region} --cluster ${cluster} --task ${task} --rds ${rds} --rds-port ${rdsPort} --local-port ${localPort}`;
+	return `npx ecs-pf connect --region ${region} --cluster ${cluster} --task ${task} --rds ${rds} --rds-port ${rdsPort} --local-port ${localPort}`;
 }
 
 export async function connectToRDS(
