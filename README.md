@@ -203,8 +203,29 @@ npx ecs-pf connect
 
 #### パッケージ設定
 - **パッケージ名**: `ecs-pf`
-- **実行ファイル**: `dist/cli.js` (Node.js用にビルド済み)
-- **対象環境**: Node.js (ESモジュール対応)
+- **実行ファイル**: `dist/ecs-pf` (ユニバーサルランチャー)
+- **対象環境**: Node.js・Bun両対応
+
+#### GitHub Actionsによる自動公開
+
+mainブランチにマージされると自動的に以下が実行されます：
+
+1. **ビルド**: `bun run build`
+2. **バージョンアップ**: パッチバージョンを自動で上げる
+3. **npm公開**: `npm publish`
+4. **GitHubリリース**: タグとリリースノートを自動作成
+
+##### 必要な設定
+GitHubリポジトリのSecretsに以下を設定してください：
+
+- `NPM_TOKEN`: npmアカウントのAccess Token
+  - npm公式サイト → Account Settings → Access Tokens → Generate New Token
+
+##### 自動公開の無効化
+コミットメッセージに `[skip ci]` を含めると自動公開をスキップできます：
+```bash
+git commit -m "docs: update README [skip ci]"
+```
 
 ## ライセンス
 
