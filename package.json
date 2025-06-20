@@ -21,11 +21,12 @@
 	"author": "",
 	"license": "MIT",
 	"scripts": {
-		"connect": "bun src/cli.ts connect",
-		"dev": "bun run src/cli.ts connect",
-		"build": "tsc && echo '#!/usr/bin/env node' > temp_file && sed '1{/^#!/d;}' dist/cli.js >> temp_file && mv temp_file dist/cli.js && chmod +x dist/cli.js",
-		"start": "bun run dist/cli.js connect",
-		"type-check": "tsc --project tsconfig.check.json",
+		"connect": "npm run build && node dist/cli.js connect",
+		"dev": "npm run build && node dist/cli.js connect",
+		"build": "./scripts/build.sh",
+		"build:tsc": "npx tsc --project tsconfig.build.json",
+		"start": "node dist/cli.js connect",
+		"type-check": "tsc --noEmit",
 		"prepublishOnly": "npm run check",
 		"format": "biome format --write",
 		"format:check": "biome format",
@@ -37,7 +38,6 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.0.0",
-		"@types/bun": "latest",
 		"@types/inquirer": "^9.0.8"
 	},
 	"peerDependencies": {

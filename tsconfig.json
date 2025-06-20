@@ -8,8 +8,8 @@
 		"jsx": "react-jsx",
 		"allowJs": true,
 
-		// Output
-		"outDir": "dist",
+		// For type checking
+		"noEmit": true,
 		"moduleResolution": "node",
 		"esModuleInterop": true,
 		"allowSyntheticDefaultImports": true,
@@ -26,6 +26,5 @@
 		"noUnusedParameters": false,
 		"noPropertyAccessFromIndexSignature": false
 	},
-	"include": ["src/**/*"],
-	"exclude": ["node_modules", "dist"]
+	"include": ["src/**/*"]
 }

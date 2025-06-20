@@ -1,4 +1,23 @@
-[![CI](https://github.com/yuyakinjo/aws-portfoward/actions/workflows/ci.yml/badge.svg)](https://github.com/yuyakinjo/aws-portfoward/actions/workflows/ci.yml)
+[![CI](https://github.com/yuyakinjo/aws-portfoward/actio## インストール
+
+```bash
+# 依存関係のインストール
+npm install
+
+# ビルド
+npm run build
+```
+
+## 使用方法
+
+### 基本的な使用方法
+
+```bash
+# 開発環境での実行
+npm run dev
+
+# 直接実行
+npm run connectbadge.svg)](https://github.com/yuyakinjo/aws-portfoward/actions/workflows/ci.yml)
 [![Security](https://github.com/yuyakinjo/aws-portfoward/actions/workflows/security.yml/badge.svg)](https://github.com/yuyakinjo/aws-portfoward/actions/workflows/security.yml)
 
 # AWS ECS経由RDS接続ツール
@@ -28,12 +47,6 @@ aws configure
 ```bash
 # Session Manager Pluginのインストール（macOS）
 brew install session-manager-plugin
-```
-
-### 3. Bun
-```bash
-# Bunのインストール
-curl -fsSL https://bun.sh/install | bash
 ```
 
 ## AWS権限
@@ -105,7 +118,7 @@ bun src/cli.ts connect
 ## 使用例
 
 ```bash
-$ bun run dev
+$ npm run dev
 
 🚀 AWS ECS経由RDS接続ツールを開始します...
 📋 AWS設定を確認しています...
@@ -180,10 +193,10 @@ ECSサービスでECS Execが有効になっているか確認してください
 #### 1. ローカルでのテスト
 ```bash
 # 依存関係のインストール
-bun install
+npm install
 
 # Node.js用にビルド
-bun run build
+npm run build
 
 # ローカルでテスト実行
 node dist/cli.js connect
