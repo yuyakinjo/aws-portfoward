@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
-import chalk from "chalk";
 import type { RDSInstance } from "./types.js";
+import { messages } from "./utils/index.js";
 
 export async function startSSMSession(
 	taskArn: string,
@@ -18,16 +18,14 @@ export async function startSSMSession(
 	const parametersJson = JSON.stringify(parameters);
 	const commandString = `aws ssm start-session --target ${taskArn} --parameters '${parametersJson}' --document-name AWS-StartPortForwardingSessionToRemoteHost`;
 
-	console.log(chalk.blue("Command to execute:"));
-	console.log(chalk.cyan(commandString));
-	console.log("");
-	console.log(
-		chalk.green(
-			`🎯 RDS connection will be available at localhost:${localPort}`,
-		),
+	messages.info("Command to execute:");
+	messages.cyan(commandString);
+	messages.empty();
+	messages.success(
+		`🎯 RDS connection will be available at localhost:${localPort}`,
 	);
-	console.log(chalk.yellow("Press Ctrl+C to terminate the session"));
-	console.log("");
+	messages.warning("Press Ctrl+C to terminate the session");
+	messages.empty();
 
 	return new Promise((resolve, reject) => {
 		const child = spawn(commandString, [], {
@@ -37,7 +35,7 @@ export async function startSSMSession(
 		});
 
 		child.on("error", (error) => {
-			console.error(chalk.red("❌ Command execution error:"), error.message);
+			console.error("❌ Command execution error:", error.message);
 
 			if (error.message.includes("ENOENT")) {
 				reject(new Error("AWS CLI may not be installed"));
@@ -54,13 +52,13 @@ export async function startSSMSession(
 
 			// Handle user termination (SIGINT/Ctrl+C) as normal termination
 			if (signal === "SIGINT" || code === 130 || isUserTermination) {
-				console.log(chalk.green("✅ Session terminated by user"));
+				messages.success("✅ Session terminated by user");
 				resolve();
 				return;
 			}
 
 			if (code === 0) {
-				console.log(chalk.green("✅ Session terminated successfully"));
+				messages.success("✅ Session terminated successfully");
 				resolve();
 			} else {
 				let errorMessage = `Session terminated with error code ${code}`;
@@ -96,7 +94,7 @@ export async function startSSMSession(
 				output.includes("Port forwarding started")
 			) {
 				hasSessionStarted = true;
-				console.log(chalk.green("🎉 Port forwarding session started!"));
+				messages.success("🎉 Port forwarding session started!");
 			}
 		});
 
@@ -105,25 +103,19 @@ export async function startSSMSession(
 			const output = data.toString();
 
 			if (output.includes("TargetNotConnected")) {
-				console.error(chalk.red("❌ Cannot connect to target"));
+				console.error("❌ Cannot connect to target");
 				console.error(
-					chalk.yellow(
-						"💡 Please verify that the ECS task is running and SSM Agent is enabled",
-					),
+					"💡 Please verify that the ECS task is running and SSM Agent is enabled",
 				);
 				reject(new Error("Cannot connect to target"));
 			} else if (output.includes("AccessDenied")) {
-				console.error(chalk.red("❌ Access denied"));
-				console.error(
-					chalk.yellow("💡 Please verify you have SSM-related IAM permissions"),
-				);
+				console.error("❌ Access denied");
+				console.error("💡 Please verify you have SSM-related IAM permissions");
 				reject(new Error("Access denied"));
 			} else if (output.includes("InvalidTarget")) {
-				console.error(chalk.red("❌ Invalid target"));
+				console.error("❌ Invalid target");
 				console.error(
-					chalk.yellow(
-						"💡 Please verify the specified ECS task exists and is running",
-					),
+					"💡 Please verify the specified ECS task exists and is running",
 				);
 				reject(new Error("Invalid target"));
 			}
@@ -132,7 +124,7 @@ export async function startSSMSession(
 		// Process termination handling
 		let isUserTermination = false;
 		process.on("SIGINT", () => {
-			console.log(chalk.yellow("\n🛑 Terminating session..."));
+			messages.warning("\n🛑 Terminating session...");
 			isUserTermination = true;
 			child.kill("SIGINT");
 		});
@@ -140,11 +132,9 @@ export async function startSSMSession(
 		// Timeout handling (30 seconds)
 		const timeout = setTimeout(() => {
 			if (!hasSessionStarted) {
-				console.error(chalk.red("❌ Session start timed out"));
+				console.error("❌ Session start timed out");
 				console.error(
-					chalk.yellow(
-						"💡 Please check network connection, target status, and permission settings",
-					),
+					"💡 Please check network connection, target status, and permission settings",
 				);
 				child.kill("SIGTERM");
 				reject(new Error("Session start timed out"));

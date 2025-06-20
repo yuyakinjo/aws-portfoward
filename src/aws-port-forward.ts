@@ -2,7 +2,6 @@ import { EC2Client } from "@aws-sdk/client-ec2";
 import { ECSClient } from "@aws-sdk/client-ecs";
 import { RDSClient } from "@aws-sdk/client-rds";
 import { input, search } from "@inquirer/prompts";
-import chalk from "chalk";
 import { isEmpty } from "remeda";
 import {
 	getAWSRegions,
@@ -26,6 +25,7 @@ import {
 	askRetry,
 	displayFriendlyError,
 	getDefaultPortForEngine,
+	messages,
 } from "./utils/index.js";
 
 export async function connectToRDS(
@@ -44,25 +44,19 @@ export async function connectToRDS(
 			displayFriendlyError(error);
 
 			if (retryCount <= maxRetries) {
-				console.log(
-					chalk.yellow(`🔄 Retry count: ${retryCount}/${maxRetries + 1}`),
-				);
+				messages.warning(`🔄 Retry count: ${retryCount}/${maxRetries + 1}`);
 				const shouldRetry = await askRetry();
 
 				if (!shouldRetry) {
-					console.log(chalk.blue("👋 Process interrupted"));
+					messages.info("👋 Process interrupted");
 					return;
 				}
 
-				console.log(chalk.blue("🔄 Retrying...\n"));
+				messages.info("🔄 Retrying...\n");
 			} else {
-				console.log(
-					chalk.red("❌ Maximum retry count reached. Terminating process."),
-				);
-				console.log(
-					chalk.gray(
-						"💡 If the problem persists, please check the above solutions.",
-					),
+				messages.error("❌ Maximum retry count reached. Terminating process.");
+				messages.gray(
+					"💡 If the problem persists, please check the above solutions.",
 				);
 				throw error;
 			}
@@ -73,7 +67,7 @@ export async function connectToRDS(
 async function connectToRDSInternal(
 	options: ValidatedConnectOptions,
 ): Promise<void> {
-	console.log(chalk.yellow("📋 Checking AWS configuration..."));
+	messages.warning("📋 Checking AWS configuration...");
 
 	// Initialize EC2 client with default region to get region list
 	const defaultEc2Client = new EC2Client({ region: "us-east-1" });
@@ -82,9 +76,9 @@ async function connectToRDSInternal(
 	let region: string;
 	if (options.region) {
 		region = options.region;
-		console.log(chalk.green(`✅ Region (from CLI): ${region}`));
+		messages.success(`✅ Region (from CLI): ${region}`);
 	} else {
-		console.log(chalk.yellow("🌍 Getting available AWS regions..."));
+		messages.warning("🌍 Getting available AWS regions...");
 		const regions = await getAWSRegions(defaultEc2Client);
 
 		if (isEmpty(regions)) {
@@ -92,10 +86,8 @@ async function connectToRDSInternal(
 		}
 
 		// Select AWS region with zoxide-style real-time search
-		console.log(
-			chalk.blue(
-				"💡 zoxide-style: List is filtered as you type (↑↓ to select, Enter to confirm)",
-			),
+		messages.info(
+			"💡 zoxide-style: List is filtered as you type (↑↓ to select, Enter to confirm)",
 		);
 
 		region = await search({
@@ -105,7 +97,7 @@ async function connectToRDSInternal(
 			},
 			pageSize: 12,
 		});
-		console.log(chalk.green(`✅ Region: ${region}`));
+		messages.success(`✅ Region: ${region}`);
 	}
 
 	// Initialize AWS clients
@@ -115,16 +107,16 @@ async function connectToRDSInternal(
 	// Get ECS cluster
 	let selectedCluster: ECSCluster;
 	if (options.cluster) {
-		console.log(chalk.yellow("🔍 Getting ECS clusters..."));
+		messages.warning("🔍 Getting ECS clusters...");
 		const clusters = await getECSClusters(ecsClient);
 		const cluster = clusters.find((c) => c.clusterName === options.cluster);
 		if (!cluster) {
 			throw new Error(`ECS cluster not found: ${options.cluster}`);
 		}
 		selectedCluster = cluster;
-		console.log(chalk.green(`✅ Cluster (from CLI): ${options.cluster}`));
+		messages.success(`✅ Cluster (from CLI): ${options.cluster}`);
 	} else {
-		console.log(chalk.yellow("🔍 Getting ECS clusters..."));
+		messages.warning("🔍 Getting ECS clusters...");
 		const clusters = await getECSClusters(ecsClient);
 
 		if (clusters.length === 0) {
@@ -132,10 +124,8 @@ async function connectToRDSInternal(
 		}
 
 		// Select ECS cluster with zoxide-style real-time search
-		console.log(
-			chalk.blue(
-				"💡 zoxide-style: List is filtered as you type (↑↓ to select, Enter to confirm)",
-			),
+		messages.info(
+			"💡 zoxide-style: List is filtered as you type (↑↓ to select, Enter to confirm)",
 		);
 
 		selectedCluster = (await search({
@@ -151,9 +141,9 @@ async function connectToRDSInternal(
 	let selectedTask: string;
 	if (options.task) {
 		selectedTask = options.task;
-		console.log(chalk.green(`✅ Task (from CLI): ${options.task}`));
+		messages.success(`✅ Task (from CLI): ${options.task}`);
 	} else {
-		console.log(chalk.yellow("🔍 Getting ECS tasks..."));
+		messages.warning("🔍 Getting ECS tasks...");
 		const tasks = await getECSTasks(ecsClient, selectedCluster);
 
 		if (tasks.length === 0) {
@@ -173,7 +163,7 @@ async function connectToRDSInternal(
 	// Get RDS instance
 	let selectedRDS: RDSInstance;
 	if (options.rds) {
-		console.log(chalk.yellow("🔍 Getting RDS instances..."));
+		messages.warning("🔍 Getting RDS instances...");
 		const rdsInstances = await getRDSInstances(rdsClient);
 		const rdsInstance = rdsInstances.find(
 			(r) => r.dbInstanceIdentifier === options.rds,
@@ -182,9 +172,9 @@ async function connectToRDSInternal(
 			throw new Error(`RDS instance not found: ${options.rds}`);
 		}
 		selectedRDS = rdsInstance;
-		console.log(chalk.green(`✅ RDS (from CLI): ${options.rds}`));
+		messages.success(`✅ RDS (from CLI): ${options.rds}`);
 	} else {
-		console.log(chalk.yellow("🔍 Getting RDS instances..."));
+		messages.warning("🔍 Getting RDS instances...");
 		const rdsInstances = await getRDSInstances(rdsClient);
 
 		if (rdsInstances.length === 0) {
@@ -205,7 +195,7 @@ async function connectToRDSInternal(
 	let rdsPort: string;
 	if (options.rdsPort !== undefined) {
 		rdsPort = options.rdsPort.toString();
-		console.log(chalk.green(`✅ RDS Port (from CLI): ${rdsPort}`));
+		messages.success(`✅ RDS Port (from CLI): ${rdsPort}`);
 	} else {
 		const defaultRDSPort = getDefaultPortForEngine(selectedRDS.engine);
 		rdsPort = await input({
@@ -224,7 +214,7 @@ async function connectToRDSInternal(
 	let localPort: string;
 	if (options.localPort !== undefined) {
 		localPort = options.localPort.toString();
-		console.log(chalk.green(`✅ Local Port (from CLI): ${localPort}`));
+		messages.success(`✅ Local Port (from CLI): ${localPort}`);
 	} else {
 		localPort = await input({
 			message: "Enter local port number:",
@@ -239,7 +229,8 @@ async function connectToRDSInternal(
 	}
 
 	// Start SSM session
-	console.log(chalk.green("🚀 Starting port forwarding session..."));
-	console.log(chalk.blue("Selected task:"), selectedTask);
+	messages.success("🚀 Starting port forwarding session...");
+	messages.info("Selected task:");
+	messages.info(selectedTask);
 	await startSSMSession(selectedTask, selectedRDS, rdsPort, localPort);
 }

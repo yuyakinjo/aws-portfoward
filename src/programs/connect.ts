@@ -1,4 +1,3 @@
-import chalk from "chalk";
 import type { Command } from "commander";
 import { safeParse } from "valibot";
 import { connectToRDS } from "../aws-port-forward.js";
@@ -6,6 +5,7 @@ import { ConnectOptionsSchema } from "../types.js";
 import {
 	displayFriendlyError,
 	displayValidationErrors,
+	messages,
 } from "../utils/index.js";
 
 export function registerConnectCommand(program: Command): void {
@@ -31,16 +31,16 @@ export function registerConnectCommand(program: Command): void {
 					process.exit(1);
 				}
 
-				console.log(chalk.blue("🚀 Starting AWS ECS RDS connection tool..."));
+				messages.info("🚀 Starting AWS ECS RDS connection tool...");
 				await connectToRDS(output);
-				console.log(chalk.green("✅ Process completed successfully"));
+				messages.success("✅ Process completed successfully");
 			} catch (error) {
 				// If error occurs during retry process, error is already displayed, so show brief message
 				if (
 					error instanceof Error &&
 					error.message.includes("maximum retry count")
 				) {
-					console.log(chalk.red("🚫 Terminating process"));
+					messages.error("🚫 Terminating process");
 				} else {
 					// For unexpected errors, display detailed error screen
 					displayFriendlyError(error);

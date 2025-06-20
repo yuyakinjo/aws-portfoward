@@ -1,6 +1,6 @@
-import chalk from "chalk";
 import type * as v from "valibot";
 import type { ConnectOptionsSchema } from "../types.js";
+import { messages } from "./messages.js";
 
 /**
  * Display validation errors in a user-friendly format
@@ -8,10 +8,10 @@ import type { ConnectOptionsSchema } from "../types.js";
 export function displayValidationErrors(
 	issues: v.InferIssue<typeof ConnectOptionsSchema>[],
 ): void {
-	console.log(chalk.red("❌ Invalid CLI options:"));
+	messages.error("❌ Invalid CLI options:");
 	for (const issue of issues) {
-		console.log(
-			chalk.red(`  • ${issue.path?.[0]?.key || "Unknown"}: ${issue.message}`),
+		messages.error(
+			`  • ${issue.path?.[0]?.key || "Unknown"}: ${issue.message}`,
 		);
 	}
 }
