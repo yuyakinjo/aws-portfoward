@@ -25,6 +25,7 @@
 		"dev": "bun run src/cli.ts connect",
 		"build": "bun build src/cli.ts --outdir dist --target node --format esm --external @aws-sdk/client-ec2 --external @aws-sdk/client-ecs --external @aws-sdk/client-rds --external @aws-sdk/client-ssm --external @inquirer/prompts --external chalk --external commander --external fuse.js --external inquirer --external inquirer-search-list --external remeda && echo '#!/usr/bin/env node' > temp_file && sed '1{/^#!/d;}' dist/cli.js >> temp_file && mv temp_file dist/cli.js && chmod +x dist/cli.js",
 		"start": "bun run dist/cli.js connect",
+		"type-check": "tsc --noEmit",
 		"prepublishOnly": "npm run check",
 		"format": "biome format",
 		"format:check": "biome format --check",

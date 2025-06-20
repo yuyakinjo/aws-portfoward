@@ -8,9 +8,8 @@ import { Command } from "commander";
 import { EC2Client } from "@aws-sdk/client-ec2";
 import { ECSClient } from "@aws-sdk/client-ecs";
 import { RDSClient } from "@aws-sdk/client-rds";
-import { search } from "@inquirer/prompts";
+import { input, search } from "@inquirer/prompts";
 import chalk4 from "chalk";
-import inquirer2 from "inquirer";
 import { isEmpty } from "remeda";
 
 // src/aws-services.ts
@@ -182,8 +181,8 @@ async function getRDSInstances(rdsClient) {
             dbInstanceStatus: db.DBInstanceStatus,
             allocatedStorage: db.AllocatedStorage || 0,
             availabilityZone: db.AvailabilityZone || "unknown",
-            vpcSecurityGroups: db.VpcSecurityGroups || [],
-            dbSubnetGroup: db.DBSubnetGroup || undefined,
+            vpcSecurityGroups: db.VpcSecurityGroups?.map((sg) => sg.VpcSecurityGroupId || "") || [],
+            dbSubnetGroup: db.DBSubnetGroup?.DBSubnetGroupName || undefined,
             createdTime: db.InstanceCreateTime || undefined
           });
         }
@@ -325,7 +324,13 @@ async function startSSMSession(taskArn, rdsInstance, rdsPort, localPort) {
         reject(new Error(`Command execution error: ${error.message}`));
       }
     });
-    child.on("close", (code) => {
+    child.on("close", (code, signal) => {
+      clearTimeout(timeout);
+      if (signal === "SIGINT" || code === 130 || isUserTermination) {
+        console.log(chalk2.green("✅ Session terminated by user"));
+        resolve();
+        return;
+      }
       if (code === 0) {
         console.log(chalk2.green("✅ Session terminated successfully"));
         resolve();
@@ -344,11 +349,6 @@ async function startSSMSession(taskArn, rdsInstance, rdsPort, localPort) {
             errorMessage += `
 \uD83D\uDCA1 Connection error or timeout. Please check network connection and target status`;
             break;
-          case 130:
-            errorMessage += `
-\uD83D\uDCA1 User interruption (Ctrl+C)`;
-            resolve();
-            return;
           default:
             errorMessage += `
 \uD83D\uDCA1 Unexpected error. Please check AWS CLI logs`;
@@ -380,9 +380,11 @@ async function startSSMSession(taskArn, rdsInstance, rdsPort, localPort) {
         reject(new Error("Invalid target"));
       }
     });
+    let isUserTermination = false;
     process.on("SIGINT", () => {
       console.log(chalk2.yellow(`
 \uD83D\uDED1 Terminating session...`));
+      isUserTermination = true;
       child.kill("SIGINT");
     });
     const timeout = setTimeout(() => {
@@ -393,9 +395,6 @@ async function startSSMSession(taskArn, rdsInstance, rdsPort, localPort) {
         reject(new Error("Session start timed out"));
       }
     }, 30000);
-    child.on("close", () => {
-      clearTimeout(timeout);
-    });
   });
 }
 
@@ -657,8 +656,8 @@ async function connectToRDSInternal() {
   console.log(chalk4.blue("\uD83D\uDCA1 zoxide-style: List is filtered as you type (↑↓ to select, Enter to confirm)"));
   const region = await search({
     message: "\uD83C\uDF0D Search and select AWS region:",
-    source: async (input) => {
-      return await searchRegions(regions, input || "");
+    source: async (input2) => {
+      return await searchRegions(regions, input2 || "");
     },
     pageSize: 12
   });
@@ -673,8 +672,8 @@ async function connectToRDSInternal() {
   console.log(chalk4.blue("\uD83D\uDCA1 zoxide-style: List is filtered as you type (↑↓ to select, Enter to confirm)"));
   const selectedCluster = await search({
     message: "\uD83D\uDD0D Search and select ECS cluster:",
-    source: async (input) => {
-      return await searchClusters(clusters, input || "");
+    source: async (input2) => {
+      return await searchClusters(clusters, input2 || "");
     },
     pageSize: 12
   });
@@ -685,8 +684,8 @@ async function connectToRDSInternal() {
   }
   const selectedTask = await search({
     message: "\uD83D\uDD0D Search and select ECS task:",
-    source: async (input) => {
-      return await searchTasks(tasks, input || "");
+    source: async (input2) => {
+      return await searchTasks(tasks, input2 || "");
     },
     pageSize: 12
   });
@@ -697,38 +696,28 @@ async function connectToRDSInternal() {
   }
   const selectedRDS = await search({
     message: "\uD83D\uDD0D Search and select RDS instance:",
-    source: async (input) => {
-      return await searchRDS(rdsInstances, input || "");
+    source: async (input2) => {
+      return await searchRDS(rdsInstances, input2 || "");
     },
     pageSize: 12
   });
   const defaultRDSPort = getDefaultPortForEngine(selectedRDS.engine);
-  const { rdsPort } = await inquirer2.prompt([
-    {
-      type: "input",
-      name: "rdsPort",
-      message: `Enter RDS port number (${selectedRDS.engine}):`,
-      default: defaultRDSPort.toString(),
-      placeholder: `e.g. ${defaultRDSPort} (default for ${selectedRDS.engine})`,
-      validate: (input) => {
-        const port = parseInt(input || defaultRDSPort.toString());
-        return port > 0 && port < 65536 ? true : "Please enter a valid port number (1-65535)";
-      }
+  const rdsPort = await input({
+    message: `Enter RDS port number (${selectedRDS.engine}):`,
+    default: defaultRDSPort.toString(),
+    validate: (inputValue) => {
+      const port = parseInt(inputValue || defaultRDSPort.toString());
+      return port > 0 && port < 65536 ? true : "Please enter a valid port number (1-65535)";
     }
-  ]);
-  const { localPort } = await inquirer2.prompt([
-    {
-      type: "input",
-      name: "localPort",
-      message: "Enter local port number:",
-      default: "8888",
-      placeholder: "e.g. 8888 (default)",
-      validate: (input) => {
-        const port = parseInt(input || "8888");
-        return port > 0 && port < 65536 ? true : "Please enter a valid port number (1-65535)";
-      }
+  });
+  const localPort = await input({
+    message: "Enter local port number:",
+    default: "8888",
+    validate: (inputValue) => {
+      const port = parseInt(inputValue || "8888");
+      return port > 0 && port < 65536 ? true : "Please enter a valid port number (1-65535)";
     }
-  ]);
+  });
   console.log(chalk4.green("\uD83D\uDE80 Starting port forwarding session..."));
   console.log(chalk4.blue("Selected task:"), selectedTask);
   await startSSMSession(selectedTask, selectedRDS, rdsPort, localPort);
