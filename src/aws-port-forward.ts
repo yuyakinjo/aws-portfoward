@@ -95,7 +95,7 @@ async function connectToRDSInternal(
 			source: async (input) => {
 				return await searchRegions(regions, input || "");
 			},
-			pageSize: 12,
+			pageSize: 50,
 		});
 		messages.success(`✅ Region: ${region}`);
 	}
@@ -133,7 +133,7 @@ async function connectToRDSInternal(
 			source: async (input) => {
 				return await searchClusters(clusters, input || "");
 			},
-			pageSize: 12,
+			pageSize: 50,
 		})) as ECSCluster;
 	}
 
@@ -156,7 +156,7 @@ async function connectToRDSInternal(
 			source: async (input) => {
 				return await searchTasks(tasks, input || "");
 			},
-			pageSize: 12,
+			pageSize: 50,
 		})) as string;
 	}
 
@@ -187,22 +187,22 @@ async function connectToRDSInternal(
 			source: async (input) => {
 				return await searchRDS(rdsInstances, input || "");
 			},
-			pageSize: 12,
+			pageSize: 50,
 		})) as RDSInstance;
 	}
 
 	// Specify RDS port
 	let rdsPort: string;
 	if (options.rdsPort !== undefined) {
-		rdsPort = options.rdsPort.toString();
+		rdsPort = `${options.rdsPort}`;
 		messages.success(`✅ RDS Port (from CLI): ${rdsPort}`);
 	} else {
 		const defaultRDSPort = getDefaultPortForEngine(selectedRDS.engine);
 		rdsPort = await input({
 			message: `Enter RDS port number (${selectedRDS.engine}):`,
-			default: defaultRDSPort.toString(),
+			default: `${defaultRDSPort}`,
 			validate: (inputValue: string) => {
-				const port = parseInt(inputValue || defaultRDSPort.toString());
+				const port = parseInt(inputValue || `${defaultRDSPort}`);
 				return port > 0 && port < 65536
 					? true
 					: "Please enter a valid port number (1-65535)";
@@ -213,7 +213,7 @@ async function connectToRDSInternal(
 	// Specify local port
 	let localPort: string;
 	if (options.localPort !== undefined) {
-		localPort = options.localPort.toString();
+		localPort = `${options.localPort}`;
 		messages.success(`✅ Local Port (from CLI): ${localPort}`);
 	} else {
 		localPort = await input({
