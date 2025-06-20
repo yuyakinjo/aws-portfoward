@@ -7,7 +7,7 @@ import { isEmpty } from "remeda";
 import { getAWSRegions, getECSClusters, getECSTasks, getRDSInstances, } from "./aws-services.js";
 import { searchClusters, searchRDS, searchRegions, searchTasks, } from "./search.js";
 import { startSSMSession } from "./session.js";
-import { askRetry, displayFriendlyError, getDefaultPortForEngine, } from "./utils.js";
+import { askRetry, displayFriendlyError, getDefaultPortForEngine, } from "./utils/index.js";
 export async function connectToRDS(options = {}) {
     let retryCount = 0;
     const maxRetries = 3;

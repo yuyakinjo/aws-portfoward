@@ -1,30 +1,4 @@
 import chalk from "chalk";
-import inquirer from "inquirer";
-export function getDefaultPortForEngine(engine) {
-    const engineLower = engine.toLowerCase();
-    if (engineLower.includes("mysql") || engineLower.includes("mariadb")) {
-        return 3306;
-    }
-    else if (engineLower.includes("postgres")) {
-        return 5432;
-    }
-    else if (engineLower.includes("oracle")) {
-        return 1521;
-    }
-    else if (engineLower.includes("sqlserver") ||
-        engineLower.includes("mssql")) {
-        return 1433;
-    }
-    else if (engineLower.includes("aurora-mysql")) {
-        return 3306;
-    }
-    else if (engineLower.includes("aurora-postgresql")) {
-        return 5432;
-    }
-    else {
-        return 5432;
-    }
-}
 export function displayFriendlyError(error) {
     const errorDetails = getErrorDetails(error);
     console.log("");
@@ -221,15 +195,4 @@ function getErrorDetails(error) {
         technicalDetails: errorMessage,
         documentation: "https://docs.aws.amazon.com/",
     };
-}
-export async function askRetry() {
-    const { shouldRetry } = await inquirer.prompt([
-        {
-            type: "confirm",
-            name: "shouldRetry",
-            message: "Would you like to retry?",
-            default: true,
-        },
-    ]);
-    return shouldRetry;
 }

@@ -26,7 +26,7 @@ import {
 	askRetry,
 	displayFriendlyError,
 	getDefaultPortForEngine,
-} from "./utils.js";
+} from "./utils/index.js";
 
 export async function connectToRDS(
 	options: ValidatedConnectOptions = {},
