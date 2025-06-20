@@ -248,8 +248,10 @@ export async function getRDSInstances(
 						dbInstanceStatus: db.DBInstanceStatus,
 						allocatedStorage: db.AllocatedStorage || 0,
 						availabilityZone: db.AvailabilityZone || "unknown",
-						vpcSecurityGroups: db.VpcSecurityGroups || [],
-						dbSubnetGroup: db.DBSubnetGroup || undefined,
+						vpcSecurityGroups:
+							db.VpcSecurityGroups?.map((sg) => sg.VpcSecurityGroupId || "") ||
+							[],
+						dbSubnetGroup: db.DBSubnetGroup?.DBSubnetGroupName || undefined,
 						createdTime: db.InstanceCreateTime || undefined,
 					});
 				}

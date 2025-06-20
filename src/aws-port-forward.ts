@@ -1,9 +1,8 @@
 import { EC2Client } from "@aws-sdk/client-ec2";
 import { ECSClient } from "@aws-sdk/client-ecs";
 import { RDSClient } from "@aws-sdk/client-rds";
-import { search } from "@inquirer/prompts";
+import { input, search } from "@inquirer/prompts";
 import chalk from "chalk";
-import inquirer from "inquirer";
 import { isEmpty } from "remeda";
 import {
 	getAWSRegions,
@@ -158,38 +157,28 @@ async function connectToRDSInternal(): Promise<void> {
 
 	// Specify RDS port
 	const defaultRDSPort = getDefaultPortForEngine(selectedRDS.engine);
-	const { rdsPort } = await inquirer.prompt([
-		{
-			type: "input",
-			name: "rdsPort",
-			message: `Enter RDS port number (${selectedRDS.engine}):`,
-			default: defaultRDSPort.toString(),
-			placeholder: `e.g. ${defaultRDSPort} (default for ${selectedRDS.engine})`,
-			validate: (input: string) => {
-				const port = parseInt(input || defaultRDSPort.toString());
-				return port > 0 && port < 65536
-					? true
-					: "Please enter a valid port number (1-65535)";
-			},
+	const rdsPort = await input({
+		message: `Enter RDS port number (${selectedRDS.engine}):`,
+		default: defaultRDSPort.toString(),
+		validate: (inputValue: string) => {
+			const port = parseInt(inputValue || defaultRDSPort.toString());
+			return port > 0 && port < 65536
+				? true
+				: "Please enter a valid port number (1-65535)";
 		},
-	]);
+	});
 
 	// Specify local port
-	const { localPort } = await inquirer.prompt([
-		{
-			type: "input",
-			name: "localPort",
-			message: "Enter local port number:",
-			default: "8888",
-			placeholder: "e.g. 8888 (default)",
-			validate: (input: string) => {
-				const port = parseInt(input || "8888");
-				return port > 0 && port < 65536
-					? true
-					: "Please enter a valid port number (1-65535)";
-			},
+	const localPort = await input({
+		message: "Enter local port number:",
+		default: "8888",
+		validate: (inputValue: string) => {
+			const port = parseInt(inputValue || "8888");
+			return port > 0 && port < 65536
+				? true
+				: "Please enter a valid port number (1-65535)";
 		},
-	]);
+	});
 
 	// Start SSM session
 	console.log(chalk.green("🚀 Starting port forwarding session..."));
