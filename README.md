@@ -210,16 +210,12 @@ npx ecs-pf connect
 
 mainブランチにマージされると自動的に以下が実行されます：
 
-1. **ビルド**: `bun run build`
-2. **バージョンアップ**: パッチバージョンを自動で上げる
-3. **npm公開**: `npm publish`
-4. **GitHubリリース**: タグとリリースノートを自動作成
+1. **依存関係のインストール**: `npm install`
+2. **ビルド**: `npm run build`
+3. **バージョンアップ**: `npm version patch|minor|major`
+4. **npm公開**: `npm publish --dry-run`
+5. **GitHubリリース**: タグとリリースノートを自動作成
 
-##### 必要な設定
-GitHubリポジトリのSecretsに以下を設定してください：
-
-- `NPM_TOKEN`: npmアカウントのAccess Token
-  - npm公式サイト → Account Settings → Access Tokens → Generate New Token
 
 ##### 自動公開の無効化
 コミットメッセージに `[skip ci]` を含めると自動公開をスキップできます：
