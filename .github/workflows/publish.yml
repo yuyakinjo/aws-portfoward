@@ -1,0 +1,88 @@
+name: Auto Publish to NPM
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    # Skip if commit message contains [skip ci]
+    if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        # Fetch full history for version bumping
+        fetch-depth: 0
+        # Use token for pushing back to repo
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Setup Bun
+      uses: oven-sh/setup-bun@v1
+      with:
+        bun-version: latest
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        registry-url: 'https://registry.npmjs.org'
+
+    - name: Install dependencies
+      run: bun install
+
+    - name: Run build
+      run: bun run build
+
+    - name: Configure Git
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+
+    - name: Bump patch version
+      run: |
+        # Bump patch version and get the new version
+        NEW_VERSION=$(npm version patch --no-git-tag-version)
+        echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+        echo "New version: $NEW_VERSION"
+
+    - name: Commit version bump
+      run: |
+        git add package.json
+        git commit -m "chore: bump version to ${{ env.NEW_VERSION }} [skip ci]"
+        git push
+
+    - name: Create Git tag
+      run: |
+        git tag ${{ env.NEW_VERSION }}
+        git push origin ${{ env.NEW_VERSION }}
+
+    - name: Publish to NPM
+      run: npm publish --access public
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+    - name: Create GitHub Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ env.NEW_VERSION }}
+        release_name: Release ${{ env.NEW_VERSION }}
+        body: |
+          自動リリース ${{ env.NEW_VERSION }}
+
+          ## 変更内容
+          - パッチバージョンの更新
+
+          ## インストール方法
+          ```bash
+          npx ecs-pf connect
+          # または
+          bunx ecs-pf connect
+          ```
+        draft: false
+        prerelease: false
