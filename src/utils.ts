@@ -77,7 +77,6 @@ export function displayFriendlyError(error: unknown): void {
 
 function getErrorDetails(error: unknown): ErrorDetails {
 	const errorMessage = error instanceof Error ? error.message : String(error);
-	const errorName = error instanceof Error ? error.name : "Unknown";
 
 	// AWS authentication related errors
 	if (

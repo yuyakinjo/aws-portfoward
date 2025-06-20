@@ -22,8 +22,8 @@ export interface RDSInstance {
 	dbInstanceStatus: string;
 	allocatedStorage: number;
 	availabilityZone: string;
-	vpcSecurityGroups: any[];
-	dbSubnetGroup?: any;
+	vpcSecurityGroups: string[];
+	dbSubnetGroup?: string;
 	createdTime?: Date;
 }
 

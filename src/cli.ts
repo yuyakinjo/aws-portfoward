@@ -36,7 +36,7 @@ program
 	});
 
 // Catch unhandled promise rejections
-process.on("unhandledRejection", (reason, promise) => {
+process.on("unhandledRejection", (reason) => {
 	console.log("");
 	console.log(chalk.red("❌ An unexpected error occurred"));
 	displayFriendlyError(reason);
