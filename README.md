@@ -50,35 +50,6 @@ npx ecs-pf connect --cluster production-cluster
 npx ecs-pf connect --help
 ```
 
-### バリデーション機能
-
-CLIオプションは自動的に検証され、不正な値が指定された場合はエラーメッセージが表示されます：
-
-```bash
-# 不正なポート番号
-$ npx ecs-pf connect --rds-port abc
-❌ Invalid CLI options:
-  • rdsPort: RDS port must be a number
-
-# 範囲外のポート番号
-$ npx ecs-pf connect --rds-port 70000
-❌ Invalid CLI options:
-  • rdsPort: RDS port must be less than 65536
-
-# 空文字列
-$ npx ecs-pf connect --cluster ""
-❌ Invalid CLI options:
-  • cluster: Cluster name cannot be empty
-```
-
-#### バリデーションルール
-
-- **region, cluster, task, rds**: 空文字列は無効
-- **rds-port, local-port**:
-  - 数値のみ受け付け
-  - 1-65535の範囲内である必要がある
-  - 整数である必要がある
-
 ## 使用例
 
 ```bash
@@ -166,7 +137,7 @@ npm run build
 node dist/cli.js connect
 ```
 
-#### 2. npm公開手順
+#### 2. npm公開手順（手動）
 ```bash
 # npmアカウントでログイン
 npm login
@@ -188,20 +159,15 @@ npx ecs-pf connect
 
 #### GitHub Actionsによる自動公開
 
-mainブランチにマージされると自動的に以下が実行されます：
+新しいリリースを作成すると自動的に以下が実行されます：
 
-1. **依存関係のインストール**: `npm install`
-2. **ビルド**: `npm run build`
-3. **バージョンアップ**: `npm version patch|minor|major`
-4. **npm公開**: `npm publish --dry-run`
-5. **GitHubリリース**: タグとリリースノートを自動作成
+1. **依存関係のインストール**: `npm ci`
+2. **型チェック**: `npm run type-check`
+3. **コード品質チェック**: `npm run ci`
+4. **ビルド**: `npm run build`
+5. **バージョン更新**: リリースタグに合わせてpackage.jsonを更新
+6. **npm公開**: `npm publish --access public`
 
-
-##### 自動公開の無効化
-コミットメッセージに `[skip ci]` を含めると自動公開をスキップできます：
-```bash
-git commit -m "docs: update README [skip ci]"
-```
 
 ## ライセンス
 

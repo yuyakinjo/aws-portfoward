@@ -1,8 +1,8 @@
 # dependencies (npm install)
 node_modules
 
-# output
-out
+# build output
+dist
 *.tgz
 
 # code coverage
