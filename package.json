@@ -23,7 +23,7 @@
 	"scripts": {
 		"connect": "bun src/cli.ts connect",
 		"dev": "bun run src/cli.ts connect",
-		"build": "node -e \"const fs=require('fs');const path=require('path');if(!fs.existsSync('dist'))fs.mkdirSync('dist');const content='#!/usr/bin/env node\\n'+fs.readFileSync('dist/cli.js','utf8').split('\\n').slice(1).join('\\n');fs.writeFileSync('dist/cli.js',content);fs.chmodSync('dist/cli.js',0o755);\" || echo 'Build file already exists'",
+		"build": "bun build src/cli.ts --outdir dist --target node --format esm --external @aws-sdk/client-ec2 --external @aws-sdk/client-ecs --external @aws-sdk/client-rds --external @aws-sdk/client-ssm --external @inquirer/prompts --external chalk --external commander --external fuse.js --external inquirer --external inquirer-search-list --external remeda && echo '#!/usr/bin/env node' > temp_file && sed '1{/^#!/d;}' dist/cli.js >> temp_file && mv temp_file dist/cli.js && chmod +x dist/cli.js",
 		"start": "bun run dist/cli.js connect",
 		"prepublishOnly": "npm run check",
 		"format": "biome format",
