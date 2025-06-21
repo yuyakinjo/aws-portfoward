@@ -30,6 +30,7 @@ import type {
 import {
   askRetry,
   displayFriendlyError,
+  findAvailablePort,
   getDefaultPortForEngine,
   messages,
 } from "./utils/index.js";
@@ -84,8 +85,6 @@ export async function connectToRDS(
 async function connectToRDSInternal(
   options: ValidatedConnectOptions,
 ): Promise<void> {
-  messages.warning("📋 Checking AWS configuration...");
-
   // Initialize EC2 client with default region to get region list
   const defaultEc2Client = new EC2Client({ region: "us-east-1" });
 
@@ -103,9 +102,7 @@ async function connectToRDSInternal(
     }
 
     // Select AWS region with zoxide-style real-time search
-    messages.info(
-      "💡 zoxide-style: List is filtered as you type (↑↓ to select, Enter to confirm)",
-    );
+    messages.info("filtered as you type (↑↓ to select, Enter to confirm)");
 
     region = await search({
       message: "🌍 Search and select AWS region:",
@@ -114,7 +111,8 @@ async function connectToRDSInternal(
       },
       pageSize: 50,
     });
-    messages.success(`✅ Region: ${region}`);
+    // リージョン重複表示を削除 (connectToRDSInternal)
+    // messages.success(`✅ Region: ${region}`);
   }
 
   // Initialize AWS clients
@@ -141,9 +139,7 @@ async function connectToRDSInternal(
     }
 
     // Select ECS cluster with zoxide-style real-time search
-    messages.info(
-      "💡 zoxide-style: List is filtered as you type (↑↓ to select, Enter to confirm)",
-    );
+    messages.info("filtered as you type (↑↓ to select, Enter to confirm)");
 
     selectedCluster = (await search({
       message: "🔍 Search and select ECS cluster:",
@@ -222,21 +218,32 @@ async function connectToRDSInternal(
   }
 
   // Specify local port
+  // Automatically find available port starting from 8888
   let localPort: string;
   if (options.localPort !== undefined) {
     localPort = `${options.localPort}`;
     messages.success(`✅ Local Port (from CLI): ${localPort}`);
   } else {
-    localPort = await input({
-      message: "Enter local port number:",
-      default: "8888",
-      validate: (inputValue: string) => {
-        const port = parseInt(inputValue || "8888");
-        return port > 0 && port < 65536
-          ? true
-          : "Please enter a valid port number (1-65535)";
-      },
-    });
+    try {
+      const availablePort = await findAvailablePort(8888);
+      localPort = `${availablePort}`;
+      messages.success(`✅ Local Port (auto-selected): ${localPort}`);
+    } catch {
+      // Fallback to asking user if automatic port finding fails
+      messages.warning(
+        "⚠️ Could not find available port automatically. Please specify manually:",
+      );
+      localPort = await input({
+        message: "Enter local port number:",
+        default: "8888",
+        validate: (inputValue: string) => {
+          const port = parseInt(inputValue || "8888");
+          return port > 0 && port < 65536
+            ? true
+            : "Please enter a valid port number (1-65535)";
+        },
+      });
+    }
   }
 
   // Generate reproducible command
@@ -304,8 +311,6 @@ export async function connectToRDSWithInference(
 async function connectToRDSWithInferenceInternal(
   options: ValidatedConnectOptions,
 ): Promise<void> {
-  messages.warning("📋 Checking AWS configuration...");
-
   // Initialize EC2 client with default region to get region list
   const defaultEc2Client = new EC2Client({ region: "us-east-1" });
 
@@ -329,7 +334,6 @@ async function connectToRDSWithInferenceInternal(
       },
       pageSize: 50,
     });
-    messages.success(`✅ Region: ${region}`);
   }
 
   // Initialize AWS clients
@@ -366,9 +370,6 @@ async function connectToRDSWithInferenceInternal(
     })) as RDSInstance;
   }
 
-  // Step 2: Infer ECS targets based on selected RDS
-  messages.warning("🔮 Inferring ECS targets based on RDS selection...");
-
   const inferenceStartTime = performance.now();
   const inferenceResults = await inferECSTargets(ecsClient, selectedRDS, false); // パフォーマンス追跡を無効化
   const inferenceEndTime = performance.now();
@@ -384,57 +385,7 @@ async function connectToRDSWithInferenceInternal(
     );
     console.log();
 
-    // Show brief summary of inference results
-    const highConfidenceResults = inferenceResults.filter(
-      (r) => r.confidence === "high",
-    );
-    const mediumConfidenceResults = inferenceResults.filter(
-      (r) => r.confidence === "medium",
-    );
-    const lowConfidenceResults = inferenceResults.filter(
-      (r) => r.confidence === "low",
-    );
-
-    // Show simple summary
-    const validLowCount = lowConfidenceResults.filter(
-      (r) => !r.reason.includes("接続不可"),
-    ).length;
-    const invalidLowCount = lowConfidenceResults.filter((r) =>
-      r.reason.includes("接続不可"),
-    ).length;
-
-    console.log(`📊 Found ${inferenceResults.length} ECS targets:`);
-    if (highConfidenceResults.length > 0) {
-      console.log(`   🎯 High confidence: ${highConfidenceResults.length}個`);
-    }
-    if (mediumConfidenceResults.length > 0) {
-      console.log(
-        `   ⭐ Medium confidence: ${mediumConfidenceResults.length}個`,
-      );
-    }
-    if (validLowCount > 0) {
-      console.log(
-        `   🔧 Low confidence: ${validLowCount}個${invalidLowCount > 0 ? ` (${invalidLowCount}個停止中)` : ""}`,
-      );
-    }
-
-    // Show recommendation
-    const recommendedResult = inferenceResults[0];
-    if (recommendedResult) {
-      console.log(
-        `🎯 \x1b[1m\x1b[36mRecommended\x1b[0m: ${recommendedResult.cluster.clusterName} → ${recommendedResult.task.displayName} (${recommendedResult.confidence} confidence)`,
-      );
-    }
-    console.log();
-
-    // Add comprehensive hint about filtering functionality
-    messages.info("💡 Filter Examples:");
-    console.log("   🔍 'prod web' - production web services");
-    console.log("   🔍 'staging api' - staging API tasks");
-    console.log("   🔍 'high env' - high confidence environment matches");
-    console.log("   🔍 'naming 中' - medium confidence naming matches");
-    console.log("   🔍 'running' - only running tasks");
-    console.log();
+    // 統計詳細、Recommended、Filter Examples を削除
 
     if (options.cluster && options.task) {
       // Try to find matching inference result
@@ -465,7 +416,7 @@ async function connectToRDSWithInferenceInternal(
                 return {
                   name: formatInferenceResult(result),
                   value: result,
-                  description: result.reason,
+                  // Removed description to clean up UI
                   disabled: isUnavailable
                     ? "⚠️ タスク停止中 - 選択不可"
                     : undefined,
@@ -489,7 +440,7 @@ async function connectToRDSWithInferenceInternal(
               return {
                 name: formatInferenceResult(result),
                 value: result,
-                description: result.reason,
+                // Removed description to clean up UI
                 disabled: isUnavailable
                   ? "⚠️ タスク停止中 - 選択不可"
                   : undefined,
@@ -505,7 +456,6 @@ async function connectToRDSWithInferenceInternal(
     messages.success(
       `✅ Selected: ${formatInferenceResult(selectedInference)}`,
     );
-    messages.info(`📝 Reason: ${selectedInference.reason}`);
   } else {
     // No inference results, fall back to manual selection
     messages.warning(
@@ -597,23 +547,33 @@ async function connectToRDSWithInferenceInternal(
     messages.success(`✅ RDS Port (auto-detected): ${rdsPort}`);
   }
 
-  // Specify local port
+  // Automatically find available port starting from 8888
   let localPort: string;
   if (options.localPort !== undefined) {
     localPort = `${options.localPort}`;
     messages.success(`✅ Local Port (from CLI): ${localPort}`);
   } else {
-    const { input } = await import("@inquirer/prompts");
-    localPort = await input({
-      message: "Enter local port number:",
-      default: "8888",
-      validate: (inputValue: string) => {
-        const port = parseInt(inputValue || "8888");
-        return port > 0 && port < 65536
-          ? true
-          : "Please enter a valid port number (1-65535)";
-      },
-    });
+    try {
+      const availablePort = await findAvailablePort(8888);
+      localPort = `${availablePort}`;
+      messages.success(`✅ Local Port (auto-selected): ${localPort}`);
+    } catch {
+      // Fallback to asking user if automatic port finding fails
+      messages.warning(
+        "⚠️ Could not find available port automatically. Please specify manually:",
+      );
+      const { input } = await import("@inquirer/prompts");
+      localPort = await input({
+        message: "Enter local port number:",
+        default: "8888",
+        validate: (inputValue: string) => {
+          const port = parseInt(inputValue || "8888");
+          return port > 0 && port < 65536
+            ? true
+            : "Please enter a valid port number (1-65535)";
+        },
+      });
+    }
   }
 
   // Generate reproducible command
@@ -654,13 +614,6 @@ async function connectToRDSWithInferenceInternal(
   console.log("└──────────────────────────────────────────────┘");
   console.log();
 
-  const connectionTime = Math.round(performance.now() - connectionStartTime);
-  console.log(`⏰ \x1b[1mConnection time\x1b[0m: ${connectionTime}ms`);
-  console.log(
-    `🛡️  \x1b[1mSecurity\x1b[0m: AWS IAM authentication + VPC internal communication`,
-  );
-  console.log();
-
   // Show database connection examples
   console.log("💡 \x1b[1mDatabase connection examples:\x1b[0m");
   if (selectedRDS.engine.includes("postgres")) {
@@ -694,13 +647,13 @@ async function connectToRDSWithInferenceInternal(
 /**
  * Filter inference results using space-separated keywords
  * Supports both English and Japanese search terms
- * Searches through cluster name, task name, service name, method, confidence, and reason
+ * Searches through cluster name, task name, service name, confidence, and reason
  *
  * Examples:
  * - "prod web" - finds tasks in production clusters with web services
  * - "staging api" - finds staging API tasks
- * - "high env" - finds high confidence matches from environment analysis
- * - "名前 中" - finds medium confidence naming matches (Japanese)
+ * - "high" - finds high confidence matches
+ * - "medium 中" - finds medium confidence matches (Japanese)
  */
 function filterInferenceResults(
   results: InferenceResult[],
@@ -733,10 +686,6 @@ function filterInferenceResults(
       result.method,
       result.reason,
       formatInferenceResult(result),
-      // Add method labels for easier searching
-      result.method === "environment" ? "環境変数 env" : "",
-      result.method === "naming" ? "名前類似性 naming" : "",
-      result.method === "network" ? "ネットワーク network" : "",
       // Add confidence levels for easier searching
       result.confidence === "high" ? "high 高" : "",
       result.confidence === "medium" ? "medium 中" : "",

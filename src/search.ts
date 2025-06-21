@@ -181,7 +181,11 @@ export async function searchRDS(rdsInstances: RDSInstance[], input: string) {
 }
 
 // zoxide-style real-time search function - for AWS regions
-export async function searchRegions(regions: AWSRegion[], input: string) {
+export async function searchRegions(
+  regions: AWSRegion[],
+  input: string,
+  defaultRegion?: string,
+) {
   const fuseOptions = {
     keys: ["regionName"],
     threshold: 0.5,
@@ -192,19 +196,46 @@ export async function searchRegions(regions: AWSRegion[], input: string) {
   };
 
   if (!input || input.trim() === "") {
-    return regions.map((region) => ({
-      name: `${region.regionName} ${chalk.dim(`(${region.optInStatus})`)}`,
-      value: region.regionName,
-    }));
+    // デフォルトリージョンがある場合は先頭に表示
+    const sortedRegions = defaultRegion
+      ? [
+          ...regions.filter((r) => r.regionName === defaultRegion),
+          ...regions.filter((r) => r.regionName !== defaultRegion),
+        ]
+      : regions;
+
+    return sortedRegions.map((region, index) => {
+      const isDefault = region.regionName === defaultRegion;
+      const icon = index === 0 && isDefault ? chalk.green("🎯") : "  ";
+      const defaultLabel = isDefault ? chalk.cyan(" (default)") : "";
+
+      return {
+        name: `${icon} ${region.regionName}${defaultLabel} ${chalk.dim(`(${region.optInStatus})`)}`,
+        value: region.regionName,
+      };
+    });
   }
 
   const fuse = new Fuse(regions, fuseOptions);
   const results = fuse.search(input);
 
   return results
-    .sort((a, b) => (a.score || 0) - (b.score || 0))
-    .map((result, index) => ({
-      name: `${index === 0 ? chalk.green("🎯") : "  "} ${result.item.regionName} ${chalk.dim(`(${result.item.optInStatus}) [${((1 - (result.score || 0)) * 100).toFixed(0)}%]`)}`,
-      value: result.item.regionName,
-    }));
+    .sort((a, b) => {
+      // デフォルトリージョンを優先
+      if (defaultRegion) {
+        if (a.item.regionName === defaultRegion) return -1;
+        if (b.item.regionName === defaultRegion) return 1;
+      }
+      return (a.score || 0) - (b.score || 0);
+    })
+    .map((result, index) => {
+      const isDefault = result.item.regionName === defaultRegion;
+      const icon = index === 0 ? chalk.green("🎯") : "  ";
+      const defaultLabel = isDefault ? chalk.cyan(" (default)") : "";
+
+      return {
+        name: `${icon} ${result.item.regionName}${defaultLabel} ${chalk.dim(`(${result.item.optInStatus}) [${((1 - (result.score || 0)) * 100).toFixed(0)}%]`)}`,
+        value: result.item.regionName,
+      };
+    });
 }

@@ -20,7 +20,11 @@ import type {
   RDSInstance,
   ValidatedConnectOptions,
 } from "../types.js";
-import { getDefaultPortForEngine, messages } from "../utils/index.js";
+import {
+  findAvailablePort,
+  getDefaultPortForEngine,
+  messages,
+} from "../utils/index.js";
 
 export interface ResourceSelectionResult {
   region: string;
@@ -44,6 +48,17 @@ export async function selectRegion(
     return options.region;
   }
 
+  // Try to get default region from AWS config
+  let defaultRegion: string | undefined;
+  try {
+    // AWS SDKは自動的に環境変数やconfig fileからリージョンを読み込む
+    const testClient = new EC2Client({});
+    defaultRegion = await testClient.config.region();
+  } catch {
+    // AWS configが設定されていない場合はスキップ
+    defaultRegion = undefined;
+  }
+
   // Initialize EC2 client with default region to get region list
   const defaultEc2Client = new EC2Client({ region: "us-east-1" });
 
@@ -54,20 +69,24 @@ export async function selectRegion(
     throw new Error("Failed to get AWS regions");
   }
 
+  // デフォルトリージョンがある場合は優先表示
+  if (defaultRegion) {
+    messages.info(`💡 Default region from AWS config: ${defaultRegion}`);
+  }
+
   // Select AWS region with zoxide-style real-time search
-  messages.info(
-    "💡 zoxide-style: List is filtered as you type (↑↓ to select, Enter to confirm)",
-  );
+  messages.info("filtered as you type (↑↓ to select, Enter to confirm)");
 
   const region = await search({
     message: "🌍 Search and select AWS region:",
     source: async (input) => {
-      return await searchRegions(regions, input || "");
+      return await searchRegions(regions, input || "", defaultRegion);
     },
     pageSize: 50,
   });
 
-  messages.success(`✅ Region: ${region}`);
+  // リージョン選択後の重複メッセージを削除
+  // messages.success(`✅ Region: ${region}`);
   return region;
 }
 
@@ -97,9 +116,7 @@ export async function selectCluster(
   }
 
   // Select ECS cluster with zoxide-style real-time search
-  messages.info(
-    "💡 zoxide-style: List is filtered as you type (↑↓ to select, Enter to confirm)",
-  );
+  messages.info("filtered as you type (↑↓ to select, Enter to confirm)");
 
   const selectedCluster = (await search({
     message: "🔍 Search and select ECS cluster:",
@@ -205,7 +222,7 @@ export async function getRDSPort(
 }
 
 /**
- * Get local port (from CLI or prompt user)
+ * Get local port (from CLI or automatically find available port starting from 8888)
  */
 export async function getLocalPort(
   options: ValidatedConnectOptions,
@@ -216,18 +233,28 @@ export async function getLocalPort(
     return localPort;
   }
 
-  const localPort = await input({
-    message: "Enter local port number:",
-    default: "8888",
-    validate: (inputValue: string) => {
-      const port = parseInt(inputValue || "8888");
-      return port > 0 && port < 65536
-        ? true
-        : "Please enter a valid port number (1-65535)";
-    },
-  });
-
-  return localPort;
+  // Automatically find available port starting from 8888
+  try {
+    const availablePort = await findAvailablePort(8888);
+    messages.success(`✅ Local Port (auto-selected): ${availablePort}`);
+    return `${availablePort}`;
+  } catch {
+    // Fallback to asking user if automatic port finding fails
+    messages.warning(
+      "⚠️ Could not find available port automatically. Please specify manually:",
+    );
+    const localPort = await input({
+      message: "Enter local port number:",
+      default: "8888",
+      validate: (inputValue: string) => {
+        const port = parseInt(inputValue || "8888");
+        return port > 0 && port < 65536
+          ? true
+          : "Please enter a valid port number (1-65535)";
+      },
+    });
+    return localPort;
+  }
 }
 
 /**
@@ -236,8 +263,6 @@ export async function getLocalPort(
 export async function selectAllResources(
   options: ValidatedConnectOptions,
 ): Promise<ResourceSelectionResult> {
-  messages.warning("📋 Checking AWS configuration...");
-
   // Select region
   const region = await selectRegion(options);
 

@@ -74,11 +74,8 @@ export async function connectToRDS(
 async function connectToRDSInternal(
   options: ValidatedConnectOptions,
 ): Promise<void> {
-  messages.warning("📋 Checking AWS configuration...");
-
   // Get region
   const region = await selectRegion(options);
-  messages.success(`✅ Region: ${region}`);
 
   // Initialize AWS clients
   const ecsClient = new ECSClient({ region });
@@ -187,11 +184,10 @@ export async function connectToRDSWithInference(
 async function connectToRDSWithInferenceInternal(
   options: ValidatedConnectOptions,
 ): Promise<void> {
-  messages.warning("📋 Checking AWS configuration...");
-
   // Get region
   const region = await selectRegion(options);
-  messages.success(`✅ Region: ${region}`);
+  // リージョン重複表示を削除
+  // messages.success(`✅ Region: ${region}`);
 
   // Initialize AWS clients
   const ecsClient = new ECSClient({ region });
@@ -200,9 +196,6 @@ async function connectToRDSWithInferenceInternal(
   // Step 1: Select RDS instance first
   const selectedRDS = await selectRDSInstance(rdsClient, options);
   messages.success(`✅ RDS: ${selectedRDS.dbInstanceIdentifier}`);
-
-  // Step 2: Infer ECS targets based on selected RDS
-  messages.warning("🔮 Inferring ECS targets based on RDS selection...");
 
   const inferenceStartTime = performance.now();
   const inferenceResults = await inferECSTargets(ecsClient, selectedRDS, false); // パフォーマンス追跡を無効化
@@ -217,49 +210,6 @@ async function connectToRDSWithInferenceInternal(
     messages.success(
       `✨ Found ${inferenceResults.length} ECS targets in ${inferenceDuration}ms`,
     );
-    console.log();
-
-    // Show brief summary of inference results
-    const highConfidenceResults = inferenceResults.filter(
-      (r) => r.confidence === "high",
-    );
-    const mediumConfidenceResults = inferenceResults.filter(
-      (r) => r.confidence === "medium",
-    );
-    const lowConfidenceResults = inferenceResults.filter(
-      (r) => r.confidence === "low",
-    );
-
-    // Show simple summary
-    const validLowCount = lowConfidenceResults.filter(
-      (r) => !r.reason.includes("接続不可"),
-    ).length;
-    const invalidLowCount = lowConfidenceResults.filter((r) =>
-      r.reason.includes("接続不可"),
-    ).length;
-
-    console.log(`📊 Found ${inferenceResults.length} ECS targets:`);
-    if (highConfidenceResults.length > 0) {
-      console.log(`   🎯 High confidence: ${highConfidenceResults.length}個`);
-    }
-    if (mediumConfidenceResults.length > 0) {
-      console.log(
-        `   ⭐ Medium confidence: ${mediumConfidenceResults.length}個`,
-      );
-    }
-    if (validLowCount > 0) {
-      console.log(
-        `   🔧 Low confidence: ${validLowCount}個${invalidLowCount > 0 ? ` (${invalidLowCount}個停止中)` : ""}`,
-      );
-    }
-
-    // Show recommendation
-    const recommendedResult = inferenceResults[0];
-    if (recommendedResult) {
-      console.log(
-        `🎯 \x1b[1m\x1b[36mRecommended\x1b[0m: ${recommendedResult.cluster.clusterName} → ${recommendedResult.task.displayName} (${recommendedResult.confidence} confidence)`,
-      );
-    }
     console.log();
 
     if (options.cluster && options.task) {
@@ -293,7 +243,6 @@ async function connectToRDSWithInferenceInternal(
     messages.success(
       `✅ Selected: ${formatInferenceResult(selectedInference)}`,
     );
-    messages.info(`📝 Reason: ${selectedInference.reason}`);
   } else {
     // No inference results, fall back to manual selection
     messages.warning(
@@ -406,13 +355,6 @@ async function displayConnectionDetails(
     `│  Target: \x1b[36m${selectedInference.cluster.clusterName}\x1b[0m → \x1b[36m${selectedInference.task.displayName}\x1b[0m │`,
   );
   console.log("└──────────────────────────────────────────────┘");
-  console.log();
-
-  const connectionTime = Math.round(performance.now() - connectionStartTime);
-  console.log(`⏰ \x1b[1mConnection time\x1b[0m: ${connectionTime}ms`);
-  console.log(
-    `🛡️  \x1b[1mSecurity\x1b[0m: AWS IAM authentication + VPC internal communication`,
-  );
   console.log();
 
   // Show database connection examples

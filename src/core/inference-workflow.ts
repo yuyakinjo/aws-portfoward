@@ -21,13 +21,13 @@ export interface InferenceWorkflowResult {
 
 /**
  * Filter inference results based on user input
- * Searches through cluster name, task name, service name, method, confidence, and reason
+ * Searches through cluster name, task name, service name, confidence, and reason
  *
  * Examples:
  * - "prod web" - finds tasks in production clusters with web services
  * - "staging api" - finds staging API tasks
- * - "high env" - finds high confidence matches from environment analysis
- * - "名前 中" - finds medium confidence naming matches (Japanese)
+ * - "high" - finds high confidence matches
+ * - "medium 中" - finds medium confidence matches (Japanese)
  */
 export function filterInferenceResults(
   results: InferenceResult[],
@@ -60,10 +60,6 @@ export function filterInferenceResults(
       result.method,
       result.reason,
       formatInferenceResult(result),
-      // Add method labels for easier searching
-      result.method === "environment" ? "環境変数 env" : "",
-      result.method === "naming" ? "名前類似性 naming" : "",
-      result.method === "network" ? "ネットワーク network" : "",
       // Add confidence levels for easier searching
       result.confidence === "high" ? "high 高" : "",
       result.confidence === "medium" ? "medium 中" : "",
@@ -86,13 +82,7 @@ export async function runInferenceWorkflow(
   selectedRDS: RDSInstance,
   options: ValidatedConnectOptions,
 ): Promise<InferenceWorkflowResult> {
-  // Step 2: Infer ECS targets based on selected RDS
-  messages.warning("🔮 Inferring ECS targets based on RDS selection...");
-
-  const inferenceStartTime = performance.now();
   const inferenceResults = await inferECSTargets(ecsClient, selectedRDS, false); // パフォーマンス追跡を無効化
-  const inferenceEndTime = performance.now();
-  const inferenceDuration = Math.round(inferenceEndTime - inferenceStartTime);
 
   let selectedInference: InferenceResult | undefined;
   let selectedTask: string;
@@ -100,61 +90,7 @@ export async function runInferenceWorkflow(
 
   if (inferenceResults.length > 0) {
     // Show simple inference results summary
-    messages.success(
-      `✨ Found ${inferenceResults.length} ECS targets in ${inferenceDuration}ms`,
-    );
-    console.log();
-
-    // Show brief summary of inference results
-    const highConfidenceResults = inferenceResults.filter(
-      (r) => r.confidence === "high",
-    );
-    const mediumConfidenceResults = inferenceResults.filter(
-      (r) => r.confidence === "medium",
-    );
-    const lowConfidenceResults = inferenceResults.filter(
-      (r) => r.confidence === "low",
-    );
-
-    // Show simple summary
-    const validLowCount = lowConfidenceResults.filter(
-      (r) => !r.reason.includes("接続不可"),
-    ).length;
-    const invalidLowCount = lowConfidenceResults.filter((r) =>
-      r.reason.includes("接続不可"),
-    ).length;
-
-    console.log(`📊 Found ${inferenceResults.length} ECS targets:`);
-    if (highConfidenceResults.length > 0) {
-      console.log(`   🎯 High confidence: ${highConfidenceResults.length}個`);
-    }
-    if (mediumConfidenceResults.length > 0) {
-      console.log(
-        `   ⭐ Medium confidence: ${mediumConfidenceResults.length}個`,
-      );
-    }
-    if (validLowCount > 0) {
-      console.log(
-        `   🔧 Low confidence: ${validLowCount}個${invalidLowCount > 0 ? ` (${invalidLowCount}個停止中)` : ""}`,
-      );
-    }
-
-    // Show recommendation
-    const recommendedResult = inferenceResults[0];
-    if (recommendedResult) {
-      console.log(
-        `🎯 \x1b[1m\x1b[36mRecommended\x1b[0m: ${recommendedResult.cluster.clusterName} → ${recommendedResult.task.displayName} (${recommendedResult.confidence} confidence)`,
-      );
-    }
-    console.log();
-
-    // Add comprehensive hint about filtering functionality
-    messages.info("💡 Filter Examples:");
-    console.log("   🔍 'prod web' - production web services");
-    console.log("   🔍 'staging api' - staging API tasks");
-    console.log("   🔍 'high env' - high confidence environment matches");
-    console.log("   🔍 'naming 中' - medium confidence naming matches");
-    console.log("   🔍 'running' - only running tasks");
+    messages.success(`✨ Found ${inferenceResults.length} ECS targets`);
     console.log();
 
     if (options.cluster && options.task) {
@@ -187,7 +123,7 @@ export async function runInferenceWorkflow(
                 return {
                   name: formatInferenceResult(result),
                   value: result,
-                  description: result.reason,
+                  // Removed description to clean up UI
                   disabled: isUnavailable
                     ? "⚠️ タスク停止中 - 選択不可"
                     : undefined,
@@ -212,7 +148,7 @@ export async function runInferenceWorkflow(
               return {
                 name: formatInferenceResult(result),
                 value: result,
-                description: result.reason,
+                // Removed description to clean up UI
                 disabled: isUnavailable
                   ? "⚠️ タスク停止中 - 選択不可"
                   : undefined,
@@ -229,7 +165,6 @@ export async function runInferenceWorkflow(
     messages.success(
       `✅ Selected: ${formatInferenceResult(selectedInference)}`,
     );
-    messages.info(`📝 Reason: ${selectedInference.reason}`);
   } else {
     // No inference results, fall back to manual selection
     messages.warning(

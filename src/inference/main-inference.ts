@@ -38,31 +38,22 @@ export async function inferECSTargets(
       .map((name: string) => clusterMap.get(name))
       .filter(Boolean) as ECSCluster[];
 
-    console.log(
-      `🎯 RDS "${rdsInstance.dbInstanceIdentifier}" から推論されたクラスター: ${likelyClusterNames.length}個`,
-    );
-    for (const clusterName of likelyClusterNames.slice(0, 5)) {
-      console.log(`   📋 ${clusterName}`);
-    }
+    // 詳細なクラスター情報表示を削除
+    // console.log(
+    //   `🎯 RDS "${rdsInstance.dbInstanceIdentifier}" から推論されたクラスター: ${likelyClusterNames.length}個`,
+    // );
     tracker.endStep();
 
     // Phase 1: 推論されたクラスターでタスク検索（最優先）
     tracker.startStep("Search tasks in inferred clusters");
     const primaryClusters = likelyClusters.slice(0, 3); // 上位3つのクラスターのみ
-    console.log(
-      `🔍 優先クラスターでタスク検索: ${primaryClusters.length}個のクラスター`,
-    );
 
     // 並列でタスクを取得し、スコアリングを実行
     const primaryClusterResults = await Promise.all(
       primaryClusters.map(async (cluster) => {
-        console.log(
-          `   ⏱️  クラスター "${cluster.clusterName}" でタスク検索中...`,
-        );
         try {
           const tasks = await getECSTasks(ecsClient, cluster);
           if (tasks.length > 0) {
-            console.log(`   ✅ ${tasks.length}個のタスクを発見`);
             const scored = await scoreTasksAgainstRDS(
               ecsClient,
               tasks,
@@ -72,15 +63,9 @@ export async function inferECSTargets(
             );
             return scored;
           } else {
-            console.log(`   ⚪ タスクなし`);
             return [];
           }
-        } catch (error) {
-          const errorMsg =
-            error instanceof Error ? error.message : String(error);
-          if (!errorMsg.includes("Tasks cannot be empty")) {
-            console.log(`   ❌ エラー: ${errorMsg}`);
-          }
+        } catch {
           return [];
         }
       }),
@@ -93,18 +78,13 @@ export async function inferECSTargets(
     // Phase 2: 不十分な場合のフォールバック検索
     tracker.startStep("Fallback search if needed");
     if (results.length < 3) {
-      console.log(`⚠️  結果が少ないため、追加のクラスターを検索します...`);
       const remainingClusters = likelyClusters.slice(3, 8); // 次の5個のクラスター
 
       const fallbackResults = await Promise.all(
         remainingClusters.map(async (cluster) => {
-          console.log(
-            `   🔍 フォールバック: クラスター "${cluster.clusterName}" でタスク検索中...`,
-          );
           try {
             const tasks = await getECSTasks(ecsClient, cluster);
             if (tasks.length > 0) {
-              console.log(`   ✅ ${tasks.length}個のタスクを発見`);
               const scored = await scoreTasksByNaming(
                 tasks,
                 cluster,
@@ -112,15 +92,9 @@ export async function inferECSTargets(
               );
               return scored;
             } else {
-              console.log(`   ⚪ タスクなし`);
               return [];
             }
-          } catch (error) {
-            const errorMsg =
-              error instanceof Error ? error.message : String(error);
-            if (!errorMsg.includes("Tasks cannot be empty")) {
-              console.log(`   ❌ エラー: ${errorMsg}`);
-            }
+          } catch {
             return [];
           }
         }),
@@ -189,17 +163,5 @@ export async function inferECSTargets(
  * Format inference result for display
  */
 export function formatInferenceResult(result: InferenceResult): string {
-  const confidenceIcon = {
-    high: "🎯",
-    medium: "⭐",
-    low: "🔧",
-  }[result.confidence];
-
-  const methodLabel = {
-    environment: "環境変数",
-    naming: "名前類似性",
-    network: "ネットワーク",
-  }[result.method];
-
-  return `${confidenceIcon} ${result.cluster.clusterName} → ${result.task.displayName} (${methodLabel}: ${result.score}%)`;
+  return `${result.cluster.clusterName} → ${result.task.displayName}`;
 }
