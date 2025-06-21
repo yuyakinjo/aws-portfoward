@@ -24,12 +24,11 @@ export interface InferenceMatch {
   match_details?: Record<string, unknown>;
 }
 
+export { loadAnalysisResults } from "./analysis-loader.js";
+export { inferClustersFromRDSName } from "./cluster-inference.js";
+// メイン推論関数とフォーマッタ
+export { formatInferenceResult, inferECSTargets } from "./main-inference.js";
 // 分割されたモジュールからの再エクスポート
 export type { PerformanceMetrics } from "./performance-tracker.js";
 export { PerformanceTracker } from "./performance-tracker.js";
-export { inferClustersFromRDSName } from "./cluster-inference.js";
-export { scoreTasksByNaming, scoreTasksAgainstRDS } from "./task-scoring.js";
-export { loadAnalysisResults } from "./analysis-loader.js";
-
-// メイン推論関数とフォーマッタ
-export { inferECSTargets, formatInferenceResult } from "./main-inference.js";
+export { scoreTasksAgainstRDS, scoreTasksByNaming } from "./task-scoring.js";

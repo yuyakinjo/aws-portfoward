@@ -1,11 +1,11 @@
 import type { ECSClient } from "@aws-sdk/client-ecs";
 import { getECSClusters, getECSTasks } from "../aws-services.js";
 import type { ECSCluster, RDSInstance } from "../types.js";
-import { PerformanceTracker } from "./performance-tracker.js";
-import { inferClustersFromRDSName } from "./cluster-inference.js";
-import { scoreTasksByNaming, scoreTasksAgainstRDS } from "./task-scoring.js";
 import { loadAnalysisResults } from "./analysis-loader.js";
+import { inferClustersFromRDSName } from "./cluster-inference.js";
 import type { InferenceResult } from "./index.js";
+import { PerformanceTracker } from "./performance-tracker.js";
+import { scoreTasksAgainstRDS, scoreTasksByNaming } from "./task-scoring.js";
 
 /**
  * Infer ECS cluster and task recommendations for a given RDS instance
