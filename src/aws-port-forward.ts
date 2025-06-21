@@ -45,14 +45,6 @@ function generateReproducibleCommand(
 	return `npx ecs-pf connect --region ${region} --cluster ${cluster} --task ${task} --rds ${rds} --rds-port ${rdsPort} --local-port ${localPort}`;
 }
 
-/**
- * Get next available port starting from base port
- */
-function getNextAvailablePort(basePort: number): number {
-	// For now, return sequential ports. In a real implementation,
-	// you might want to check if ports are actually available
-	return basePort;
-}
 
 export async function connectToRDS(
 	options: ValidatedConnectOptions = {},
@@ -549,7 +541,7 @@ async function connectToRDSWithInferenceInternal(
 					return await searchTasks(tasks, input || "");
 				},
 				pageSize: 50,
-			})) as string;
+			}));
 
 			selectedTask = selectedTaskObject;
 		}
