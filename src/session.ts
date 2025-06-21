@@ -21,7 +21,7 @@ export async function startSSMSession(
 
   messages.empty();
   messages.success(
-    `🎯 RDS connection will be available at localhost:${localPort}`,
+    `RDS connection will be available at localhost:${localPort}`,
   );
   messages.warning("Press Ctrl+C to terminate the session");
   messages.empty();
@@ -53,9 +53,9 @@ export async function startSSMSession(
         if (!hasSessionStarted) {
           hasSessionStarted = true;
           clearTimeout(timeout);
-          messages.success("🎉 Port forwarding session started!");
+          messages.success("Port forwarding session started!");
           messages.info(
-            "✨ Connection is ready - you can now connect to your database",
+            "Connection is ready - you can now connect to your database",
           );
         }
       }
@@ -67,23 +67,23 @@ export async function startSSMSession(
 
       // Check for critical errors first
       if (output.includes("TargetNotConnected")) {
-        console.error("❌ Cannot connect to target");
+        console.error("Cannot connect to target");
         console.error(
-          "💡 Please verify that the ECS task is running and SSM Agent is enabled",
+          "Please verify that the ECS task is running and SSM Agent is enabled",
         );
         child.kill("SIGTERM");
         reject(new Error("Cannot connect to target"));
         return;
       } else if (output.includes("AccessDenied")) {
-        console.error("❌ Access denied");
-        console.error("💡 Please verify you have SSM-related IAM permissions");
+        console.error("Access denied");
+        console.error("Please verify you have SSM-related IAM permissions");
         child.kill("SIGTERM");
         reject(new Error("Access denied"));
         return;
       } else if (output.includes("InvalidTarget")) {
-        console.error("❌ Invalid target");
+        console.error("Invalid target");
         console.error(
-          "💡 Please verify the specified ECS task exists and is running",
+          "Please verify the specified ECS task exists and is running",
         );
         child.kill("SIGTERM");
         reject(new Error("Invalid target"));
@@ -96,7 +96,7 @@ export async function startSSMSession(
 
     child.on("error", (error) => {
       clearTimeout(timeout);
-      console.error("❌ Command execution error:", error.message);
+      console.error("Command execution error:", error.message);
 
       if (error.message.includes("ENOENT")) {
         reject(new Error("AWS CLI may not be installed"));
@@ -112,8 +112,8 @@ export async function startSSMSession(
 
       // Handle user termination (SIGINT/Ctrl+C) as normal termination
       if (signal === "SIGINT" || code === 130 || isUserTermination) {
-        messages.success("✅ Process completed successfully");
-        
+        messages.success("Process completed successfully");
+
         // Display commands after successful termination
         messages.empty();
         messages.info("Command to execute:");
@@ -124,20 +124,20 @@ export async function startSSMSession(
 
         // Display reproducible command if provided
         if (reproducibleCommand) {
-          messages.info("💡 To reproduce this connection, use:");
+          messages.info("To reproduce this connection, use:");
           messages.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
           messages.info(reproducibleCommand);
           messages.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
           messages.empty();
         }
-        
+
         resolve();
         return;
       }
 
       if (code === 0) {
-        messages.success("✅ Process completed successfully");
-        
+        messages.success("Process completed successfully");
+
         // Display commands after successful termination
         messages.empty();
         messages.info("Command to execute:");
@@ -148,13 +148,13 @@ export async function startSSMSession(
 
         // Display reproducible command if provided
         if (reproducibleCommand) {
-          messages.info("💡 To reproduce this connection, use:");
+          messages.info("To reproduce this connection, use:");
           messages.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
           messages.info(reproducibleCommand);
           messages.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
           messages.empty();
         }
-        
+
         resolve();
       } else {
         let errorMessage = `Session terminated with error code ${code}`;
@@ -163,17 +163,17 @@ export async function startSSMSession(
         switch (code) {
           case 1:
             errorMessage +=
-              "\n💡 General error. Please check your AWS CLI configuration and permissions";
+              "\nGeneral error. Please check your AWS CLI configuration and permissions";
             break;
           case 2:
-            errorMessage += "\n💡 Configuration file or parameter issue";
+            errorMessage += "\nConfiguration file or parameter issue";
             break;
           case 255:
             errorMessage +=
-              "\n💡 Connection error or timeout. Please check network connection and target status";
+              "\nConnection error or timeout. Please check network connection and target status";
             break;
           default:
-            errorMessage += "\n💡 Unexpected error. Please check AWS CLI logs";
+            errorMessage += "\nUnexpected error. Please check AWS CLI logs";
         }
 
         reject(new Error(errorMessage));
@@ -194,9 +194,9 @@ export async function startSSMSession(
     const timeout = setTimeout(() => {
       if (!hasSessionStarted) {
         hasSessionStarted = true;
-        messages.success("🎉 Port forwarding session should be active");
+        messages.success("Port forwarding session should be active");
         messages.info(
-          "💡 If connection fails, the session may still be starting. Please wait a moment and try again.",
+          "If connection fails, the session may still be starting. Please wait a moment and try again.",
         );
       }
     }, 5000);

@@ -48,19 +48,19 @@ export async function connectToRDS(
       displayFriendlyError(error);
 
       if (retryCount <= maxRetries) {
-        messages.warning(`🔄 Retry count: ${retryCount}/${maxRetries + 1}`);
+        messages.warning(`Retry count: ${retryCount}/${maxRetries + 1}`);
         const shouldRetry = await askRetry();
 
         if (!shouldRetry) {
-          messages.info("👋 Process interrupted");
+          messages.info("Process interrupted");
           return;
         }
 
-        messages.info("🔄 Retrying...\n");
+        messages.info("Retrying...\n");
       } else {
-        messages.error("❌ Maximum retry count reached. Terminating process.");
+        messages.error("Maximum retry count reached. Terminating process.");
         messages.gray(
-          "💡 If the problem persists, please check the above solutions.",
+          "If the problem persists, please check the above solutions.",
         );
         throw error;
       }
@@ -83,35 +83,35 @@ async function connectToRDSInternal(
 
   // Get ECS cluster
   const selectedCluster = await selectCluster(ecsClient, options);
-  messages.success(`✅ Cluster: ${selectedCluster.clusterName}`);
+  messages.success(`Cluster: ${selectedCluster.clusterName}`);
 
   // Get ECS task
   const selectedTask = await selectTask(ecsClient, selectedCluster, options);
-  messages.success(`✅ Task: ${selectedTask}`);
+  messages.success(`Task: ${selectedTask}`);
 
   // Get RDS instance
-  messages.warning("🔍 Getting RDS instances...");
+  messages.warning("Getting RDS instances...");
   const selectedRDS = await selectRDSInstance(rdsClient, options);
-  messages.success(`✅ RDS: ${selectedRDS.dbInstanceIdentifier}`);
+  messages.success(`RDS: ${selectedRDS.dbInstanceIdentifier}`);
 
   // Use RDS port automatically
   let rdsPort: string;
   if (options.rdsPort !== undefined) {
     rdsPort = `${options.rdsPort}`;
-    messages.success(`✅ RDS Port (from CLI): ${rdsPort}`);
+    messages.success(`RDS Port (from CLI): ${rdsPort}`);
   } else {
     // Automatically use the port from RDS instance, fallback to engine default
     const actualRDSPort = selectedRDS.port;
     const fallbackPort = getDefaultPortForEngine(selectedRDS.engine);
     rdsPort = `${actualRDSPort || fallbackPort}`;
-    messages.success(`✅ RDS Port (auto-detected): ${rdsPort}`);
+    messages.success(`RDS Port (auto-detected): ${rdsPort}`);
   }
 
   // Specify local port
   let localPort: string;
   if (options.localPort !== undefined) {
     localPort = `${options.localPort}`;
-    messages.success(`✅ Local Port (from CLI): ${localPort}`);
+    messages.success(`Local Port (from CLI): ${localPort}`);
   } else {
     localPort = await promptForLocalPort();
   }
@@ -127,7 +127,7 @@ async function connectToRDSInternal(
   );
 
   // Start SSM session
-  messages.success("🚀 Starting port forwarding session...");
+  messages.success("Starting port forwarding session...");
   messages.info("Selected task:");
   messages.info(selectedTask);
   await startSSMSession(
@@ -158,19 +158,19 @@ export async function connectToRDSWithInference(
       displayFriendlyError(error);
 
       if (retryCount <= maxRetries) {
-        messages.warning(`🔄 Retry count: ${retryCount}/${maxRetries + 1}`);
+        messages.warning(`Retry count: ${retryCount}/${maxRetries + 1}`);
         const shouldRetry = await askRetry();
 
         if (!shouldRetry) {
-          messages.info("👋 Process interrupted");
+          messages.info("Process interrupted");
           return;
         }
 
-        messages.info("🔄 Retrying...\n");
+        messages.info("Retrying...\n");
       } else {
-        messages.error("❌ Maximum retry count reached. Terminating process.");
+        messages.error("Maximum retry count reached. Terminating process.");
         messages.gray(
-          "💡 If the problem persists, please check the above solutions.",
+          "If the problem persists, please check the above solutions.",
         );
         throw error;
       }
@@ -187,7 +187,7 @@ async function connectToRDSWithInferenceInternal(
   // Get region
   const region = await selectRegion(options);
   // リージョン重複表示を削除
-  // messages.success(`✅ Region: ${region}`);
+  // messages.success(`Region: ${region}`);
 
   // Initialize AWS clients
   const ecsClient = new ECSClient({ region });
@@ -195,7 +195,7 @@ async function connectToRDSWithInferenceInternal(
 
   // Step 1: Select RDS instance first
   const selectedRDS = await selectRDSInstance(rdsClient, options);
-  messages.success(`✅ RDS: ${selectedRDS.dbInstanceIdentifier}`);
+  messages.success(`RDS: ${selectedRDS.dbInstanceIdentifier}`);
 
   const inferenceStartTime = performance.now();
   const inferenceResults = await inferECSTargets(ecsClient, selectedRDS, false); // パフォーマンス追跡を無効化
@@ -208,7 +208,7 @@ async function connectToRDSWithInferenceInternal(
   if (inferenceResults.length > 0) {
     // Show simple inference results summary
     messages.success(
-      `✨ Found ${inferenceResults.length} ECS targets in ${inferenceDuration}ms`,
+      `Found ${inferenceResults.length} ECS targets in ${inferenceDuration}ms`,
     );
     console.log();
 
@@ -224,12 +224,12 @@ async function connectToRDSWithInferenceInternal(
         selectedInference = matchingResult;
         selectedTask = matchingResult.task.taskArn;
         messages.success(
-          `✅ Using CLI specified target: ${formatInferenceResult(matchingResult)}`,
+          `Using CLI specified target: ${formatInferenceResult(matchingResult)}`,
         );
       } else {
         // CLI options don't match inference, show warning and let user choose
         messages.warning(
-          `⚠️ CLI specified cluster/task not found in recommendations. Showing all options:`,
+          `CLI specified cluster/task not found in recommendations. Showing all options:`,
         );
         selectedInference = await promptForInferenceResult(inferenceResults);
         selectedTask = selectedInference.task.taskArn;
@@ -241,21 +241,21 @@ async function connectToRDSWithInferenceInternal(
     }
 
     messages.success(
-      `✅ Selected: ${formatInferenceResult(selectedInference)}`,
+      `Selected: ${formatInferenceResult(selectedInference)}`,
     );
   } else {
     // No inference results, fall back to manual selection
     messages.warning(
-      "⚠️ No specific recommendations found. Manual selection required.",
+      "No specific recommendations found. Manual selection required.",
     );
 
     // Get ECS cluster manually
     const selectedCluster = await selectCluster(ecsClient, options);
-    messages.success(`✅ Cluster: ${selectedCluster.clusterName}`);
+    messages.success(`Cluster: ${selectedCluster.clusterName}`);
 
     // Get ECS task manually
     selectedTask = await selectTask(ecsClient, selectedCluster, options);
-    messages.success(`✅ Task: ${selectedTask}`);
+    messages.success(`Task: ${selectedTask}`);
 
     // Create a dummy inference result for consistency
     const dummyTask: ECSTask = {
@@ -283,19 +283,19 @@ async function connectToRDSWithInferenceInternal(
   let rdsPort: string;
   if (options.rdsPort !== undefined) {
     rdsPort = `${options.rdsPort}`;
-    messages.success(`✅ RDS Port (from CLI): ${rdsPort}`);
+    messages.success(`RDS Port (from CLI): ${rdsPort}`);
   } else {
     const actualRDSPort = selectedRDS.port;
     const fallbackPort = getDefaultPortForEngine(selectedRDS.engine);
     rdsPort = `${actualRDSPort || fallbackPort}`;
-    messages.success(`✅ RDS Port (auto-detected): ${rdsPort}`);
+    messages.success(`RDS Port (auto-detected): ${rdsPort}`);
   }
 
   // Specify local port
   let localPort: string;
   if (options.localPort !== undefined) {
     localPort = `${options.localPort}`;
-    messages.success(`✅ Local Port (from CLI): ${localPort}`);
+    messages.success(`Local Port (from CLI): ${localPort}`);
   } else {
     localPort = await promptForLocalPort();
   }
@@ -330,16 +330,16 @@ async function displayConnectionDetails(
   selectedInference: InferenceResult,
   localPort: string,
 ): Promise<void> {
-  messages.success("🚀 Starting port forwarding session...");
+  messages.success("Starting port forwarding session...");
 
   // Calculate connection establishment time
   const connectionStartTime = performance.now();
 
   // Display connection information in a beautiful format
   console.log();
-  console.log("🎉 \x1b[1m\x1b[32mConnection Established!\x1b[0m");
+  console.log("\x1b[1m\x1b[32mConnection Established!\x1b[0m");
   console.log("┌──────────────────────────────────────────────┐");
-  console.log("│  🔗 \x1b[1mConnection Details\x1b[0m                    │");
+  console.log("│  \x1b[1mConnection Details\x1b[0m                    │");
   console.log("├──────────────────────────────────────────────┤");
   console.log(`│  Host: \x1b[36mlocalhost\x1b[0m                        │`);
   console.log(
@@ -358,7 +358,7 @@ async function displayConnectionDetails(
   console.log();
 
   // Show database connection examples
-  console.log("💡 \x1b[1mDatabase connection examples:\x1b[0m");
+  console.log("\x1b[1mDatabase connection examples:\x1b[0m");
   if (selectedRDS.engine.includes("postgres")) {
     console.log(
       `   PostgreSQL: \x1b[33mpsql -h localhost -p ${localPort} -U [username] -d [database]\x1b[0m`,
@@ -375,6 +375,6 @@ async function displayConnectionDetails(
     );
   }
   console.log();
-  console.log("✨ \x1b[1mPress Ctrl+C to disconnect\x1b[0m");
+  console.log("\x1b[1mPress Ctrl+C to disconnect\x1b[0m");
   console.log();
 }

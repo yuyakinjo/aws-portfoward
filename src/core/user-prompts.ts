@@ -20,7 +20,7 @@ export async function promptForRegion(
   messages.info("filtered as you type (↑↓ to select, Enter to confirm)");
 
   return await search({
-    message: "🌍 Search and select AWS region:",
+    message: "Search and select AWS region:",
     source: async (input) => {
       return await searchRegions(regions, input || "", defaultRegion);
     },
@@ -38,7 +38,7 @@ export async function promptForCluster(
   messages.info("filtered as you type (↑↓ to select, Enter to confirm)");
 
   return (await search({
-    message: "🔍 Search and select ECS cluster:",
+    message: "Search and select ECS cluster:",
     source: async (input) => {
       return await searchClusters(clusters, input || "");
     },
@@ -52,7 +52,7 @@ export async function promptForCluster(
 export async function promptForTask(tasks: ECSTask[]): Promise<string> {
   // Select ECS task with zoxide-style real-time search
   return (await search({
-    message: "🔍 Search and select ECS task:",
+    message: "Search and select ECS task:",
     source: async (input) => {
       return await searchTasks(tasks, input || "");
     },
@@ -68,7 +68,7 @@ export async function promptForRDS(
 ): Promise<RDSInstance> {
   // Select RDS instance with zoxide-style real-time search
   return (await search({
-    message: "🔍 Search and select RDS instance:",
+    message: "Search and select RDS instance:",
     source: async (input) => {
       return await searchRDS(rdsInstances, input || "");
     },
@@ -86,7 +86,7 @@ export async function promptForInferenceResult(
 
   return (await search({
     message:
-      "🎯 Select ECS target (filter with keywords like 'prod web' or 'staging api'):",
+      "Select ECS target (filter with keywords like 'prod web' or 'staging api'):",
     source: async (input) => {
       return filterInferenceResults(inferenceResults, input || "").map(
         (result) => {
@@ -95,7 +95,7 @@ export async function promptForInferenceResult(
             name: formatInferenceResult(result),
             value: result,
             // Removed description to clean up UI
-            disabled: isUnavailable ? "⚠️ タスク停止中 - 選択不可" : undefined,
+            disabled: isUnavailable ? "Task stopped - Cannot select" : undefined,
           };
         },
       );

@@ -60,9 +60,9 @@ export class PerformanceTracker {
     report += `${"Total".padEnd(30)} ${total.toFixed(0).padStart(6)}ms (100.0%)\n`;
 
     if (total > 3000) {
-      report += "\n⚠️  Warning: Total time exceeds 3 seconds threshold\n";
+      report += "\nWarning: Total time exceeds 3 seconds threshold\n";
     } else {
-      report += "\n✅ Performance within acceptable range (<3s)\n";
+      report += "\nPerformance within acceptable range (<3s)\n";
     }
 
     return report;

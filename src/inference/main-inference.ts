@@ -40,7 +40,7 @@ export async function inferECSTargets(
 
     // 詳細なクラスター情報表示を削除
     // console.log(
-    //   `🎯 RDS "${rdsInstance.dbInstanceIdentifier}" から推論されたクラスター: ${likelyClusterNames.length}個`,
+    //   `RDS "${rdsInstance.dbInstanceIdentifier}" から推論されたクラスター: ${likelyClusterNames.length}個`,
     // );
     tracker.endStep();
 
@@ -141,7 +141,7 @@ export async function inferECSTargets(
 
     // Debug: 推論結果のサマリーを表示
     if (enablePerformanceTracking) {
-      console.log(`\n📊 推論結果サマリー:`);
+      console.log(`\n推論結果サマリー:`);
       console.log(`  - 推論クラスター: ${likelyClusterNames.length}個`);
       console.log(`  - 検索済みタスク: ${results.length}個`);
       console.log(`  - 接続可能: ${validResults.length}個`);

@@ -17,7 +17,7 @@ registerAllCommands(program);
 // Catch unhandled promise rejections
 process.on("unhandledRejection", (reason) => {
   messages.empty();
-  messages.error("❌ An unexpected error occurred");
+  messages.error("An unexpected error occurred");
   displayFriendlyError(reason);
   process.exit(1);
 });
@@ -25,7 +25,7 @@ process.on("unhandledRejection", (reason) => {
 // Catch uncaught exceptions
 process.on("uncaughtException", (error) => {
   messages.empty();
-  messages.error("❌ A critical error occurred");
+  messages.error("A critical error occurred");
   displayFriendlyError(error);
   process.exit(1);
 });

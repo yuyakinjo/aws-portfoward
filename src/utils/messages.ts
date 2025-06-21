@@ -30,7 +30,10 @@ export const messages = {
   },
 
   // Clear and replace the last line
-  clearAndReplace: (newMessage: string, color: 'info' | 'success' | 'error' | 'warning' = 'success') => {
+  clearAndReplace: (
+    newMessage: string,
+    color: "info" | "success" | "error" | "warning" = "success",
+  ) => {
     process.stdout.write("\x1b[1A"); // Move cursor up
     process.stdout.write("\x1b[2K"); // Clear entire line
     process.stdout.write("\r"); // Move to start of line

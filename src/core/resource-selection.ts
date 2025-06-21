@@ -44,7 +44,7 @@ export async function selectRegion(
   options: ValidatedConnectOptions,
 ): Promise<string> {
   if (options.region) {
-    messages.success(`✅ Region (from CLI): ${options.region}`);
+    messages.success(`Region (from CLI): ${options.region}`);
     return options.region;
   }
 
@@ -62,7 +62,7 @@ export async function selectRegion(
   // Initialize EC2 client with default region to get region list
   const defaultEc2Client = new EC2Client({ region: "us-east-1" });
 
-  messages.warning("🌍 Getting available AWS regions...");
+  messages.warning("Getting available AWS regions...");
   const regions = await getAWSRegions(defaultEc2Client);
 
   if (isEmpty(regions)) {
@@ -71,14 +71,14 @@ export async function selectRegion(
 
   // デフォルトリージョンがある場合は優先表示
   if (defaultRegion) {
-    messages.info(`💡 Default region from AWS config: ${defaultRegion}`);
+    messages.info(`Default region from AWS config: ${defaultRegion}`);
   }
 
   // Select AWS region with zoxide-style real-time search
   messages.info("filtered as you type (↑↓ to select, Enter to confirm)");
 
   const region = await search({
-    message: "🌍 Search and select AWS region:",
+    message: "Search and select AWS region:",
     source: async (input) => {
       return await searchRegions(regions, input || "", defaultRegion);
     },
@@ -86,7 +86,7 @@ export async function selectRegion(
   });
 
   // リージョン選択後の重複メッセージを削除
-  // messages.success(`✅ Region: ${region}`);
+  // messages.success(`Region: ${region}`);
   return region;
 }
 
@@ -98,17 +98,17 @@ export async function selectCluster(
   options: ValidatedConnectOptions,
 ): Promise<ECSCluster> {
   if (options.cluster) {
-    messages.warning("🔍 Getting ECS clusters...");
+    messages.warning("Getting ECS clusters...");
     const clusters = await getECSClusters(ecsClient);
     const cluster = clusters.find((c) => c.clusterName === options.cluster);
     if (!cluster) {
       throw new Error(`ECS cluster not found: ${options.cluster}`);
     }
-    messages.success(`✅ Cluster (from CLI): ${options.cluster}`);
+    messages.success(`Cluster (from CLI): ${options.cluster}`);
     return cluster;
   }
 
-  messages.warning("🔍 Getting ECS clusters...");
+  messages.warning("Getting ECS clusters...");
   const clusters = await getECSClusters(ecsClient);
 
   if (clusters.length === 0) {
@@ -119,7 +119,7 @@ export async function selectCluster(
   messages.info("filtered as you type (↑↓ to select, Enter to confirm)");
 
   const selectedCluster = (await search({
-    message: "🔍 Search and select ECS cluster:",
+    message: "Search and select ECS cluster:",
     source: async (input) => {
       return await searchClusters(clusters, input || "");
     },
@@ -138,11 +138,11 @@ export async function selectTask(
   options: ValidatedConnectOptions,
 ): Promise<string> {
   if (options.task) {
-    messages.success(`✅ Task (from CLI): ${options.task}`);
+    messages.success(`Task (from CLI): ${options.task}`);
     return options.task;
   }
 
-  messages.warning("🔍 Getting ECS tasks...");
+  messages.warning("Getting ECS tasks...");
   const tasks = await getECSTasks(ecsClient, cluster);
 
   if (tasks.length === 0) {
@@ -151,7 +151,7 @@ export async function selectTask(
 
   // Select ECS task with zoxide-style real-time search
   const selectedTask = (await search({
-    message: "🔍 Search and select ECS task:",
+    message: "Search and select ECS task:",
     source: async (input) => {
       return await searchTasks(tasks, input || "");
     },
@@ -169,7 +169,7 @@ export async function selectRDSInstance(
   options: ValidatedConnectOptions,
 ): Promise<RDSInstance> {
   if (options.rds) {
-    messages.warning("🔍 Getting RDS instances...");
+    messages.warning("Getting RDS instances...");
     const rdsInstances = await getRDSInstances(rdsClient);
     const rdsInstance = rdsInstances.find(
       (r) => r.dbInstanceIdentifier === options.rds,
@@ -177,11 +177,11 @@ export async function selectRDSInstance(
     if (!rdsInstance) {
       throw new Error(`RDS instance not found: ${options.rds}`);
     }
-    messages.success(`✅ RDS (from CLI): ${options.rds}`);
+    messages.success(`RDS (from CLI): ${options.rds}`);
     return rdsInstance;
   }
 
-  messages.warning("🔍 Getting RDS instances...");
+  messages.warning("Getting RDS instances...");
   const rdsInstances = await getRDSInstances(rdsClient);
 
   if (rdsInstances.length === 0) {
@@ -190,7 +190,7 @@ export async function selectRDSInstance(
 
   // Select RDS instance with zoxide-style real-time search
   const selectedRDS = (await search({
-    message: "🔍 Search and select RDS instance:",
+    message: "Search and select RDS instance:",
     source: async (input) => {
       return await searchRDS(rdsInstances, input || "");
     },
@@ -209,7 +209,7 @@ export async function getRDSPort(
 ): Promise<string> {
   if (options.rdsPort !== undefined) {
     const rdsPort = `${options.rdsPort}`;
-    messages.success(`✅ RDS Port (from CLI): ${rdsPort}`);
+    messages.success(`RDS Port (from CLI): ${rdsPort}`);
     return rdsPort;
   }
 
@@ -217,7 +217,7 @@ export async function getRDSPort(
   const actualRDSPort = rdsInstance.port;
   const fallbackPort = getDefaultPortForEngine(rdsInstance.engine);
   const rdsPort = `${actualRDSPort || fallbackPort}`;
-  messages.success(`✅ RDS Port (auto-detected): ${rdsPort}`);
+  messages.success(`RDS Port (auto-detected): ${rdsPort}`);
   return rdsPort;
 }
 
@@ -229,19 +229,19 @@ export async function getLocalPort(
 ): Promise<string> {
   if (options.localPort !== undefined) {
     const localPort = `${options.localPort}`;
-    messages.success(`✅ Local Port (from CLI): ${localPort}`);
+    messages.success(`Local Port (from CLI): ${localPort}`);
     return localPort;
   }
 
   // Automatically find available port starting from 8888
   try {
     const availablePort = await findAvailablePort(8888);
-    messages.success(`✅ Local Port (auto-selected): ${availablePort}`);
+    messages.success(`Local Port (auto-selected): ${availablePort}`);
     return `${availablePort}`;
   } catch {
     // Fallback to asking user if automatic port finding fails
     messages.warning(
-      "⚠️ Could not find available port automatically. Please specify manually:",
+      "Could not find available port automatically. Please specify manually:",
     );
     const localPort = await input({
       message: "Enter local port number:",

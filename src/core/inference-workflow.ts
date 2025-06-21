@@ -90,7 +90,7 @@ export async function runInferenceWorkflow(
 
   if (inferenceResults.length > 0) {
     // Show simple inference results summary
-    messages.success(`✨ Found ${inferenceResults.length} ECS targets`);
+    messages.success(`Found ${inferenceResults.length} ECS targets`);
     console.log();
 
     if (options.cluster && options.task) {
@@ -106,16 +106,16 @@ export async function runInferenceWorkflow(
         selectedTask = matchingResult.task.taskArn;
         selectedCluster = matchingResult.cluster;
         messages.success(
-          `✅ Using CLI specified target: ${formatInferenceResult(matchingResult)}`,
+          `Using CLI specified target: ${formatInferenceResult(matchingResult)}`,
         );
       } else {
         // CLI options don't match inference, show warning and let user choose
         messages.warning(
-          `⚠️ CLI specified cluster/task not found in recommendations. Showing all options:`,
+          `CLI specified cluster/task not found in recommendations. Showing all options:`,
         );
         selectedInference = (await search({
           message:
-            "🎯 Select ECS target (filter with keywords like 'prod web' or 'staging api'):",
+            "Select ECS target (filter with keywords like 'prod web' or 'staging api'):",
           source: async (input) => {
             return filterInferenceResults(inferenceResults, input || "").map(
               (result) => {
@@ -125,7 +125,7 @@ export async function runInferenceWorkflow(
                   value: result,
                   // Removed description to clean up UI
                   disabled: isUnavailable
-                    ? "⚠️ タスク停止中 - 選択不可"
+                    ? "Task stopped - Cannot select"
                     : undefined,
                 };
               },
@@ -140,7 +140,7 @@ export async function runInferenceWorkflow(
       // Let user choose from recommendations
       selectedInference = (await search({
         message:
-          "🎯 Select ECS target (filter with keywords like 'prod web' or 'staging api'):",
+          "Select ECS target (filter with keywords like 'prod web' or 'staging api'):",
         source: async (input) => {
           return filterInferenceResults(inferenceResults, input || "").map(
             (result) => {
@@ -150,7 +150,7 @@ export async function runInferenceWorkflow(
                 value: result,
                 // Removed description to clean up UI
                 disabled: isUnavailable
-                  ? "⚠️ タスク停止中 - 選択不可"
+                  ? "Task stopped - Cannot select"
                   : undefined,
               };
             },
@@ -163,12 +163,12 @@ export async function runInferenceWorkflow(
     }
 
     messages.success(
-      `✅ Selected: ${formatInferenceResult(selectedInference)}`,
+      `Selected: ${formatInferenceResult(selectedInference)}`,
     );
   } else {
     // No inference results, fall back to manual selection
     messages.warning(
-      "⚠️ No specific recommendations found. Manual selection required.",
+      "No specific recommendations found. Manual selection required.",
     );
 
     // Get ECS cluster manually
