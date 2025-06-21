@@ -720,7 +720,7 @@ async function connectToRDSWithSimpleUIInternal(
   } else {
     // Show initial UI state
     messages.ui.displaySelectionState(selections);
-    
+
     console.log(chalk.yellow("Getting available AWS regions..."));
     const regions = await getAWSRegions(defaultEc2Client);
 
@@ -782,7 +782,7 @@ async function connectToRDSWithSimpleUIInternal(
       },
       pageSize: 15,
     })) as RDSInstance;
-    
+
     selections.rds = selectedRDS.dbInstanceIdentifier;
   }
 
@@ -796,7 +796,9 @@ async function connectToRDSWithSimpleUIInternal(
   messages.ui.displaySelectionState(selections);
 
   // Step 4: ECS Target Selection with Inference
-  console.log(chalk.yellow("Finding ECS targets that can connect to this RDS..."));
+  console.log(
+    chalk.yellow("Finding ECS targets that can connect to this RDS..."),
+  );
   const inferenceResults = await inferECSTargets(ecsClient, selectedRDS, false);
   let selectedInference: InferenceResult;
   let selectedTask: string;
@@ -806,8 +808,10 @@ async function connectToRDSWithSimpleUIInternal(
     process.stdout.write("\x1b[1A");
     process.stdout.write("\x1b[2K");
     process.stdout.write("\r");
-    
-    console.log(chalk.green(`Found ${inferenceResults.length} potential ECS targets`));
+
+    console.log(
+      chalk.green(`Found ${inferenceResults.length} potential ECS targets`),
+    );
     console.log();
 
     if (options.cluster && options.task) {
@@ -833,7 +837,9 @@ async function connectToRDSWithSimpleUIInternal(
                 return {
                   name: formatInferenceResult(result),
                   value: result,
-                  disabled: isUnavailable ? "Task stopped - Cannot select" : undefined,
+                  disabled: isUnavailable
+                    ? "Task stopped - Cannot select"
+                    : undefined,
                 };
               },
             );
@@ -854,7 +860,9 @@ async function connectToRDSWithSimpleUIInternal(
               return {
                 name: formatInferenceResult(result),
                 value: result,
-                disabled: isUnavailable ? "Task stopped - Cannot select" : undefined,
+                disabled: isUnavailable
+                  ? "Task stopped - Cannot select"
+                  : undefined,
               };
             },
           );
@@ -866,7 +874,9 @@ async function connectToRDSWithSimpleUIInternal(
       selections.ecsCluster = selectedInference.cluster.clusterName;
     }
   } else {
-    throw new Error("No ECS targets found that can connect to this RDS instance");
+    throw new Error(
+      "No ECS targets found that can connect to this RDS instance",
+    );
   }
 
   // Update UI with ECS target selection
@@ -880,7 +890,7 @@ async function connectToRDSWithSimpleUIInternal(
       console.log(chalk.yellow("Finding available local port..."));
       const availablePort = await findAvailablePort(8888);
       selections.localPort = `${availablePort}`;
-      
+
       // Clear the loading message
       process.stdout.write("\x1b[1A");
       process.stdout.write("\x1b[2K");
@@ -901,7 +911,7 @@ async function connectToRDSWithSimpleUIInternal(
 
   // Final display with all selections complete
   messages.ui.displaySelectionState(selections);
-  
+
   console.log(chalk.green("All configurations selected!"));
   console.log(chalk.yellow("Starting port forwarding session..."));
   console.log();

@@ -78,9 +78,7 @@ export function registerConnectInferenceCommand(program: Command): void {
           process.exit(1);
         }
 
-        messages.info(
-          "Starting AWS ECS RDS connection tool with inference...",
-        );
+        messages.info("Starting AWS ECS RDS connection tool with inference...");
         await connectToRDSWithInference(output);
         messages.success("Process completed successfully");
       } catch (error) {

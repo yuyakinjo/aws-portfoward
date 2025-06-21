@@ -95,7 +95,9 @@ export async function promptForInferenceResult(
             name: formatInferenceResult(result),
             value: result,
             // Removed description to clean up UI
-            disabled: isUnavailable ? "Task stopped - Cannot select" : undefined,
+            disabled: isUnavailable
+              ? "Task stopped - Cannot select"
+              : undefined,
           };
         },
       );
