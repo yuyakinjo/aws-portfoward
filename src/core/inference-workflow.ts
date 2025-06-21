@@ -1,12 +1,10 @@
 import type { ECSClient } from "@aws-sdk/client-ecs";
 import { search } from "@inquirer/prompts";
-import { getECSClusters, getECSTasks } from "../aws-services.js";
 import {
-  inferECSTargets,
   formatInferenceResult,
   type InferenceResult,
+  inferECSTargets,
 } from "../inference/index.js";
-import { searchClusters, searchTasks } from "../search.js";
 import type {
   ECSCluster,
   RDSInstance,
