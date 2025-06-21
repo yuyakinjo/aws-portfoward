@@ -8,7 +8,7 @@ A modern CLI tool for connecting to RDS databases through AWS ECS tasks using SS
 ## Features
 
 - **Step-by-step UI**: Clean, guided workflow with progressive disclosure
-- **ECS Exec filtering**: Automatically excludes clusters without ECS exec capability  
+- **ECS Exec filtering**: Automatically excludes clusters without ECS exec capability
 - **Auto-detection**: RDS port and ECS cluster information filled automatically
 - **Multiple workflows**: Choose between guided UI or traditional manual selection
 - **Real-time search**: Fuzzy search for all AWS resources
@@ -140,7 +140,7 @@ postgresql://username:password@localhost:8888/database_name
 ```bash
 mysql -h localhost -P 8888 -u username -p database_name
 
-# Connection string format  
+# Connection string format
 mysql://username:password@localhost:8888/database_name
 ```
 
