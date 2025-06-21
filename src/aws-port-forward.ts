@@ -546,8 +546,13 @@ async function connectToRDSWithInferenceInternal(
 		}
 		console.log();
 
-		// Add hint about filtering functionality
-		messages.info("💡 Tip: You can filter results using space-separated keywords (e.g., 'prod web', 'staging api')");
+		// Add comprehensive hint about filtering functionality
+		messages.info("💡 Filter Examples:");
+		console.log("   🔍 'prod web' - production web services");
+		console.log("   🔍 'staging api' - staging API tasks");
+		console.log("   🔍 'high env' - high confidence environment matches");
+		console.log("   🔍 'naming 中' - medium confidence naming matches");
+		console.log("   🔍 'running' - only running tasks");
 		console.log();
 
 		if (options.cluster && options.task) {
@@ -570,7 +575,7 @@ async function connectToRDSWithInferenceInternal(
 					`⚠️ CLI specified cluster/task not found in recommendations. Showing all options:`,
 				);
 				selectedInference = (await search({
-					message: "🎯 Select recommended ECS target (space-separated keywords to filter):",
+					message: "🎯 Select ECS target (filter with keywords like 'prod web' or 'staging api'):",
 					source: async (input) => {
 						return filterInferenceResults(inferenceResults, input || "")
 							.map((result) => {
@@ -590,7 +595,7 @@ async function connectToRDSWithInferenceInternal(
 		} else {
 			// Let user choose from recommendations
 			selectedInference = (await search({
-				message: "🎯 Select recommended ECS target (space-separated keywords to filter):",
+				message: "🎯 Select ECS target (filter with keywords like 'prod web' or 'staging api'):",
 				source: async (input) => {
 					return filterInferenceResults(inferenceResults, input || "")
 						.map((result) => {
@@ -811,7 +816,7 @@ async function connectToRDSWithInferenceInternal(
  * Filter inference results using space-separated keywords
  * Supports both English and Japanese search terms
  * Searches through cluster name, task name, service name, method, confidence, and reason
- * 
+ *
  * Examples:
  * - "prod web" - finds tasks in production clusters with web services
  * - "staging api" - finds staging API tasks
