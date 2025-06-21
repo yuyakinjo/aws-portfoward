@@ -20,23 +20,6 @@ export async function startSSMSession(
   const commandString = `aws ssm start-session --target ${taskArn} --parameters '${parametersJson}' --document-name AWS-StartPortForwardingSessionToRemoteHost`;
 
   messages.empty();
-  messages.info("Command to execute:");
-  messages.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-  messages.info(commandString);
-  messages.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-  messages.empty();
-
-  // Display reproducible command if provided
-  if (reproducibleCommand) {
-    messages.empty();
-    messages.info("💡 To reproduce this connection, use:");
-    messages.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-    messages.info(reproducibleCommand);
-    messages.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-    messages.empty();
-  }
-
-  messages.empty();
   messages.success(
     `🎯 RDS connection will be available at localhost:${localPort}`,
   );
@@ -129,13 +112,49 @@ export async function startSSMSession(
 
       // Handle user termination (SIGINT/Ctrl+C) as normal termination
       if (signal === "SIGINT" || code === 130 || isUserTermination) {
-        messages.success("✅ Session terminated by user");
+        messages.success("✅ Process completed successfully");
+        
+        // Display commands after successful termination
+        messages.empty();
+        messages.info("Command to execute:");
+        messages.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        messages.info(commandString);
+        messages.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        messages.empty();
+
+        // Display reproducible command if provided
+        if (reproducibleCommand) {
+          messages.info("💡 To reproduce this connection, use:");
+          messages.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+          messages.info(reproducibleCommand);
+          messages.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+          messages.empty();
+        }
+        
         resolve();
         return;
       }
 
       if (code === 0) {
-        messages.success("✅ Session terminated successfully");
+        messages.success("✅ Process completed successfully");
+        
+        // Display commands after successful termination
+        messages.empty();
+        messages.info("Command to execute:");
+        messages.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        messages.info(commandString);
+        messages.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        messages.empty();
+
+        // Display reproducible command if provided
+        if (reproducibleCommand) {
+          messages.info("💡 To reproduce this connection, use:");
+          messages.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+          messages.info(reproducibleCommand);
+          messages.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+          messages.empty();
+        }
+        
         resolve();
       } else {
         let errorMessage = `Session terminated with error code ${code}`;

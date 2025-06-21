@@ -28,6 +28,7 @@
     "build:tsc": "npx tsc --project tsconfig.build.json",
     "start": "node dist/cli.js connect",
     "type-check": "tsc --noEmit",
+    "test": "npm run type-check && npm run build",
     "prepublishOnly": "npm run check",
     "format": "biome format --write",
     "format:check": "biome format",
