@@ -89,10 +89,7 @@ export async function runInferenceWorkflow(
   // Step 2: Infer ECS targets based on selected RDS
   messages.warning("🔮 Inferring ECS targets based on RDS selection...");
 
-  const inferenceStartTime = performance.now();
   const inferenceResults = await inferECSTargets(ecsClient, selectedRDS, false); // パフォーマンス追跡を無効化
-  const inferenceEndTime = performance.now();
-  const inferenceDuration = Math.round(inferenceEndTime - inferenceStartTime);
 
   let selectedInference: InferenceResult | undefined;
   let selectedTask: string;
@@ -100,61 +97,16 @@ export async function runInferenceWorkflow(
 
   if (inferenceResults.length > 0) {
     // Show simple inference results summary
-    messages.success(
-      `✨ Found ${inferenceResults.length} ECS targets in ${inferenceDuration}ms`,
-    );
+    messages.success(`✨ Found ${inferenceResults.length} ECS targets`);
     console.log();
-
-    // Show brief summary of inference results
-    const highConfidenceResults = inferenceResults.filter(
-      (r) => r.confidence === "high",
-    );
-    const mediumConfidenceResults = inferenceResults.filter(
-      (r) => r.confidence === "medium",
-    );
-    const lowConfidenceResults = inferenceResults.filter(
-      (r) => r.confidence === "low",
-    );
-
-    // Show simple summary
-    const validLowCount = lowConfidenceResults.filter(
-      (r) => !r.reason.includes("接続不可"),
-    ).length;
-    const invalidLowCount = lowConfidenceResults.filter((r) =>
-      r.reason.includes("接続不可"),
-    ).length;
-
-    console.log(`📊 Found ${inferenceResults.length} ECS targets:`);
-    if (highConfidenceResults.length > 0) {
-      console.log(`   🎯 High confidence: ${highConfidenceResults.length}個`);
-    }
-    if (mediumConfidenceResults.length > 0) {
-      console.log(
-        `   ⭐ Medium confidence: ${mediumConfidenceResults.length}個`,
-      );
-    }
-    if (validLowCount > 0) {
-      console.log(
-        `   🔧 Low confidence: ${validLowCount}個${invalidLowCount > 0 ? ` (${invalidLowCount}個停止中)` : ""}`,
-      );
-    }
 
     // Show recommendation
     const recommendedResult = inferenceResults[0];
     if (recommendedResult) {
       console.log(
-        `🎯 \x1b[1m\x1b[36mRecommended\x1b[0m: ${recommendedResult.cluster.clusterName} → ${recommendedResult.task.displayName} (${recommendedResult.confidence} confidence)`,
+        `🎯 \x1b[1m\x1b[36mRecommended\x1b[0m: ${recommendedResult.cluster.clusterName} → ${recommendedResult.task.displayName}`,
       );
     }
-    console.log();
-
-    // Add comprehensive hint about filtering functionality
-    messages.info("💡 Filter Examples:");
-    console.log("   🔍 'prod web' - production web services");
-    console.log("   🔍 'staging api' - staging API tasks");
-    console.log("   🔍 'high env' - high confidence environment matches");
-    console.log("   🔍 'naming 中' - medium confidence naming matches");
-    console.log("   🔍 'running' - only running tasks");
     console.log();
 
     if (options.cluster && options.task) {
