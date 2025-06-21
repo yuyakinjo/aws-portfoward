@@ -825,7 +825,7 @@ async function connectToRDSWithSimpleUIInternal(
       if (matchingResult) {
         selectedInference = matchingResult;
         selectedTask = matchingResult.task.taskArn;
-        selections.ecsTarget = `${matchingResult.cluster.clusterName} → ${matchingResult.task.displayName}`;
+        selections.ecsTarget = matchingResult.task.displayName;
         selections.ecsCluster = matchingResult.cluster.clusterName;
       } else {
         selectedInference = (await search({
@@ -847,7 +847,7 @@ async function connectToRDSWithSimpleUIInternal(
           pageSize: 10,
         })) as InferenceResult;
         selectedTask = selectedInference.task.taskArn;
-        selections.ecsTarget = `${selectedInference.cluster.clusterName} → ${selectedInference.task.displayName}`;
+        selections.ecsTarget = selectedInference.task.displayName;
         selections.ecsCluster = selectedInference.cluster.clusterName;
       }
     } else {
@@ -870,7 +870,7 @@ async function connectToRDSWithSimpleUIInternal(
         pageSize: 10,
       })) as InferenceResult;
       selectedTask = selectedInference.task.taskArn;
-      selections.ecsTarget = `${selectedInference.cluster.clusterName} → ${selectedInference.task.displayName}`;
+      selections.ecsTarget = selectedInference.task.displayName;
       selections.ecsCluster = selectedInference.cluster.clusterName;
     }
   } else {
