@@ -91,7 +91,7 @@ export async function runInferenceWorkflow(
   if (inferenceResults.length > 0) {
     // Show simple inference results summary
     messages.success(`Found ${inferenceResults.length} ECS targets`);
-    console.log();
+    messages.empty();
 
     if (options.cluster && options.task) {
       // Try to find matching inference result
@@ -162,9 +162,7 @@ export async function runInferenceWorkflow(
       selectedCluster = selectedInference.cluster;
     }
 
-    messages.success(
-      `Selected: ${formatInferenceResult(selectedInference)}`,
-    );
+    messages.success(`Selected: ${formatInferenceResult(selectedInference)}`);
   } else {
     // No inference results, fall back to manual selection
     messages.warning(

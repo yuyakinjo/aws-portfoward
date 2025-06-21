@@ -397,7 +397,7 @@ async function connectToRDSWithInferenceInternal(
     messages.success(
       `Found ${inferenceResults.length} ECS targets in ${inferenceDuration}ms`,
     );
-    console.log();
+    messages.empty();
 
     // 統計詳細、Recommended、Filter Examples を削除
 
@@ -471,9 +471,7 @@ async function connectToRDSWithInferenceInternal(
       messages.clearLines(2); // Clear "Found X ECS targets..." and "filtered as you type"
     }
 
-    messages.success(
-      `Selected: ${formatInferenceResult(selectedInference)}`,
-    );
+    messages.success(`Selected: ${formatInferenceResult(selectedInference)}`);
   } else {
     // No inference results, fall back to manual selection
     messages.warning(
@@ -612,7 +610,7 @@ async function connectToRDSWithInferenceInternal(
   messages.success("Starting port forwarding session...");
 
   // Display connection information in a beautiful format
-  console.log();
+  messages.empty();
   console.log("\x1b[1m\x1b[32mConnection Established!\x1b[0m");
   console.log("┌──────────────────────────────────────────────┐");
   console.log("│  \x1b[1mConnection Details\x1b[0m                    │");
@@ -631,7 +629,7 @@ async function connectToRDSWithInferenceInternal(
     `│  Target: \x1b[36m${selectedInference.cluster.clusterName}\x1b[0m → \x1b[36m${selectedInference.task.displayName}\x1b[0m │`,
   );
   console.log("└──────────────────────────────────────────────┘");
-  console.log();
+  messages.empty();
 
   // Show database connection examples
   console.log("\x1b[1mDatabase connection examples:\x1b[0m");
@@ -650,9 +648,6 @@ async function connectToRDSWithInferenceInternal(
       `   Connection String: \x1b[33mmysql://[user]:[pass]@localhost:${localPort}/[db]\x1b[0m`,
     );
   }
-  console.log();
-  console.log("\x1b[1mPress Ctrl+C to disconnect\x1b[0m");
-  console.log();
 
   await startSSMSession(
     selectedTask,

@@ -210,7 +210,7 @@ async function connectToRDSWithInferenceInternal(
     messages.success(
       `Found ${inferenceResults.length} ECS targets in ${inferenceDuration}ms`,
     );
-    console.log();
+    messages.empty();
 
     if (options.cluster && options.task) {
       // Try to find matching inference result
@@ -240,9 +240,7 @@ async function connectToRDSWithInferenceInternal(
       selectedTask = selectedInference.task.taskArn;
     }
 
-    messages.success(
-      `Selected: ${formatInferenceResult(selectedInference)}`,
-    );
+    messages.success(`Selected: ${formatInferenceResult(selectedInference)}`);
   } else {
     // No inference results, fall back to manual selection
     messages.warning(
@@ -336,7 +334,7 @@ async function displayConnectionDetails(
   const connectionStartTime = performance.now();
 
   // Display connection information in a beautiful format
-  console.log();
+  messages.empty();
   console.log("\x1b[1m\x1b[32mConnection Established!\x1b[0m");
   console.log("┌──────────────────────────────────────────────┐");
   console.log("│  \x1b[1mConnection Details\x1b[0m                    │");
@@ -355,7 +353,7 @@ async function displayConnectionDetails(
     `│  Target: \x1b[36m${selectedInference.cluster.clusterName}\x1b[0m → \x1b[36m${selectedInference.task.displayName}\x1b[0m │`,
   );
   console.log("└──────────────────────────────────────────────┘");
-  console.log();
+  messages.empty();
 
   // Show database connection examples
   console.log("\x1b[1mDatabase connection examples:\x1b[0m");
@@ -374,7 +372,7 @@ async function displayConnectionDetails(
       `   Connection String: \x1b[33mmysql://[user]:[pass]@localhost:${localPort}/[db]\x1b[0m`,
     );
   }
-  console.log();
+  messages.empty();
   console.log("\x1b[1mPress Ctrl+C to disconnect\x1b[0m");
-  console.log();
+  messages.empty();
 }

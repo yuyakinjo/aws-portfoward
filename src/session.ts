@@ -23,7 +23,6 @@ export async function startSSMSession(
   messages.success(
     `RDS connection will be available at localhost:${localPort}`,
   );
-  messages.warning("Press Ctrl+C to terminate the session");
   messages.empty();
 
   return new Promise((resolve, reject) => {
