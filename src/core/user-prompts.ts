@@ -12,14 +12,14 @@ import { messages } from "../utils/index.js";
 /**
  * Prompt user to select an AWS region
  */
-export async function promptForRegion(regions: AWSRegion[]): Promise<string> {
+export async function promptForRegion(regions: AWSRegion[], defaultRegion?: string): Promise<string> {
   // Select AWS region with zoxide-style real-time search
   messages.info("filtered as you type (↑↓ to select, Enter to confirm)");
 
   return await search({
     message: "🌍 Search and select AWS region:",
     source: async (input) => {
-      return await searchRegions(regions, input || "");
+      return await searchRegions(regions, input || "", defaultRegion);
     },
     pageSize: 50,
   });
@@ -79,14 +79,7 @@ export async function promptForRDS(
 export async function promptForInferenceResult(
   inferenceResults: InferenceResult[],
 ): Promise<InferenceResult> {
-  // Add comprehensive hint about filtering functionality
-  messages.info("💡 Filter Examples:");
-  console.log("   🔍 'prod web' - production web services");
-  console.log("   🔍 'staging api' - staging API tasks");
-  console.log("   🔍 'high env' - high confidence environment matches");
-  console.log("   🔍 'naming 中' - medium confidence naming matches");
-  console.log("   🔍 'running' - only running tasks");
-  console.log();
+  // Filter Examples セクションを削除
 
   return (await search({
     message:

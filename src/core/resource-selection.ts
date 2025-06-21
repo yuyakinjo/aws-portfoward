@@ -44,6 +44,17 @@ export async function selectRegion(
     return options.region;
   }
 
+  // Try to get default region from AWS config
+  let defaultRegion: string | undefined;
+  try {
+    // AWS SDKは自動的に環境変数やconfig fileからリージョンを読み込む
+    const testClient = new EC2Client({});
+    defaultRegion = await testClient.config.region();
+  } catch {
+    // AWS configが設定されていない場合はスキップ
+    defaultRegion = undefined;
+  }
+
   // Initialize EC2 client with default region to get region list
   const defaultEc2Client = new EC2Client({ region: "us-east-1" });
 
@@ -54,13 +65,18 @@ export async function selectRegion(
     throw new Error("Failed to get AWS regions");
   }
 
+  // デフォルトリージョンがある場合は優先表示
+  if (defaultRegion) {
+    messages.info(`💡 Default region from AWS config: ${defaultRegion}`);
+  }
+  
   // Select AWS region with zoxide-style real-time search
   messages.info("filtered as you type (↑↓ to select, Enter to confirm)");
 
   const region = await search({
     message: "🌍 Search and select AWS region:",
     source: async (input) => {
-      return await searchRegions(regions, input || "");
+      return await searchRegions(regions, input || "", defaultRegion);
     },
     pageSize: 50,
   });

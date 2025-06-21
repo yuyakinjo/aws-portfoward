@@ -97,15 +97,6 @@ export async function runInferenceWorkflow(
     messages.success(`✨ Found ${inferenceResults.length} ECS targets`);
     console.log();
 
-    // Show recommendation
-    const recommendedResult = inferenceResults[0];
-    if (recommendedResult) {
-      console.log(
-        `🎯 \x1b[1m\x1b[36mRecommended\x1b[0m: ${recommendedResult.cluster.clusterName} → ${recommendedResult.task.displayName}`,
-      );
-    }
-    console.log();
-
     if (options.cluster && options.task) {
       // Try to find matching inference result
       const matchingResult = inferenceResults.find(
