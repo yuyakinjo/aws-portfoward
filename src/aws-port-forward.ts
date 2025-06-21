@@ -46,22 +46,6 @@ function generateReproducibleCommand(
 }
 
 /**
- * Get user-friendly label for inference method
- */
-function getMethodLabel(method: "environment" | "naming" | "network"): string {
-	switch (method) {
-		case "environment":
-			return "環境変数";
-		case "naming":
-			return "名前類似性";
-		case "network":
-			return "ネットワーク";
-		default:
-			return method;
-	}
-}
-
-/**
  * Get next available port starting from base port
  */
 function getNextAvailablePort(basePort: number): number {
@@ -688,16 +672,6 @@ async function connectToRDSWithInferenceInternal(
 	console.log();
 	console.log("✨ \x1b[1mPress Ctrl+C to disconnect\x1b[0m");
 	console.log();
-
-	messages.info("Selected configuration:");
-	messages.info(
-		`  RDS: ${selectedRDS.dbInstanceIdentifier} (${selectedRDS.engine}:${rdsPort})`,
-	);
-	messages.info(`  ECS: ${selectedInference.cluster.clusterName}`);
-	messages.info(`  Task: ${selectedTask}`);
-	messages.info(
-		`  Method: ${getMethodLabel(selectedInference.method)} (${selectedInference.confidence} confidence)`,
-	);
 
 	await startSSMSession(
 		selectedTask,
