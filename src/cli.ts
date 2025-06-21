@@ -9,7 +9,7 @@ const program = new Command();
 program
   .name("aws-port-forward")
   .description("CLI for port-forwarding to RDS via AWS ECS")
-  .version("1.0.0");
+  .version("2.0.1");
 
 // Register all commands
 registerAllCommands(program);
