@@ -113,7 +113,9 @@ export async function selectCluster(
   const clusters = await getECSClustersWithExecCapability(ecsClient);
 
   if (clusters.length === 0) {
-    throw new Error("No ECS clusters found with exec capability. Please ensure your clusters have ECS exec enabled.");
+    throw new Error(
+      "No ECS clusters found with exec capability. Please ensure your clusters have ECS exec enabled.",
+    );
   }
 
   // Show count of exec-capable clusters

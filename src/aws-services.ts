@@ -300,7 +300,7 @@ export async function checkECSExecCapability(
     }
 
     const clusterData = response.clusters[0];
-    
+
     // Check if the cluster has execute command configuration
     // This is a basic check - in practice, you might need additional checks
     // for IAM roles, VPC configuration, etc.

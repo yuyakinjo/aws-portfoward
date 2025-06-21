@@ -1,5 +1,8 @@
 import type { ECSClient } from "@aws-sdk/client-ecs";
-import { getECSClustersWithExecCapability, getECSTasks } from "../aws-services.js";
+import {
+  getECSClustersWithExecCapability,
+  getECSTasks,
+} from "../aws-services.js";
 import type { ECSCluster, RDSInstance } from "../types.js";
 import { loadAnalysisResults } from "./analysis-loader.js";
 import { inferClustersFromRDSName } from "./cluster-inference.js";

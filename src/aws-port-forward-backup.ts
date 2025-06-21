@@ -416,7 +416,9 @@ async function connectToRDSWithSimpleUIInternal(
 
   // Step 4: ECS Target Selection with Inference
   console.log(
-    chalk.yellow("Finding ECS targets with exec capability that can connect to this RDS..."),
+    chalk.yellow(
+      "Finding ECS targets with exec capability that can connect to this RDS...",
+    ),
   );
   const inferenceResults = await inferECSTargets(ecsClient, selectedRDS, false);
   let selectedInference: InferenceResult;
