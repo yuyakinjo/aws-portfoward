@@ -127,7 +127,6 @@ async function connectToRDSInternal(
   );
 
   // Start SSM session
-  messages.success("Starting port forwarding session...");
   messages.info("Selected task:");
   messages.info(selectedTask);
   await startSSMSession(
@@ -328,11 +327,6 @@ async function displayConnectionDetails(
   selectedInference: InferenceResult,
   localPort: string,
 ): Promise<void> {
-  messages.success("Starting port forwarding session...");
-
-  // Calculate connection establishment time
-  const connectionStartTime = performance.now();
-
   // Display connection information in a beautiful format
   messages.empty();
   console.log("\x1b[1m\x1b[32mConnection Established!\x1b[0m");

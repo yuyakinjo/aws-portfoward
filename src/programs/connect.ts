@@ -37,7 +37,6 @@ export function registerConnectCommand(program: Command): void {
 
         messages.info("Starting AWS ECS RDS connection tool...");
         await connectToRDS(output);
-        messages.success("Process completed successfully");
       } catch (error) {
         // If error occurs during retry process, error is already displayed, so show brief message
         if (
@@ -80,7 +79,6 @@ export function registerConnectInferenceCommand(program: Command): void {
 
         messages.info("Starting AWS ECS RDS connection tool with inference...");
         await connectToRDSWithInference(output);
-        messages.success("Process completed successfully");
       } catch (error) {
         // If error occurs during retry process, error is already displayed, so show brief message
         if (
@@ -123,7 +121,6 @@ export function registerConnectSimpleUICommand(program: Command): void {
 
         messages.info("Starting AWS ECS RDS connection tool with Simple UI...");
         await connectToRDSWithSimpleUI(output);
-        messages.success("Process completed successfully");
       } catch (error) {
         // If error occurs during retry process, error is already displayed, so show brief message
         if (

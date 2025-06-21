@@ -52,7 +52,6 @@ export async function startSSMSession(
         if (!hasSessionStarted) {
           hasSessionStarted = true;
           clearTimeout(timeout);
-          messages.success("Port forwarding session started!");
         }
       }
     });
@@ -179,7 +178,6 @@ export async function startSSMSession(
     // Process termination handling
     process.on("SIGINT", () => {
       if (!isUserTermination) {
-        messages.warning("\nTerminating session...");
         isUserTermination = true;
         child.kill("SIGINT");
       }

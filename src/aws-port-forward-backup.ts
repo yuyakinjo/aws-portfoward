@@ -268,7 +268,6 @@ async function connectToRDSInternal(
   );
 
   // Start SSM session
-  messages.success("Starting port forwarding session...");
   messages.info("Selected task:");
   messages.info(selectedTask);
   await startSSMSession(
@@ -607,9 +606,6 @@ async function connectToRDSWithInferenceInternal(
     localPort,
   );
 
-  // Start SSM session with beautiful connection details
-  messages.success("Starting port forwarding session...");
-
   // Display connection information in a beautiful format
   messages.empty();
   console.log("\x1b[1m\x1b[32mConnection Established!\x1b[0m");
@@ -911,10 +907,6 @@ async function connectToRDSWithSimpleUIInternal(
 
   // Final display with all selections complete
   messages.ui.displaySelectionState(selections);
-
-  console.log(chalk.green("All configurations selected!"));
-  console.log(chalk.yellow("Starting port forwarding session..."));
-  console.log();
 
   // Generate reproducible command
   const reproducibleCommand = generateReproducibleCommand(
