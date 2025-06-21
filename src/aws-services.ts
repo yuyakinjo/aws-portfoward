@@ -279,3 +279,64 @@ export async function getRDSInstances(
     );
   }
 }
+
+/**
+ * Check if ECS cluster supports ECS exec
+ */
+export async function checkECSExecCapability(
+  ecsClient: ECSClient,
+  cluster: ECSCluster,
+): Promise<boolean> {
+  try {
+    // Get cluster configuration
+    const describeCommand = new DescribeClustersCommand({
+      clusters: [cluster.clusterArn],
+      include: ["CONFIGURATIONS"],
+    });
+    const response = await ecsClient.send(describeCommand);
+
+    if (!response.clusters || response.clusters.length === 0) {
+      return false;
+    }
+
+    const clusterData = response.clusters[0];
+    
+    // Check if the cluster has execute command configuration
+    // This is a basic check - in practice, you might need additional checks
+    // for IAM roles, VPC configuration, etc.
+    if (clusterData?.configuration?.executeCommandConfiguration) {
+      return true;
+    }
+
+    // If no explicit execute command configuration, check if there are any running tasks
+    // that support exec (this is a fallback check)
+    try {
+      const tasks = await getECSTasks(ecsClient, cluster);
+      return tasks.length > 0; // If there are tasks, assume exec might be possible
+    } catch {
+      return false;
+    }
+  } catch {
+    // If we can't determine exec capability, assume it's not available
+    return false;
+  }
+}
+
+/**
+ * Filter ECS clusters to only include those that support ECS exec
+ */
+export async function getECSClustersWithExecCapability(
+  ecsClient: ECSClient,
+): Promise<ECSCluster[]> {
+  const allClusters = await getECSClusters(ecsClient);
+  const clustersWithExec: ECSCluster[] = [];
+
+  for (const cluster of allClusters) {
+    const hasExecCapability = await checkECSExecCapability(ecsClient, cluster);
+    if (hasExecCapability) {
+      clustersWithExec.push(cluster);
+    }
+  }
+
+  return clustersWithExec;
+}

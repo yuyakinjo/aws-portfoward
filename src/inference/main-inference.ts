@@ -1,5 +1,5 @@
 import type { ECSClient } from "@aws-sdk/client-ecs";
-import { getECSClusters, getECSTasks } from "../aws-services.js";
+import { getECSClustersWithExecCapability, getECSTasks } from "../aws-services.js";
 import type { ECSCluster, RDSInstance } from "../types.js";
 import { loadAnalysisResults } from "./analysis-loader.js";
 import { inferClustersFromRDSName } from "./cluster-inference.js";
@@ -23,8 +23,8 @@ export async function inferECSTargets(
     const analysisResults = loadAnalysisResults();
     tracker.endStep();
 
-    tracker.startStep("Get ECS clusters");
-    const allClusters = await getECSClusters(ecsClient);
+    tracker.startStep("Get ECS clusters with exec capability");
+    const allClusters = await getECSClustersWithExecCapability(ecsClient);
     const clusterMap = new Map(allClusters.map((c) => [c.clusterName, c]));
     tracker.endStep();
 

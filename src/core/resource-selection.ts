@@ -6,6 +6,7 @@ import { isEmpty } from "remeda";
 import {
   getAWSRegions,
   getECSClusters,
+  getECSClustersWithExecCapability,
   getECSTasks,
   getRDSInstances,
 } from "../aws-services.js";
@@ -108,12 +109,15 @@ export async function selectCluster(
     return cluster;
   }
 
-  messages.warning("Getting ECS clusters...");
-  const clusters = await getECSClusters(ecsClient);
+  messages.warning("Getting ECS clusters with exec capability...");
+  const clusters = await getECSClustersWithExecCapability(ecsClient);
 
   if (clusters.length === 0) {
-    throw new Error("No ECS clusters found");
+    throw new Error("No ECS clusters found with exec capability. Please ensure your clusters have ECS exec enabled.");
   }
+
+  // Show count of exec-capable clusters
+  messages.info(`Found ${clusters.length} clusters with ECS exec capability`);
 
   // Select ECS cluster with zoxide-style real-time search
   messages.info("filtered as you type (↑↓ to select, Enter to confirm)");
