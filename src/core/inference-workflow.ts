@@ -86,9 +86,6 @@ export async function runInferenceWorkflow(
   selectedRDS: RDSInstance,
   options: ValidatedConnectOptions,
 ): Promise<InferenceWorkflowResult> {
-  // Step 2: Infer ECS targets based on selected RDS
-  messages.warning("🔮 Inferring ECS targets based on RDS selection...");
-
   const inferenceResults = await inferECSTargets(ecsClient, selectedRDS, false); // パフォーマンス追跡を無効化
 
   let selectedInference: InferenceResult | undefined;

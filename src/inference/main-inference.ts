@@ -38,9 +38,10 @@ export async function inferECSTargets(
       .map((name: string) => clusterMap.get(name))
       .filter(Boolean) as ECSCluster[];
 
-    console.log(
-      `🎯 RDS "${rdsInstance.dbInstanceIdentifier}" から推論されたクラスター: ${likelyClusterNames.length}個`,
-    );
+    // 詳細なクラスター情報表示を削除
+    // console.log(
+    //   `🎯 RDS "${rdsInstance.dbInstanceIdentifier}" から推論されたクラスター: ${likelyClusterNames.length}個`,
+    // );
     tracker.endStep();
 
     // Phase 1: 推論されたクラスターでタスク検索（最優先）

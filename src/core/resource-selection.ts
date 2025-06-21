@@ -55,9 +55,7 @@ export async function selectRegion(
   }
 
   // Select AWS region with zoxide-style real-time search
-  messages.info(
-    "💡 zoxide-style: List is filtered as you type (↑↓ to select, Enter to confirm)",
-  );
+  messages.info("filtered as you type (↑↓ to select, Enter to confirm)");
 
   const region = await search({
     message: "🌍 Search and select AWS region:",
@@ -67,7 +65,8 @@ export async function selectRegion(
     pageSize: 50,
   });
 
-  messages.success(`✅ Region: ${region}`);
+  // リージョン選択後の重複メッセージを削除
+  // messages.success(`✅ Region: ${region}`);
   return region;
 }
 
@@ -97,9 +96,7 @@ export async function selectCluster(
   }
 
   // Select ECS cluster with zoxide-style real-time search
-  messages.info(
-    "💡 zoxide-style: List is filtered as you type (↑↓ to select, Enter to confirm)",
-  );
+  messages.info("filtered as you type (↑↓ to select, Enter to confirm)");
 
   const selectedCluster = (await search({
     message: "🔍 Search and select ECS cluster:",
@@ -236,8 +233,6 @@ export async function getLocalPort(
 export async function selectAllResources(
   options: ValidatedConnectOptions,
 ): Promise<ResourceSelectionResult> {
-  messages.warning("📋 Checking AWS configuration...");
-
   // Select region
   const region = await selectRegion(options);
 

@@ -55,7 +55,7 @@ export function registerConnectCommand(program: Command): void {
 
 export function registerConnectInferenceCommand(program: Command): void {
   program
-    .command("connect-inference")
+    .command("connect-infer")
     .alias("ci")
     .description("Connect to RDS via ECS with intelligent target inference")
     .option("-r, --region <region>", "AWS region")

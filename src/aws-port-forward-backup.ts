@@ -84,8 +84,6 @@ export async function connectToRDS(
 async function connectToRDSInternal(
   options: ValidatedConnectOptions,
 ): Promise<void> {
-  messages.warning("📋 Checking AWS configuration...");
-
   // Initialize EC2 client with default region to get region list
   const defaultEc2Client = new EC2Client({ region: "us-east-1" });
 
@@ -103,9 +101,7 @@ async function connectToRDSInternal(
     }
 
     // Select AWS region with zoxide-style real-time search
-    messages.info(
-      "💡 zoxide-style: List is filtered as you type (↑↓ to select, Enter to confirm)",
-    );
+    messages.info("filtered as you type (↑↓ to select, Enter to confirm)");
 
     region = await search({
       message: "🌍 Search and select AWS region:",
@@ -114,7 +110,8 @@ async function connectToRDSInternal(
       },
       pageSize: 50,
     });
-    messages.success(`✅ Region: ${region}`);
+    // リージョン重複表示を削除 (connectToRDSInternal)
+    // messages.success(`✅ Region: ${region}`);
   }
 
   // Initialize AWS clients
@@ -141,9 +138,7 @@ async function connectToRDSInternal(
     }
 
     // Select ECS cluster with zoxide-style real-time search
-    messages.info(
-      "💡 zoxide-style: List is filtered as you type (↑↓ to select, Enter to confirm)",
-    );
+    messages.info("filtered as you type (↑↓ to select, Enter to confirm)");
 
     selectedCluster = (await search({
       message: "🔍 Search and select ECS cluster:",
@@ -304,8 +299,6 @@ export async function connectToRDSWithInference(
 async function connectToRDSWithInferenceInternal(
   options: ValidatedConnectOptions,
 ): Promise<void> {
-  messages.warning("📋 Checking AWS configuration...");
-
   // Initialize EC2 client with default region to get region list
   const defaultEc2Client = new EC2Client({ region: "us-east-1" });
 
@@ -329,7 +322,6 @@ async function connectToRDSWithInferenceInternal(
       },
       pageSize: 50,
     });
-    messages.success(`✅ Region: ${region}`);
   }
 
   // Initialize AWS clients
@@ -365,9 +357,6 @@ async function connectToRDSWithInferenceInternal(
       pageSize: 50,
     })) as RDSInstance;
   }
-
-  // Step 2: Infer ECS targets based on selected RDS
-  messages.warning("🔮 Inferring ECS targets based on RDS selection...");
 
   const inferenceStartTime = performance.now();
   const inferenceResults = await inferECSTargets(ecsClient, selectedRDS, false); // パフォーマンス追跡を無効化
