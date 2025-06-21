@@ -404,7 +404,7 @@ async function connectToRDSWithInferenceInternal(
                 return {
                   name: formatInferenceResult(result),
                   value: result,
-                  description: result.reason,
+                  // Removed description to clean up UI
                   disabled: isUnavailable
                     ? "⚠️ タスク停止中 - 選択不可"
                     : undefined,
@@ -428,7 +428,7 @@ async function connectToRDSWithInferenceInternal(
               return {
                 name: formatInferenceResult(result),
                 value: result,
-                description: result.reason,
+                // Removed description to clean up UI
                 disabled: isUnavailable
                   ? "⚠️ タスク停止中 - 選択不可"
                   : undefined,
@@ -444,7 +444,6 @@ async function connectToRDSWithInferenceInternal(
     messages.success(
       `✅ Selected: ${formatInferenceResult(selectedInference)}`,
     );
-    messages.info(`📝 Reason: ${selectedInference.reason}`);
   } else {
     // No inference results, fall back to manual selection
     messages.warning(
@@ -593,13 +592,6 @@ async function connectToRDSWithInferenceInternal(
   console.log("└──────────────────────────────────────────────┘");
   console.log();
 
-  const connectionTime = Math.round(performance.now() - connectionStartTime);
-  console.log(`⏰ \x1b[1mConnection time\x1b[0m: ${connectionTime}ms`);
-  console.log(
-    `🛡️  \x1b[1mSecurity\x1b[0m: AWS IAM authentication + VPC internal communication`,
-  );
-  console.log();
-
   // Show database connection examples
   console.log("💡 \x1b[1mDatabase connection examples:\x1b[0m");
   if (selectedRDS.engine.includes("postgres")) {
@@ -633,13 +625,13 @@ async function connectToRDSWithInferenceInternal(
 /**
  * Filter inference results using space-separated keywords
  * Supports both English and Japanese search terms
- * Searches through cluster name, task name, service name, method, confidence, and reason
+ * Searches through cluster name, task name, service name, confidence, and reason
  *
  * Examples:
  * - "prod web" - finds tasks in production clusters with web services
  * - "staging api" - finds staging API tasks
- * - "high env" - finds high confidence matches from environment analysis
- * - "名前 中" - finds medium confidence naming matches (Japanese)
+ * - "high" - finds high confidence matches
+ * - "medium 中" - finds medium confidence matches (Japanese)
  */
 function filterInferenceResults(
   results: InferenceResult[],
@@ -672,10 +664,6 @@ function filterInferenceResults(
       result.method,
       result.reason,
       formatInferenceResult(result),
-      // Add method labels for easier searching
-      result.method === "environment" ? "環境変数 env" : "",
-      result.method === "naming" ? "名前類似性 naming" : "",
-      result.method === "network" ? "ネットワーク network" : "",
       // Add confidence levels for easier searching
       result.confidence === "high" ? "high 高" : "",
       result.confidence === "medium" ? "medium 中" : "",

@@ -181,7 +181,11 @@ export async function searchRDS(rdsInstances: RDSInstance[], input: string) {
 }
 
 // zoxide-style real-time search function - for AWS regions
-export async function searchRegions(regions: AWSRegion[], input: string, defaultRegion?: string) {
+export async function searchRegions(
+  regions: AWSRegion[],
+  input: string,
+  defaultRegion?: string,
+) {
   const fuseOptions = {
     keys: ["regionName"],
     threshold: 0.5,
@@ -195,8 +199,8 @@ export async function searchRegions(regions: AWSRegion[], input: string, default
     // デフォルトリージョンがある場合は先頭に表示
     const sortedRegions = defaultRegion
       ? [
-          ...regions.filter(r => r.regionName === defaultRegion),
-          ...regions.filter(r => r.regionName !== defaultRegion)
+          ...regions.filter((r) => r.regionName === defaultRegion),
+          ...regions.filter((r) => r.regionName !== defaultRegion),
         ]
       : regions;
 
@@ -204,7 +208,7 @@ export async function searchRegions(regions: AWSRegion[], input: string, default
       const isDefault = region.regionName === defaultRegion;
       const icon = index === 0 && isDefault ? chalk.green("🎯") : "  ";
       const defaultLabel = isDefault ? chalk.cyan(" (default)") : "";
-      
+
       return {
         name: `${icon} ${region.regionName}${defaultLabel} ${chalk.dim(`(${region.optInStatus})`)}`,
         value: region.regionName,
@@ -228,7 +232,7 @@ export async function searchRegions(regions: AWSRegion[], input: string, default
       const isDefault = result.item.regionName === defaultRegion;
       const icon = index === 0 ? chalk.green("🎯") : "  ";
       const defaultLabel = isDefault ? chalk.cyan(" (default)") : "";
-      
+
       return {
         name: `${icon} ${result.item.regionName}${defaultLabel} ${chalk.dim(`(${result.item.optInStatus}) [${((1 - (result.score || 0)) * 100).toFixed(0)}%]`)}`,
         value: result.item.regionName,

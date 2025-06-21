@@ -12,7 +12,10 @@ import { messages } from "../utils/index.js";
 /**
  * Prompt user to select an AWS region
  */
-export async function promptForRegion(regions: AWSRegion[], defaultRegion?: string): Promise<string> {
+export async function promptForRegion(
+  regions: AWSRegion[],
+  defaultRegion?: string,
+): Promise<string> {
   // Select AWS region with zoxide-style real-time search
   messages.info("filtered as you type (↑↓ to select, Enter to confirm)");
 
@@ -91,7 +94,7 @@ export async function promptForInferenceResult(
           return {
             name: formatInferenceResult(result),
             value: result,
-            description: result.reason,
+            // Removed description to clean up UI
             disabled: isUnavailable ? "⚠️ タスク停止中 - 選択不可" : undefined,
           };
         },
@@ -120,13 +123,13 @@ export async function promptForLocalPort(): Promise<string> {
 /**
  * Filter inference results using space-separated keywords
  * Supports both English and Japanese search terms
- * Searches through cluster name, task name, service name, method, confidence, and reason
+ * Searches through cluster name, task name, service name, confidence, and reason
  *
  * Examples:
  * - "prod web" - finds tasks in production clusters with web services
  * - "staging api" - finds staging API tasks
- * - "high env" - finds high confidence matches from environment analysis
- * - "名前 中" - finds medium confidence naming matches (Japanese)
+ * - "high" - finds high confidence matches
+ * - "medium 中" - finds medium confidence matches (Japanese)
  */
 function filterInferenceResults(
   results: InferenceResult[],
@@ -159,10 +162,6 @@ function filterInferenceResults(
       result.method,
       result.reason,
       formatInferenceResult(result),
-      // Add method labels for easier searching
-      result.method === "environment" ? "環境変数 env" : "",
-      result.method === "naming" ? "名前類似性 naming" : "",
-      result.method === "network" ? "ネットワーク network" : "",
       // Add confidence levels for easier searching
       result.confidence === "high" ? "high 高" : "",
       result.confidence === "medium" ? "medium 中" : "",

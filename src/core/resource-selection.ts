@@ -69,7 +69,7 @@ export async function selectRegion(
   if (defaultRegion) {
     messages.info(`💡 Default region from AWS config: ${defaultRegion}`);
   }
-  
+
   // Select AWS region with zoxide-style real-time search
   messages.info("filtered as you type (↑↓ to select, Enter to confirm)");
 

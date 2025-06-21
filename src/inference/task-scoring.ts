@@ -124,7 +124,6 @@ export async function scoreTasksByNaming(
       (total, calc) => total + calc.score,
       0,
     );
-    const baseReasons = baseResults.map((calc) => calc.reason);
 
     // セグメント一致を関数型で処理
     const segmentResults = rdsSegments
@@ -146,11 +145,9 @@ export async function scoreTasksByNaming(
       (total, calc) => total + calc.score,
       0,
     );
-    const segmentReasons = segmentResults.map((calc) => calc.reason);
 
     // 最終スコアと理由
     const totalScore = 25 + baseScore + segmentScore; // 25はベーススコア
-    const allReasons = [...baseReasons, ...segmentReasons];
     const confidence =
       totalScore >= 75 ? "high" : totalScore >= 50 ? "medium" : "low";
 
@@ -160,7 +157,7 @@ export async function scoreTasksByNaming(
       confidence,
       method: "naming" as const,
       score: totalScore,
-      reason: `名前類似性: ${allReasons.join(", ")} (${totalScore}%)`,
+      reason: "名前類似性関連",
     };
   });
 }
@@ -203,7 +200,7 @@ export async function scoreTasksAgainstRDS(
         confidence: confidence as "high" | "medium" | "low",
         method: "environment" as const,
         score: envCheck.score,
-        reason: `環境変数推論: ${envCheck.matchDetails.join(", ")}`,
+        reason: "データベース接続関連",
       };
     });
 
@@ -232,7 +229,7 @@ export async function scoreTasksAgainstRDS(
         confidence: match.confidence as "high" | "medium" | "low",
         method: "environment" as const,
         score,
-        reason: `分析結果: ${match.match_reasons?.join(", ") || "データベース接続"}`,
+        reason: "データベース接続関連",
       };
     });
   });

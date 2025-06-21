@@ -163,17 +163,5 @@ export async function inferECSTargets(
  * Format inference result for display
  */
 export function formatInferenceResult(result: InferenceResult): string {
-  const confidenceIcon = {
-    high: "🎯",
-    medium: "⭐",
-    low: "🔧",
-  }[result.confidence];
-
-  const methodLabel = {
-    environment: "環境変数",
-    naming: "名前類似性",
-    network: "ネットワーク",
-  }[result.method];
-
-  return `${confidenceIcon} ${result.cluster.clusterName} → ${result.task.displayName} (${methodLabel}: ${result.score}%)`;
+  return `${result.cluster.clusterName} → ${result.task.displayName}`;
 }

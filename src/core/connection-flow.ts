@@ -243,7 +243,6 @@ async function connectToRDSWithInferenceInternal(
     messages.success(
       `✅ Selected: ${formatInferenceResult(selectedInference)}`,
     );
-    messages.info(`📝 Reason: ${selectedInference.reason}`);
   } else {
     // No inference results, fall back to manual selection
     messages.warning(
@@ -356,13 +355,6 @@ async function displayConnectionDetails(
     `│  Target: \x1b[36m${selectedInference.cluster.clusterName}\x1b[0m → \x1b[36m${selectedInference.task.displayName}\x1b[0m │`,
   );
   console.log("└──────────────────────────────────────────────┘");
-  console.log();
-
-  const connectionTime = Math.round(performance.now() - connectionStartTime);
-  console.log(`⏰ \x1b[1mConnection time\x1b[0m: ${connectionTime}ms`);
-  console.log(
-    `🛡️  \x1b[1mSecurity\x1b[0m: AWS IAM authentication + VPC internal communication`,
-  );
   console.log();
 
   // Show database connection examples

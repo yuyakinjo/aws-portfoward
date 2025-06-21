@@ -21,13 +21,13 @@ export interface InferenceWorkflowResult {
 
 /**
  * Filter inference results based on user input
- * Searches through cluster name, task name, service name, method, confidence, and reason
+ * Searches through cluster name, task name, service name, confidence, and reason
  *
  * Examples:
  * - "prod web" - finds tasks in production clusters with web services
  * - "staging api" - finds staging API tasks
- * - "high env" - finds high confidence matches from environment analysis
- * - "名前 中" - finds medium confidence naming matches (Japanese)
+ * - "high" - finds high confidence matches
+ * - "medium 中" - finds medium confidence matches (Japanese)
  */
 export function filterInferenceResults(
   results: InferenceResult[],
@@ -60,10 +60,6 @@ export function filterInferenceResults(
       result.method,
       result.reason,
       formatInferenceResult(result),
-      // Add method labels for easier searching
-      result.method === "environment" ? "環境変数 env" : "",
-      result.method === "naming" ? "名前類似性 naming" : "",
-      result.method === "network" ? "ネットワーク network" : "",
       // Add confidence levels for easier searching
       result.confidence === "high" ? "high 高" : "",
       result.confidence === "medium" ? "medium 中" : "",
@@ -127,7 +123,7 @@ export async function runInferenceWorkflow(
                 return {
                   name: formatInferenceResult(result),
                   value: result,
-                  description: result.reason,
+                  // Removed description to clean up UI
                   disabled: isUnavailable
                     ? "⚠️ タスク停止中 - 選択不可"
                     : undefined,
@@ -152,7 +148,7 @@ export async function runInferenceWorkflow(
               return {
                 name: formatInferenceResult(result),
                 value: result,
-                description: result.reason,
+                // Removed description to clean up UI
                 disabled: isUnavailable
                   ? "⚠️ タスク停止中 - 選択不可"
                   : undefined,
@@ -169,7 +165,6 @@ export async function runInferenceWorkflow(
     messages.success(
       `✅ Selected: ${formatInferenceResult(selectedInference)}`,
     );
-    messages.info(`📝 Reason: ${selectedInference.reason}`);
   } else {
     // No inference results, fall back to manual selection
     messages.warning(
