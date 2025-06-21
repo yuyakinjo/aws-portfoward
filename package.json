@@ -22,6 +22,7 @@
 	"license": "MIT",
 	"scripts": {
 		"connect": "npm run build && node dist/cli.js connect",
+		"connect-inference": "npm run build && node dist/cli.js connect-inference",
 		"dev": "npm run build && node dist/cli.js connect",
 		"build": "./scripts/build.sh",
 		"build:tsc": "npx tsc --project tsconfig.build.json",
