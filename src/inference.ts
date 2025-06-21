@@ -82,11 +82,12 @@ export class PerformanceTracker {
 		report += "=".repeat(50) + "\n";
 
 		for (const metric of metrics) {
-			const percentage = total > 0 ? ((metric.duration / total) * 100).toFixed(1) : "0.0";
+			const percentage =
+				total > 0 ? ((metric.duration / total) * 100).toFixed(1) : "0.0";
 			report += `${metric.step.padEnd(30)} ${metric.duration.toFixed(0).padStart(6)}ms (${percentage}%)\n`;
 		}
 
-		report += "-".repeat(50) + "\n";
+		report += `${"=".repeat(50)}\n`;
 		report += `${"Total".padEnd(30)} ${total.toFixed(0).padStart(6)}ms (100.0%)\n`;
 
 		if (total > 3000) {
@@ -100,13 +101,16 @@ export class PerformanceTracker {
 }
 
 // RDS名からECSクラスター名を推論する関数
-function inferClustersFromRDSName(rdsName: string, allClusters: ECSCluster[]): string[] {
+function inferClustersFromRDSName(
+	rdsName: string,
+	allClusters: ECSCluster[],
+): string[] {
 	const rdsSegments = rdsName.toLowerCase().split(/[-_]/);
 	const rdsWords = rdsName.toLowerCase().split(/[-_\s]/);
 	const rdsLower = rdsName.toLowerCase();
 
 	return allClusters
-		.map(cluster => {
+		.map((cluster) => {
 			const clusterName = cluster.clusterName.toLowerCase();
 			let score = 0;
 
@@ -116,7 +120,10 @@ function inferClustersFromRDSName(rdsName: string, allClusters: ECSCluster[]): s
 			}
 
 			// プレフィックス一致
-			if (clusterName.startsWith(rdsLower) || rdsLower.startsWith(clusterName)) {
+			if (
+				clusterName.startsWith(rdsLower) ||
+				rdsLower.startsWith(clusterName)
+			) {
 				score += 80;
 			}
 
@@ -145,7 +152,16 @@ function inferClustersFromRDSName(rdsName: string, allClusters: ECSCluster[]): s
 			}
 
 			// 環境指標（dev, staging, prod, test）
-			const envIndicators = ['dev', 'development', 'staging', 'stage', 'stg', 'prod', 'production', 'test'];
+			const envIndicators = [
+				"dev",
+				"development",
+				"staging",
+				"stage",
+				"stg",
+				"prod",
+				"production",
+				"test",
+			];
 			for (const env of envIndicators) {
 				if (rdsLower.includes(env) && clusterName.includes(env)) {
 					score += 25;
@@ -153,7 +169,14 @@ function inferClustersFromRDSName(rdsName: string, allClusters: ECSCluster[]): s
 			}
 
 			// 共通パターン（app, web, api, service等）
-			const commonPatterns = ['app', 'web', 'api', 'service', 'backend', 'frontend'];
+			const commonPatterns = [
+				"app",
+				"web",
+				"api",
+				"service",
+				"backend",
+				"frontend",
+			];
 			for (const pattern of commonPatterns) {
 				if (rdsLower.includes(pattern) && clusterName.includes(pattern)) {
 					score += 20;
@@ -162,21 +185,20 @@ function inferClustersFromRDSName(rdsName: string, allClusters: ECSCluster[]): s
 
 			return { clusterName: cluster.clusterName, score };
 		})
-		.filter(item => item.score > 0)
+		.filter((item) => item.score > 0)
 		.sort((a, b) => b.score - a.score)
-		.map(item => item.clusterName);
+		.map((item) => item.clusterName);
 }
 
 // タスクの環境変数を模擬的にチェックする関数（実際のプロダクションでは、タスク定義のAPIから取得）
 async function checkTaskEnvironmentVariables(
-	ecsClient: ECSClient,
+	_: ECSClient,
 	task: ECSTask,
-	rdsInstance: RDSInstance
+	rdsInstance: RDSInstance,
 ): Promise<{ hasMatch: boolean; score: number; matchDetails: string[] }> {
 	// 実際の実装では、ECS describe-task-definition API を使用して環境変数を取得
 	// ここでは模擬的にタスク名とサービス名から推論
 
-	const rdsHost = rdsInstance.endpoint || rdsInstance.dbInstanceIdentifier;
 	const taskName = task.displayName.toLowerCase();
 	const serviceName = task.serviceName.toLowerCase();
 
@@ -195,7 +217,7 @@ async function checkTaskEnvironmentVariables(
 	}
 
 	// 共通のセグメントをチェック
-	const rdsSegments = rdsInstance.dbInstanceIdentifier.toLowerCase().split('-');
+	const rdsSegments = rdsInstance.dbInstanceIdentifier.toLowerCase().split("-");
 	for (const segment of rdsSegments) {
 		if (segment.length > 2) {
 			if (taskName.includes(segment)) {
@@ -212,7 +234,7 @@ async function checkTaskEnvironmentVariables(
 	return {
 		hasMatch: score > 20,
 		score,
-		matchDetails
+		matchDetails,
 	};
 }
 
@@ -220,7 +242,7 @@ async function checkTaskEnvironmentVariables(
 async function scoreTasksByNaming(
 	tasks: ECSTask[],
 	cluster: ECSCluster,
-	rdsInstance: RDSInstance
+	rdsInstance: RDSInstance,
 ): Promise<InferenceResult[]> {
 	const results: InferenceResult[] = [];
 
@@ -243,7 +265,7 @@ async function scoreTasksByNaming(
 		}
 
 		// セグメント一致
-		const rdsSegments = rdsName.split('-').filter(s => s.length > 2);
+		const rdsSegments = rdsName.split("-").filter((s) => s.length > 2);
 		for (const segment of rdsSegments) {
 			if (taskName.includes(segment)) {
 				score += 20;
@@ -263,7 +285,7 @@ async function scoreTasksByNaming(
 			confidence,
 			method: "naming",
 			score,
-			reason: `名前類似性: ${reasons.join(", ")} (${score}%)`
+			reason: `名前類似性: ${reasons.join(", ")} (${score}%)`,
 		});
 	}
 
@@ -276,44 +298,58 @@ async function scoreTasksAgainstRDS(
 	tasks: ECSTask[],
 	cluster: ECSCluster,
 	rdsInstance: RDSInstance,
-	analysisResults: { environment: InferenceMatch[]; naming: InferenceMatch[]; network: InferenceMatch[] }
+	analysisResults: {
+		environment: InferenceMatch[];
+		naming: InferenceMatch[];
+		network: InferenceMatch[];
+	},
 ): Promise<InferenceResult[]> {
 	const results: InferenceResult[] = [];
 
 	for (const task of tasks) {
 		// 環境変数チェック（模擬）
-		const envCheck = await checkTaskEnvironmentVariables(ecsClient, task, rdsInstance);
+		const envCheck = await checkTaskEnvironmentVariables(
+			ecsClient,
+			task,
+			rdsInstance,
+		);
 
 		if (envCheck.hasMatch) {
-			const confidence = envCheck.score >= 80 ? "high" : envCheck.score >= 50 ? "medium" : "low";
+			const confidence =
+				envCheck.score >= 80 ? "high" : envCheck.score >= 50 ? "medium" : "low";
 			results.push({
 				cluster,
 				task,
 				confidence,
 				method: "environment",
 				score: envCheck.score,
-				reason: `環境変数推論: ${envCheck.matchDetails.join(", ")}`
+				reason: `環境変数推論: ${envCheck.matchDetails.join(", ")}`,
 			});
 		}
 
 		// 分析結果からの一致もチェック
 		const envMatches = analysisResults.environment.filter(
-			match => match.rds_identifier === rdsInstance.dbInstanceIdentifier &&
-			match.task_family && (
-				task.taskId.includes(match.task_family) ||
-				task.serviceName.includes(match.task_family)
-			)
+			(match) =>
+				match.rds_identifier === rdsInstance.dbInstanceIdentifier &&
+				match.task_family &&
+				(task.taskId.includes(match.task_family) ||
+					task.serviceName.includes(match.task_family)),
 		);
 
 		for (const match of envMatches) {
-			const score = match.confidence === "high" ? 95 : match.confidence === "medium" ? 75 : 45;
+			const score =
+				match.confidence === "high"
+					? 95
+					: match.confidence === "medium"
+						? 75
+						: 45;
 			results.push({
 				cluster,
 				task,
 				confidence: match.confidence,
 				method: "environment",
 				score,
-				reason: `分析結果: ${match.match_reasons?.join(", ") || "データベース接続"}`
+				reason: `分析結果: ${match.match_reasons?.join(", ") || "データベース接続"}`,
 			});
 		}
 	}
@@ -388,10 +424,17 @@ export async function inferECSTargets(
 
 		tracker.startStep("RDS name-based cluster inference");
 		// Phase 0: Infer likely ECS clusters from RDS name (performance optimization)
-		const likelyClusterNames = inferClustersFromRDSName(rdsInstance.dbInstanceIdentifier, allClusters);
-		const likelyClusters = likelyClusterNames.map((name: string) => clusterMap.get(name)).filter(Boolean) as ECSCluster[];
+		const likelyClusterNames = inferClustersFromRDSName(
+			rdsInstance.dbInstanceIdentifier,
+			allClusters,
+		);
+		const likelyClusters = likelyClusterNames
+			.map((name: string) => clusterMap.get(name))
+			.filter(Boolean) as ECSCluster[];
 
-		console.log(`🎯 RDS "${rdsInstance.dbInstanceIdentifier}" から推論されたクラスター: ${likelyClusterNames.length}個`);
+		console.log(
+			`🎯 RDS "${rdsInstance.dbInstanceIdentifier}" から推論されたクラスター: ${likelyClusterNames.length}個`,
+		);
 		for (const clusterName of likelyClusterNames.slice(0, 5)) {
 			console.log(`   📋 ${clusterName}`);
 		}
@@ -400,22 +443,32 @@ export async function inferECSTargets(
 		// Phase 1: 推論されたクラスターでタスク検索（最優先）
 		tracker.startStep("Search tasks in inferred clusters");
 		const primaryClusters = likelyClusters.slice(0, 3); // 上位3つのクラスターのみ
-		console.log(`🔍 優先クラスターでタスク検索: ${primaryClusters.length}個のクラスター`);
+		console.log(
+			`🔍 優先クラスターでタスク検索: ${primaryClusters.length}個のクラスター`,
+		);
 
 		for (const cluster of primaryClusters) {
-			console.log(`   ⏱️  クラスター "${cluster.clusterName}" でタスク検索中...`);
+			console.log(
+				`   ⏱️  クラスター "${cluster.clusterName}" でタスク検索中...`,
+			);
 			try {
 				const tasks = await getECSTasks(ecsClient, cluster);
 				if (tasks.length > 0) {
 					console.log(`   ✅ ${tasks.length}個のタスクを発見`);
-					const scored = await scoreTasksAgainstRDS(ecsClient, tasks, cluster, rdsInstance, analysisResults);
+					const scored = await scoreTasksAgainstRDS(
+						ecsClient,
+						tasks,
+						cluster,
+						rdsInstance,
+						analysisResults,
+					);
 					results.push(...scored);
 				} else {
 					console.log(`   ⚪ タスクなし`);
 				}
 			} catch (error) {
 				const errorMsg = error instanceof Error ? error.message : String(error);
-				if (!errorMsg.includes('Tasks cannot be empty')) {
+				if (!errorMsg.includes("Tasks cannot be empty")) {
 					console.log(`   ❌ エラー: ${errorMsg}`);
 				}
 			}
@@ -429,19 +482,26 @@ export async function inferECSTargets(
 			const remainingClusters = likelyClusters.slice(3, 8); // 次の5個のクラスター
 
 			for (const cluster of remainingClusters) {
-				console.log(`   🔍 フォールバック: クラスター "${cluster.clusterName}" でタスク検索中...`);
+				console.log(
+					`   🔍 フォールバック: クラスター "${cluster.clusterName}" でタスク検索中...`,
+				);
 				try {
 					const tasks = await getECSTasks(ecsClient, cluster);
 					if (tasks.length > 0) {
 						console.log(`   ✅ ${tasks.length}個のタスクを発見`);
-						const scored = await scoreTasksByNaming(tasks, cluster, rdsInstance);
+						const scored = await scoreTasksByNaming(
+							tasks,
+							cluster,
+							rdsInstance,
+						);
 						results.push(...scored);
 					} else {
 						console.log(`   ⚪ タスクなし`);
 					}
 				} catch (error) {
-					const errorMsg = error instanceof Error ? error.message : String(error);
-					if (!errorMsg.includes('Tasks cannot be empty')) {
+					const errorMsg =
+						error instanceof Error ? error.message : String(error);
+					if (!errorMsg.includes("Tasks cannot be empty")) {
 						console.log(`   ❌ エラー: ${errorMsg}`);
 					}
 				}
@@ -450,18 +510,25 @@ export async function inferECSTargets(
 		tracker.endStep();
 
 		// 有効なタスクと無効なタスクを分離
-		const validResults = results.filter(result => {
-			return result.task.taskStatus === 'RUNNING' || result.task.taskStatus === 'PENDING';
+		const validResults = results.filter((result) => {
+			return (
+				result.task.taskStatus === "RUNNING" ||
+				result.task.taskStatus === "PENDING"
+			);
 		});
 
-		const invalidResults = results.filter(result => {
-			return result.task.taskStatus !== 'RUNNING' && result.task.taskStatus !== 'PENDING';
+		const invalidResults = results.filter((result) => {
+			return (
+				result.task.taskStatus !== "RUNNING" &&
+				result.task.taskStatus !== "PENDING"
+			);
 		});
 
 		// 有効な結果を信頼度とスコアでソート
 		const sortedValidResults = validResults.sort((a, b) => {
 			const confidenceOrder = { high: 3, medium: 2, low: 1 };
-			const confidenceDiff = confidenceOrder[b.confidence] - confidenceOrder[a.confidence];
+			const confidenceDiff =
+				confidenceOrder[b.confidence] - confidenceOrder[a.confidence];
 			if (confidenceDiff !== 0) return confidenceDiff;
 			return b.score - a.score;
 		});
@@ -469,12 +536,12 @@ export async function inferECSTargets(
 		// 無効な結果を最後に追加（disabled状態として）
 		const finalResults = [
 			...sortedValidResults,
-			...invalidResults.map(result => ({
+			...invalidResults.map((result) => ({
 				...result,
-				confidence: 'low' as const,
+				confidence: "low" as const,
 				score: 0,
-				reason: `${result.reason} (タスク停止中 - 接続不可)`
-			}))
+				reason: `${result.reason} (タスク停止中 - 接続不可)`,
+			})),
 		];
 
 		// Debug: 推論結果のサマリーを表示
