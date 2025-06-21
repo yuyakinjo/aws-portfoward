@@ -44,13 +44,73 @@ export async function startSSMSession(
 	messages.empty();
 
 	return new Promise((resolve, reject) => {
+		let isUserTermination = false;
+		let hasSessionStarted = false;
+
+		// Use pipe mode to capture output while still showing it to user
 		const child = spawn(commandString, [], {
-			stdio: "inherit",
+			stdio: ["inherit", "pipe", "pipe"],
 			env: process.env,
 			shell: true,
 		});
 
+		// Forward stdout to console while monitoring for session start
+		child.stdout?.on("data", (data) => {
+			const output = data.toString();
+			process.stdout.write(output); // Forward to user
+
+			// Detect session start with more patterns
+			if (
+				output.includes("Starting session") ||
+				output.includes("Port forwarding started") ||
+				output.includes("Waiting for connections") ||
+				output.includes("Port forwarding session started") ||
+				(output.includes("Session") && output.includes("started"))
+			) {
+				if (!hasSessionStarted) {
+					hasSessionStarted = true;
+					clearTimeout(timeout);
+					messages.success("🎉 Port forwarding session started!");
+					messages.info("✨ Connection is ready - you can now connect to your database");
+				}
+			}
+		});
+
+		// Forward stderr to console while monitoring for errors
+		child.stderr?.on("data", (data) => {
+			const output = data.toString();
+			
+			// Check for critical errors first
+			if (output.includes("TargetNotConnected")) {
+				console.error("❌ Cannot connect to target");
+				console.error(
+					"💡 Please verify that the ECS task is running and SSM Agent is enabled",
+				);
+				child.kill("SIGTERM");
+				reject(new Error("Cannot connect to target"));
+				return;
+			} else if (output.includes("AccessDenied")) {
+				console.error("❌ Access denied");
+				console.error("💡 Please verify you have SSM-related IAM permissions");
+				child.kill("SIGTERM");
+				reject(new Error("Access denied"));
+				return;
+			} else if (output.includes("InvalidTarget")) {
+				console.error("❌ Invalid target");
+				console.error(
+					"💡 Please verify the specified ECS task exists and is running",
+				);
+				child.kill("SIGTERM");
+				reject(new Error("Invalid target"));
+				return;
+			}
+
+			// Forward non-critical stderr to console
+			process.stderr.write(output);
+		});
+
 		child.on("error", (error) => {
+			clearTimeout(timeout);
 			console.error("❌ Command execution error:", error.message);
 
 			if (error.message.includes("ENOENT")) {
@@ -63,7 +123,6 @@ export async function startSSMSession(
 		});
 
 		child.on("close", (code, signal) => {
-			// Clear timeout when session closes
 			clearTimeout(timeout);
 
 			// Handle user termination (SIGINT/Ctrl+C) as normal termination
@@ -100,61 +159,23 @@ export async function startSSMSession(
 			}
 		});
 
-		let hasSessionStarted = false;
-
-		// Monitor stdout to detect session start
-		child.stdout?.on("data", (data) => {
-			const output = data.toString();
-			if (
-				output.includes("Starting session") ||
-				output.includes("Port forwarding started")
-			) {
-				hasSessionStarted = true;
-				messages.success("🎉 Port forwarding session started!");
-			}
-		});
-
-		// Monitor stderr to analyze errors in detail
-		child.stderr?.on("data", (data) => {
-			const output = data.toString();
-
-			if (output.includes("TargetNotConnected")) {
-				console.error("❌ Cannot connect to target");
-				console.error(
-					"💡 Please verify that the ECS task is running and SSM Agent is enabled",
-				);
-				reject(new Error("Cannot connect to target"));
-			} else if (output.includes("AccessDenied")) {
-				console.error("❌ Access denied");
-				console.error("💡 Please verify you have SSM-related IAM permissions");
-				reject(new Error("Access denied"));
-			} else if (output.includes("InvalidTarget")) {
-				console.error("❌ Invalid target");
-				console.error(
-					"💡 Please verify the specified ECS task exists and is running",
-				);
-				reject(new Error("Invalid target"));
-			}
-		});
-
 		// Process termination handling
-		let isUserTermination = false;
 		process.on("SIGINT", () => {
-			messages.warning("\n🛑 Terminating session...");
-			isUserTermination = true;
-			child.kill("SIGINT");
+			if (!isUserTermination) {
+				messages.warning("\n🛑 Terminating session...");
+				isUserTermination = true;
+				child.kill("SIGINT");
+			}
 		});
 
-		// Timeout handling (30 seconds)
+		// Optimistic timeout - assume session will start successfully after 5 seconds
+		// if no explicit errors are encountered
 		const timeout = setTimeout(() => {
 			if (!hasSessionStarted) {
-				console.error("❌ Session start timed out");
-				console.error(
-					"💡 Please check network connection, target status, and permission settings",
-				);
-				child.kill("SIGTERM");
-				reject(new Error("Session start timed out"));
+				hasSessionStarted = true;
+				messages.success("🎉 Port forwarding session should be active");
+				messages.info("💡 If connection fails, the session may still be starting. Please wait a moment and try again.");
 			}
-		}, 30000);
+		}, 5000);
 	});
 }
