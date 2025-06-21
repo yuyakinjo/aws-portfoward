@@ -182,7 +182,7 @@ export async function startSSMSession(
     // Process termination handling
     process.on("SIGINT", () => {
       if (!isUserTermination) {
-        messages.warning("\n🛑 Terminating session...");
+        messages.warning("\nTerminating session...");
         isUserTermination = true;
         child.kill("SIGINT");
       }
