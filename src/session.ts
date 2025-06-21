@@ -53,9 +53,6 @@ export async function startSSMSession(
           hasSessionStarted = true;
           clearTimeout(timeout);
           messages.success("Port forwarding session started!");
-          messages.info(
-            "Connection is ready - you can now connect to your database",
-          );
         }
       }
     });
