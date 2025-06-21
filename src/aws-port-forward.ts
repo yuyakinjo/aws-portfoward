@@ -393,16 +393,9 @@ async function connectToRDSWithInferenceInternal(
 
 	// Step 2: Infer ECS targets based on selected RDS
 	messages.warning("🔮 Inferring ECS targets based on RDS selection...");
-	console.log("   📊 Loading analysis data...");
-	console.log("   🔍 Analyzing environment variables...");
-	console.log("   📝 Checking name similarities...");
-	console.log("   🌐 Reviewing network configurations...");
-	console.log(
-		`   🎯 RDS名ベース推論: "${selectedRDS.dbInstanceIdentifier.substring(0, 5)}" で検索中...`,
-	);
 
 	const inferenceStartTime = performance.now();
-	const inferenceResults = await inferECSTargets(ecsClient, selectedRDS, true); // デバッグ情報を有効化
+	const inferenceResults = await inferECSTargets(ecsClient, selectedRDS, false); // パフォーマンス追跡を無効化
 	const inferenceEndTime = performance.now();
 	const inferenceDuration = Math.round(inferenceEndTime - inferenceStartTime);
 
@@ -410,11 +403,11 @@ async function connectToRDSWithInferenceInternal(
 	let selectedTask: string;
 
 	if (inferenceResults.length > 0) {
-		// Show beautiful inference results like in the success story
-		messages.success(`✨ Inference completed in ${inferenceDuration}ms!`);
+		// Show simple inference results summary
+		messages.success(`✨ Found ${inferenceResults.length} ECS targets in ${inferenceDuration}ms`);
 		console.log();
 
-		// Group results by confidence
+		// Show brief summary of inference results
 		const highConfidenceResults = inferenceResults.filter(
 			(r) => r.confidence === "high",
 		);
@@ -425,124 +418,27 @@ async function connectToRDSWithInferenceInternal(
 			(r) => r.confidence === "low",
 		);
 
+		// Show simple summary
+		const validLowCount = lowConfidenceResults.filter(r => !r.reason.includes('接続不可')).length;
+		const invalidLowCount = lowConfidenceResults.filter(r => r.reason.includes('接続不可')).length;
+
+		console.log(`📊 Found ${inferenceResults.length} ECS targets:`);
 		if (highConfidenceResults.length > 0) {
-			console.log("🎯 \x1b[1m\x1b[32mHigh Confidence Matches\x1b[0m");
-			highConfidenceResults.forEach((result, index) => {
-				const icon =
-					index === 0
-						? "┌─"
-						: index === highConfidenceResults.length - 1
-							? "└─"
-							: "├─";
-				const methodIcon =
-					result.method === "environment"
-						? "🔧"
-						: result.method === "naming"
-							? "📝"
-							: "🌐";
-				console.log(
-					`${icon} ${result.cluster.clusterName} → ${result.task.displayName}`,
-				);
-				console.log(
-					`   ${methodIcon} ${getMethodLabel(result.method)}: ${result.score}% (${result.reason})`,
-				);
-				console.log(
-					`   🔗 localhost:${getNextAvailablePort(5432 + index)} → ${selectedRDS.endpoint}:${selectedRDS.port || getDefaultPortForEngine(selectedRDS.engine)}`,
-				);
-				if (index < highConfidenceResults.length - 1) console.log("│");
-			});
-			console.log();
+			console.log(`   🎯 High confidence: ${highConfidenceResults.length}個`);
 		}
-
 		if (mediumConfidenceResults.length > 0) {
-			console.log("⭐ \x1b[1m\x1b[33mMedium Confidence Matches\x1b[0m");
-			mediumConfidenceResults.slice(0, 5).forEach((result, index) => {
-				const icon =
-					index === 0
-						? "┌─"
-						: index === Math.min(mediumConfidenceResults.length, 5) - 1
-							? "└─"
-							: "├─";
-				const methodIcon =
-					result.method === "environment"
-						? "🔧"
-						: result.method === "naming"
-							? "📝"
-							: "🌐";
-				console.log(
-					`${icon} ${result.cluster.clusterName} → ${result.task.displayName}`,
-				);
-				console.log(
-					`   ${methodIcon} ${getMethodLabel(result.method)}: ${result.score}%`,
-				);
-				if (result.reason.includes("RDS名推論")) {
-					console.log(`   🎯 RDS名ベース推論による推薦`);
-				}
-				if (index < Math.min(mediumConfidenceResults.length, 5) - 1)
-					console.log("│");
-			});
-			console.log();
+			console.log(`   ⭐ Medium confidence: ${mediumConfidenceResults.length}個`);
 		}
-
-		if (
-			lowConfidenceResults.length > 0 &&
-			highConfidenceResults.length === 0 &&
-			mediumConfidenceResults.length === 0
-		) {
-			console.log(
-				"🔧 \x1b[1m\x1b[90mLow Confidence Matches (フォールバック推論)\x1b[0m",
-			);
-			const validLowResults = lowConfidenceResults.filter(r => !r.reason.includes('接続不可'));
-			const invalidLowResults = lowConfidenceResults.filter(r => r.reason.includes('接続不可'));
-
-			validLowResults.slice(0, 3).forEach((result, index) => {
-				const icon =
-					index === Math.min(validLowResults.length, 3) - 1 ? "└─" : "├─";
-				const methodIcon =
-					result.method === "environment"
-						? "🔧"
-						: result.method === "naming"
-							? "📝"
-							: "🌐";
-				console.log(
-					`${icon} ${result.cluster.clusterName} → ${result.task.displayName}`,
-				);
-				console.log(
-					`   ${methodIcon} ${getMethodLabel(result.method)}: ${result.score}%`,
-				);
-				if (result.reason.includes("RDS名推論")) {
-					console.log(`   🎯 RDS名ベース推論`);
-				}
-			});
-
-			if (invalidLowResults.length > 0) {
-				console.log('│');
-				console.log('├─ \x1b[2m\x1b[90m停止中のタスク (選択不可)\x1b[0m');
-				invalidLowResults.slice(0, 2).forEach((result) => {
-					console.log(`│  └─ \x1b[2m${result.cluster.clusterName} → ${result.task.displayName} (停止中)\x1b[0m`);
-				});
-			}
-			console.log();
-		} else if (lowConfidenceResults.length > 0) {
-			const validLowCount = lowConfidenceResults.filter(r => !r.reason.includes('接続不可')).length;
-			const invalidLowCount = lowConfidenceResults.filter(r => r.reason.includes('接続不可')).length;
-			console.log(
-				`🔧 \x1b[1m\x1b[90mLow Confidence\x1b[0m: ${validLowCount}個の候補あり${invalidLowCount > 0 ? ` (${invalidLowCount}個停止中)` : ''}`,
-			);
+		if (validLowCount > 0) {
+			console.log(`   🔧 Low confidence: ${validLowCount}個${invalidLowCount > 0 ? ` (${invalidLowCount}個停止中)` : ''}`);
 		}
 
 		// Show recommendation
 		const recommendedResult = inferenceResults[0];
 		if (recommendedResult) {
-			if (highConfidenceResults.length > 0) {
-				console.log(
-					`🎯 \x1b[1m\x1b[36mRecommendation\x1b[0m: ${recommendedResult.cluster.clusterName} → ${recommendedResult.task.displayName} (${recommendedResult.confidence} confidence, ${recommendedResult.score}%)`,
-				);
-			} else {
-				console.log(
-					`💡 \x1b[1m\x1b[36mBest Match\x1b[0m: ${recommendedResult.cluster.clusterName} → ${recommendedResult.task.displayName} (${recommendedResult.confidence} confidence)`,
-				);
-			}
+			console.log(
+				`🎯 \x1b[1m\x1b[36mRecommended\x1b[0m: ${recommendedResult.cluster.clusterName} → ${recommendedResult.task.displayName} (${recommendedResult.confidence} confidence)`,
+			);
 		}
 		console.log();
 
