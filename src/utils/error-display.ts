@@ -13,18 +13,18 @@ export function displayFriendlyError(error: unknown): void {
 
   messages.empty();
   messages.error("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-  messages.bold.error(`❌ ${errorDetails.title}`);
+  messages.bold.error(`${errorDetails.title}`);
   messages.error("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
   messages.empty();
 
   // Main message
-  messages.bold.white("🔍 Problem:");
+  messages.bold.white("Problem:");
   messages.white(`   ${errorDetails.message}`);
   messages.empty();
 
   // Present solutions
   if (errorDetails.suggestions.length > 0) {
-    messages.bold.warning("💡 Hint:");
+    messages.bold.warning("Hint:");
     for (let i = 0; i < errorDetails.suggestions.length; i++) {
       messages.warning(`   ${i + 1}. ${errorDetails.suggestions[i]}`);
     }

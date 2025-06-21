@@ -1,6 +1,6 @@
 {
   "name": "ecs-pf",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "CLI for port-forwarding to RDS via AWS ECS",
   "type": "module",
   "main": "dist/cli.js",
@@ -22,12 +22,13 @@
   "license": "MIT",
   "scripts": {
     "connect": "npm run build && node dist/cli.js connect",
-    "connect-infer": "npm run build && node dist/cli.js connect-infer",
+    "connect-ui": "npm run build && node dist/cli.js connect-ui",
     "dev": "npm run build && node dist/cli.js connect",
     "build": "./scripts/build.sh",
     "build:tsc": "npx tsc --project tsconfig.build.json",
     "start": "node dist/cli.js connect",
     "type-check": "tsc --noEmit",
+    "test": "npm run type-check && npm run build",
     "prepublishOnly": "npm run check",
     "format": "biome format --write",
     "format:check": "biome format",

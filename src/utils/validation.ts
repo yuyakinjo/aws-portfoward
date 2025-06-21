@@ -9,7 +9,7 @@ import { messages } from "./messages.js";
 export function displayValidationErrors(
   issues: v.InferIssue<typeof ConnectOptionsSchema>[],
 ): void {
-  messages.error("❌ Invalid CLI options:");
+  messages.error("Invalid CLI options:");
   for (const issue of issues) {
     messages.error(
       `  • ${issue.path?.[0]?.key || "Unknown"}: ${issue.message}`,

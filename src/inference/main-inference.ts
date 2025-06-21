@@ -1,5 +1,8 @@
 import type { ECSClient } from "@aws-sdk/client-ecs";
-import { getECSClusters, getECSTasks } from "../aws-services.js";
+import {
+  getECSClustersWithExecCapability,
+  getECSTasks,
+} from "../aws-services.js";
 import type { ECSCluster, RDSInstance } from "../types.js";
 import { loadAnalysisResults } from "./analysis-loader.js";
 import { inferClustersFromRDSName } from "./cluster-inference.js";
@@ -23,8 +26,8 @@ export async function inferECSTargets(
     const analysisResults = loadAnalysisResults();
     tracker.endStep();
 
-    tracker.startStep("Get ECS clusters");
-    const allClusters = await getECSClusters(ecsClient);
+    tracker.startStep("Get ECS clusters with exec capability");
+    const allClusters = await getECSClustersWithExecCapability(ecsClient);
     const clusterMap = new Map(allClusters.map((c) => [c.clusterName, c]));
     tracker.endStep();
 
@@ -40,7 +43,7 @@ export async function inferECSTargets(
 
     // 詳細なクラスター情報表示を削除
     // console.log(
-    //   `🎯 RDS "${rdsInstance.dbInstanceIdentifier}" から推論されたクラスター: ${likelyClusterNames.length}個`,
+    //   `RDS "${rdsInstance.dbInstanceIdentifier}" から推論されたクラスター: ${likelyClusterNames.length}個`,
     // );
     tracker.endStep();
 
@@ -141,7 +144,7 @@ export async function inferECSTargets(
 
     // Debug: 推論結果のサマリーを表示
     if (enablePerformanceTracking) {
-      console.log(`\n📊 推論結果サマリー:`);
+      console.log(`\n推論結果サマリー:`);
       console.log(`  - 推論クラスター: ${likelyClusterNames.length}個`);
       console.log(`  - 検索済みタスク: ${results.length}個`);
       console.log(`  - 接続可能: ${validResults.length}個`);

@@ -1,9 +1,7 @@
 import type { Command } from "commander";
 import { safeParse } from "valibot";
-import {
-  connectToRDS,
-  connectToRDSWithInference,
-} from "../aws-port-forward.js";
+import { connectToRDS } from "../aws-port-forward.js";
+import { connectToRDSWithSimpleUI } from "../aws-port-forward-backup.js";
 import { ConnectOptionsSchema } from "../types.js";
 import {
   displayFriendlyError,
@@ -34,16 +32,15 @@ export function registerConnectCommand(program: Command): void {
           process.exit(1);
         }
 
-        messages.info("🚀 Starting AWS ECS RDS connection tool...");
+        messages.info("Starting AWS ECS RDS connection tool...");
         await connectToRDS(output);
-        messages.success("✅ Process completed successfully");
       } catch (error) {
         // If error occurs during retry process, error is already displayed, so show brief message
         if (
           error instanceof Error &&
           error.message.includes("maximum retry count")
         ) {
-          messages.error("🚫 Terminating process");
+          messages.error("Terminating process");
         } else {
           // For unexpected errors, display detailed error screen
           displayFriendlyError(error);
@@ -53,11 +50,11 @@ export function registerConnectCommand(program: Command): void {
     });
 }
 
-export function registerConnectInferenceCommand(program: Command): void {
+export function registerConnectSimpleUICommand(program: Command): void {
   program
-    .command("connect-infer")
-    .alias("ci")
-    .description("Connect to RDS via ECS with intelligent target inference")
+    .command("connect-ui")
+    .alias("ui")
+    .description("Connect to RDS via ECS with step-by-step UI (recommended)")
     .option("-r, --region <region>", "AWS region")
     .option("-c, --cluster <cluster>", "ECS cluster name")
     .option("-t, --task <task>", "ECS task ID")
@@ -77,18 +74,15 @@ export function registerConnectInferenceCommand(program: Command): void {
           process.exit(1);
         }
 
-        messages.info(
-          "🚀 Starting AWS ECS RDS connection tool with inference...",
-        );
-        await connectToRDSWithInference(output);
-        messages.success("✅ Process completed successfully");
+        messages.info("Starting AWS ECS RDS connection tool with Simple UI...");
+        await connectToRDSWithSimpleUI(output);
       } catch (error) {
         // If error occurs during retry process, error is already displayed, so show brief message
         if (
           error instanceof Error &&
           error.message.includes("maximum retry count")
         ) {
-          messages.error("🚫 Terminating process");
+          messages.error("Terminating process");
         } else {
           // For unexpected errors, display detailed error screen
           displayFriendlyError(error);

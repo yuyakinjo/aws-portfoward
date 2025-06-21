@@ -30,7 +30,10 @@ export const messages = {
   },
 
   // Clear and replace the last line
-  clearAndReplace: (newMessage: string, color: 'info' | 'success' | 'error' | 'warning' = 'success') => {
+  clearAndReplace: (
+    newMessage: string,
+    color: "info" | "success" | "error" | "warning" = "success",
+  ) => {
     process.stdout.write("\x1b[1A"); // Move cursor up
     process.stdout.write("\x1b[2K"); // Clear entire line
     process.stdout.write("\r"); // Move to start of line
@@ -80,5 +83,101 @@ export const messages = {
   // 空行
   empty: () => {
     console.log("");
+  },
+
+  // Network selection UI
+  ui: {
+    // Display the current selection state in step-by-step format matching the mockup
+    displaySelectionState: (selections: {
+      region?: string;
+      rds?: string;
+      rdsPort?: string;
+      ecsTarget?: string;
+      ecsCluster?: string;
+      localPort?: string;
+    }) => {
+      console.clear();
+      console.log(chalk.bold.white("Select Network Configuration"));
+      console.log();
+
+      // Helper function to format line with proper spacing and alignment
+      const formatSelectionLine = (
+        label: string,
+        value: string | undefined,
+        isPlaceholder = false,
+        placeholderLabel?: string,
+      ) => {
+        const labelWidth = 12;
+        const totalWidth = 60;
+        const paddedLabel = label.padEnd(labelWidth, " ");
+
+        if (!value) {
+          const placeholder = "____________";
+          const spaces = " ".repeat(
+            Math.max(0, totalWidth - labelWidth - 3 - placeholder.length),
+          );
+          return `  ${paddedLabel}: ${spaces}${chalk.gray(placeholder)}`;
+        }
+
+        if (isPlaceholder && placeholderLabel) {
+          // Special format for placeholder labels like "(RDS port): 5432"
+          const formattedLabel = `(${placeholderLabel})`;
+          const paddedPlaceholderLabel = formattedLabel.padEnd(labelWidth, " ");
+          const spaces = " ".repeat(
+            Math.max(0, totalWidth - labelWidth - 3 - value.length),
+          );
+          return `  ${chalk.gray.italic(paddedPlaceholderLabel)}: ${spaces}${chalk.gray.italic(value)}`;
+        }
+
+        if (isPlaceholder) {
+          const formattedValue = `(${value})`;
+          const spaces = " ".repeat(
+            Math.max(0, totalWidth - labelWidth - 3 - formattedValue.length),
+          );
+          return `  ${paddedLabel}: ${spaces}${chalk.gray.italic(formattedValue)}`;
+        }
+
+        const spaces = " ".repeat(
+          Math.max(0, totalWidth - labelWidth - 3 - value.length),
+        );
+        return `  ${paddedLabel}: ${spaces}${chalk.cyan(value)}`;
+      };
+
+      // Region selection
+      console.log(formatSelectionLine("Region", selections.region));
+
+      // RDS Instance selection
+      console.log(formatSelectionLine("RDS", selections.rds));
+
+      // RDS Port (auto-determined when RDS is selected)
+      if (selections.rds && selections.rdsPort) {
+        console.log(
+          formatSelectionLine("", selections.rdsPort, true, "RDS port"),
+        );
+      } else if (selections.rds) {
+        console.log(formatSelectionLine("", "determining port...", true));
+      } else {
+        console.log(formatSelectionLine("", undefined));
+      }
+
+      // ECS Target selection
+      console.log(formatSelectionLine("ECS Target", selections.ecsTarget));
+
+      // ECS Cluster (auto-determined when ECS Target is selected)
+      if (selections.ecsTarget && selections.ecsCluster) {
+        console.log(
+          formatSelectionLine("", selections.ecsCluster, true, "ECS Cluster"),
+        );
+      } else if (selections.ecsTarget) {
+        console.log(formatSelectionLine("", "determining cluster...", true));
+      } else {
+        console.log(formatSelectionLine("", undefined));
+      }
+
+      // Local Port selection
+      console.log(formatSelectionLine("Local Port", selections.localPort));
+
+      console.log();
+    },
   },
 };

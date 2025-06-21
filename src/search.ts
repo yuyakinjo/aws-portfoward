@@ -27,7 +27,7 @@ export function fuzzySearchClusters(clusters: ECSCluster[], input: string) {
   return results
     .sort((a, b) => (a.score || 0) - (b.score || 0))
     .map((result, index) => ({
-      name: `${index === 0 ? chalk.green("🎯") : "  "} ${result.item.clusterName} ${chalk.dim(`(${result.item.clusterArn.split("/").pop()}) [${((1 - (result.score || 0)) * 100).toFixed(0)}%]`)}`,
+      name: `${index === 0 ? chalk.green("•") : "  "} ${result.item.clusterName} ${chalk.dim(`(${result.item.clusterArn.split("/").pop()}) [${((1 - (result.score || 0)) * 100).toFixed(0)}%]`)}`,
       value: result.item,
     }));
 }
@@ -56,7 +56,7 @@ export function fuzzySearchTasks(tasks: ECSTask[], input: string) {
   return results
     .sort((a, b) => (a.score || 0) - (b.score || 0))
     .map((result, index) => ({
-      name: `${index === 0 ? chalk.green("🎯") : "  "} ${result.item.displayName} ${chalk.dim(`[${((1 - (result.score || 0)) * 100).toFixed(0)}%]`)}`,
+      name: `${index === 0 ? chalk.green("•") : "  "} ${result.item.displayName} ${chalk.dim(`[${((1 - (result.score || 0)) * 100).toFixed(0)}%]`)}`,
       value: result.item.taskArn,
     }));
 }
@@ -85,7 +85,7 @@ export function fuzzySearchRDS(rdsInstances: RDSInstance[], input: string) {
   return results
     .sort((a, b) => (a.score || 0) - (b.score || 0))
     .map((result, index) => ({
-      name: `${index === 0 ? chalk.green("🎯") : "  "} (${result.item.engine}): ${result.item.dbInstanceIdentifier}:${result.item.port} - ${result.item.endpoint} ${chalk.dim(`[${((1 - (result.score || 0)) * 100).toFixed(0)}%]`)}`,
+      name: `${index === 0 ? chalk.green("•") : "  "} (${result.item.engine}): ${result.item.dbInstanceIdentifier}:${result.item.port} - ${result.item.endpoint} ${chalk.dim(`[${((1 - (result.score || 0)) * 100).toFixed(0)}%]`)}`,
       value: result.item,
     }));
 }
@@ -117,7 +117,7 @@ export async function searchClusters(clusters: ECSCluster[], input: string) {
   return results
     .sort((a, b) => (a.score || 0) - (b.score || 0))
     .map((result, index) => ({
-      name: `${index === 0 ? chalk.green("🎯") : "  "} ${result.item.clusterName} ${chalk.dim(`(${result.item.clusterArn.split("/").pop()}) [${((1 - (result.score || 0)) * 100).toFixed(0)}%]`)}`,
+      name: `${index === 0 ? chalk.green("•") : "  "} ${result.item.clusterName} ${chalk.dim(`(${result.item.clusterArn.split("/").pop()}) [${((1 - (result.score || 0)) * 100).toFixed(0)}%]`)}`,
       value: result.item,
     }));
 }
@@ -146,7 +146,7 @@ export async function searchTasks(tasks: ECSTask[], input: string) {
   return results
     .sort((a, b) => (a.score || 0) - (b.score || 0))
     .map((result, index) => ({
-      name: `${index === 0 ? chalk.green("🎯") : "  "} ${result.item.displayName} ${chalk.dim(`[${((1 - (result.score || 0)) * 100).toFixed(0)}%]`)}`,
+      name: `${index === 0 ? chalk.green("•") : "  "} ${result.item.displayName} ${chalk.dim(`[${((1 - (result.score || 0)) * 100).toFixed(0)}%]`)}`,
       value: result.item.taskArn,
     }));
 }
@@ -175,7 +175,7 @@ export async function searchRDS(rdsInstances: RDSInstance[], input: string) {
   return results
     .sort((a, b) => (a.score || 0) - (b.score || 0))
     .map((result, index) => ({
-      name: `${index === 0 ? chalk.green("🎯") : "  "} ${result.item.engine}: ${result.item.dbInstanceIdentifier}:${result.item.port} - ${result.item.endpoint} ${chalk.dim(`[${((1 - (result.score || 0)) * 100).toFixed(0)}%]`)}`,
+      name: `${index === 0 ? chalk.green("•") : "  "} ${result.item.engine}: ${result.item.dbInstanceIdentifier}:${result.item.port} - ${result.item.endpoint} ${chalk.dim(`[${((1 - (result.score || 0)) * 100).toFixed(0)}%]`)}`,
       value: result.item,
     }));
 }
@@ -206,7 +206,7 @@ export async function searchRegions(
 
     return sortedRegions.map((region, index) => {
       const isDefault = region.regionName === defaultRegion;
-      const icon = index === 0 && isDefault ? chalk.green("🎯") : "  ";
+      const icon = index === 0 && isDefault ? chalk.green("•") : "  ";
       const defaultLabel = isDefault ? chalk.cyan(" (default)") : "";
 
       return {
@@ -230,7 +230,7 @@ export async function searchRegions(
     })
     .map((result, index) => {
       const isDefault = result.item.regionName === defaultRegion;
-      const icon = index === 0 ? chalk.green("🎯") : "  ";
+      const icon = index === 0 ? chalk.green("•") : "  ";
       const defaultLabel = isDefault ? chalk.cyan(" (default)") : "";
 
       return {
