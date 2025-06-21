@@ -21,6 +21,22 @@ export const messages = {
     console.log(message);
   },
 
+  // Clear previous lines
+  clearLines: (count: number) => {
+    for (let i = 0; i < count; i++) {
+      process.stdout.write("\x1b[1A"); // Move cursor up
+      process.stdout.write("\x1b[2K"); // Clear entire line
+    }
+  },
+
+  // Clear and replace the last line
+  clearAndReplace: (newMessage: string, color: 'info' | 'success' | 'error' | 'warning' = 'success') => {
+    process.stdout.write("\x1b[1A"); // Move cursor up
+    process.stdout.write("\x1b[2K"); // Clear entire line
+    process.stdout.write("\r"); // Move to start of line
+    messages[color](newMessage);
+  },
+
   // 色付きのメッセージ（既存の色指定を維持）
   cyan: (message: string) => {
     console.log(chalk.cyan(message));

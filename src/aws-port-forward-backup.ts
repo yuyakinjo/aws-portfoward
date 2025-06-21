@@ -111,8 +111,10 @@ async function connectToRDSInternal(
       },
       pageSize: 50,
     });
-    // リージョン重複表示を削除 (connectToRDSInternal)
-    // messages.success(`✅ Region: ${region}`);
+    
+    // Clear the process messages and show only the result
+    messages.clearLines(2); // Clear "Getting regions..." and "filtered as you type"
+    messages.success(`✅ Region: ${region}`);
   }
 
   // Initialize AWS clients
@@ -129,7 +131,7 @@ async function connectToRDSInternal(
       throw new Error(`ECS cluster not found: ${options.cluster}`);
     }
     selectedCluster = cluster;
-    messages.success(`✅ Cluster (from CLI): ${options.cluster}`);
+    messages.clearAndReplace(`✅ Cluster (from CLI): ${options.cluster}`);
   } else {
     messages.warning("🔍 Getting ECS clusters...");
     const clusters = await getECSClusters(ecsClient);
@@ -148,6 +150,10 @@ async function connectToRDSInternal(
       },
       pageSize: 50,
     })) as ECSCluster;
+    
+    // Clear the process messages and show only the result
+    messages.clearLines(2); // Clear "Getting clusters..." and "filtered as you type"
+    messages.success(`✅ Cluster: ${selectedCluster.clusterName}`);
   }
 
   // Get ECS task
@@ -171,6 +177,8 @@ async function connectToRDSInternal(
       },
       pageSize: 50,
     })) as string;
+    
+    messages.clearLines(2); // Clear "Getting ECS tasks..." and "filtered as you type"
   }
 
   // Get RDS instance
@@ -185,7 +193,7 @@ async function connectToRDSInternal(
       throw new Error(`RDS instance not found: ${options.rds}`);
     }
     selectedRDS = rdsInstance;
-    messages.success(`✅ RDS (from CLI): ${options.rds}`);
+    messages.clearAndReplace(`✅ RDS (from CLI): ${options.rds}`);
   } else {
     messages.warning("🔍 Getting RDS instances...");
     const rdsInstances = await getRDSInstances(rdsClient);
@@ -202,6 +210,8 @@ async function connectToRDSInternal(
       },
       pageSize: 50,
     })) as RDSInstance;
+    
+    messages.clearLines(2); // Clear "Getting RDS instances..." and "filtered as you type"
   }
 
   // Use RDS port automatically
@@ -334,6 +344,8 @@ async function connectToRDSWithInferenceInternal(
       },
       pageSize: 50,
     });
+    
+    messages.clearLines(2); // Clear "Getting regions..." and "filtered as you type"
   }
 
   // Initialize AWS clients
@@ -352,7 +364,7 @@ async function connectToRDSWithInferenceInternal(
       throw new Error(`RDS instance not found: ${options.rds}`);
     }
     selectedRDS = rdsInstance;
-    messages.success(`✅ RDS (from CLI): ${options.rds}`);
+    messages.clearAndReplace(`✅ RDS (from CLI): ${options.rds}`);
   } else {
     messages.warning("🔍 Getting RDS instances...");
     const rdsInstances = await getRDSInstances(rdsClient);
@@ -368,6 +380,8 @@ async function connectToRDSWithInferenceInternal(
       },
       pageSize: 50,
     })) as RDSInstance;
+    
+    messages.clearLines(2); // Clear "Getting RDS instances..." and "filtered as you type"
   }
 
   const inferenceStartTime = performance.now();
@@ -427,6 +441,8 @@ async function connectToRDSWithInferenceInternal(
           pageSize: 15,
         })) as InferenceResult;
         selectedTask = selectedInference.task.taskArn;
+        
+        messages.clearLines(2); // Clear "Found X ECS targets..." and "filtered as you type"
       }
     } else {
       // Let user choose from recommendations
@@ -451,6 +467,8 @@ async function connectToRDSWithInferenceInternal(
         pageSize: 15,
       })) as InferenceResult;
       selectedTask = selectedInference.task.taskArn;
+      
+      messages.clearLines(2); // Clear "Found X ECS targets..." and "filtered as you type"
     }
 
     messages.success(
@@ -472,7 +490,7 @@ async function connectToRDSWithInferenceInternal(
         throw new Error(`ECS cluster not found: ${options.cluster}`);
       }
       selectedCluster = cluster;
-      messages.success(`✅ Cluster (from CLI): ${options.cluster}`);
+      messages.clearAndReplace(`✅ Cluster (from CLI): ${options.cluster}`);
     } else {
       messages.warning("🔍 Getting ECS clusters...");
       const clusters = await getECSClusters(ecsClient);
@@ -488,6 +506,8 @@ async function connectToRDSWithInferenceInternal(
         },
         pageSize: 50,
       })) as ECSCluster;
+      
+      messages.clearLines(2); // Clear "Getting ECS clusters..." and "filtered as you type"
     }
 
     // Get ECS task manually
@@ -511,6 +531,8 @@ async function connectToRDSWithInferenceInternal(
       });
 
       selectedTask = selectedTaskObject;
+      
+      messages.clearLines(2); // Clear "Getting ECS tasks..." and "filtered as you type"
     }
 
     // Create a dummy inference result for consistency
@@ -588,9 +610,6 @@ async function connectToRDSWithInferenceInternal(
 
   // Start SSM session with beautiful connection details
   messages.success("🚀 Starting port forwarding session...");
-
-  // Calculate connection establishment time
-  const connectionStartTime = performance.now();
 
   // Display connection information in a beautiful format
   console.log();
