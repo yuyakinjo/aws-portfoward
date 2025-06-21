@@ -30,6 +30,7 @@ import type {
 import {
   askRetry,
   displayFriendlyError,
+  findAvailablePort,
   getDefaultPortForEngine,
   messages,
 } from "./utils/index.js";
@@ -217,21 +218,32 @@ async function connectToRDSInternal(
   }
 
   // Specify local port
+  // Automatically find available port starting from 8888
   let localPort: string;
   if (options.localPort !== undefined) {
     localPort = `${options.localPort}`;
     messages.success(`✅ Local Port (from CLI): ${localPort}`);
   } else {
-    localPort = await input({
-      message: "Enter local port number:",
-      default: "8888",
-      validate: (inputValue: string) => {
-        const port = parseInt(inputValue || "8888");
-        return port > 0 && port < 65536
-          ? true
-          : "Please enter a valid port number (1-65535)";
-      },
-    });
+    try {
+      const availablePort = await findAvailablePort(8888);
+      localPort = `${availablePort}`;
+      messages.success(`✅ Local Port (auto-selected): ${localPort}`);
+    } catch {
+      // Fallback to asking user if automatic port finding fails
+      messages.warning(
+        "⚠️ Could not find available port automatically. Please specify manually:",
+      );
+      localPort = await input({
+        message: "Enter local port number:",
+        default: "8888",
+        validate: (inputValue: string) => {
+          const port = parseInt(inputValue || "8888");
+          return port > 0 && port < 65536
+            ? true
+            : "Please enter a valid port number (1-65535)";
+        },
+      });
+    }
   }
 
   // Generate reproducible command
@@ -535,23 +547,33 @@ async function connectToRDSWithInferenceInternal(
     messages.success(`✅ RDS Port (auto-detected): ${rdsPort}`);
   }
 
-  // Specify local port
+  // Automatically find available port starting from 8888
   let localPort: string;
   if (options.localPort !== undefined) {
     localPort = `${options.localPort}`;
     messages.success(`✅ Local Port (from CLI): ${localPort}`);
   } else {
-    const { input } = await import("@inquirer/prompts");
-    localPort = await input({
-      message: "Enter local port number:",
-      default: "8888",
-      validate: (inputValue: string) => {
-        const port = parseInt(inputValue || "8888");
-        return port > 0 && port < 65536
-          ? true
-          : "Please enter a valid port number (1-65535)";
-      },
-    });
+    try {
+      const availablePort = await findAvailablePort(8888);
+      localPort = `${availablePort}`;
+      messages.success(`✅ Local Port (auto-selected): ${localPort}`);
+    } catch {
+      // Fallback to asking user if automatic port finding fails
+      messages.warning(
+        "⚠️ Could not find available port automatically. Please specify manually:",
+      );
+      const { input } = await import("@inquirer/prompts");
+      localPort = await input({
+        message: "Enter local port number:",
+        default: "8888",
+        validate: (inputValue: string) => {
+          const port = parseInt(inputValue || "8888");
+          return port > 0 && port < 65536
+            ? true
+            : "Please enter a valid port number (1-65535)";
+        },
+      });
+    }
   }
 
   // Generate reproducible command
