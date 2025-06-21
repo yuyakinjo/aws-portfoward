@@ -1,6 +1,10 @@
 import type { Command } from "commander";
-import { registerConnectCommand } from "./connect.js";
+import {
+  registerConnectCommand,
+  registerConnectInferenceCommand,
+} from "./connect.js";
 
 export function registerAllCommands(program: Command): void {
-	registerConnectCommand(program);
+  registerConnectCommand(program);
+  registerConnectInferenceCommand(program);
 }

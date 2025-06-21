@@ -1,60 +1,61 @@
 {
-	"name": "ecs-pf",
-	"version": "1.2.0",
-	"description": "CLI for port-forwarding to RDS via AWS ECS",
-	"type": "module",
-	"main": "dist/cli.js",
-	"bin": {
-		"ecs-pf": "dist/cli.js"
-	},
-	"files": [
-		"dist/**/*",
-		"README.md"
-	],
-	"keywords": [
-		"aws",
-		"ecs",
-		"rds",
-		"port-forwarding",
-		"cli"
-	],
-	"author": "",
-	"license": "MIT",
-	"scripts": {
-		"connect": "npm run build && node dist/cli.js connect",
-		"dev": "npm run build && node dist/cli.js connect",
-		"build": "./scripts/build.sh",
-		"build:tsc": "npx tsc --project tsconfig.build.json",
-		"start": "node dist/cli.js connect",
-		"type-check": "tsc --noEmit",
-		"prepublishOnly": "npm run check",
-		"format": "biome format --write",
-		"format:check": "biome format",
-		"lint": "biome lint --write",
-		"lint:check": "biome lint",
-		"check": "biome check --write",
-		"check:dry": "biome check",
-		"ci": "biome ci"
-	},
-	"devDependencies": {
-		"@biomejs/biome": "^2.0.0",
-		"@types/inquirer": "^9.0.8"
-	},
-	"peerDependencies": {
-		"typescript": "^5"
-	},
-	"dependencies": {
-		"@aws-sdk/client-ec2": "^3.830.0",
-		"@aws-sdk/client-ecs": "^3.830.0",
-		"@aws-sdk/client-rds": "^3.830.0",
-		"@aws-sdk/client-ssm": "^3.830.0",
-		"@inquirer/prompts": "^7.5.3",
-		"chalk": "^5.4.1",
-		"commander": "^14.0.0",
-		"fuse.js": "^7.1.0",
-		"inquirer": "^12.6.3",
-		"inquirer-search-list": "^1.2.6",
-		"remeda": "^2.23.0",
-		"valibot": "^1.1.0"
-	}
+  "name": "ecs-pf",
+  "version": "1.2.0",
+  "description": "CLI for port-forwarding to RDS via AWS ECS",
+  "type": "module",
+  "main": "dist/cli.js",
+  "bin": {
+    "ecs-pf": "dist/cli.js"
+  },
+  "files": [
+    "dist/**/*",
+    "README.md"
+  ],
+  "keywords": [
+    "aws",
+    "ecs",
+    "rds",
+    "port-forwarding",
+    "cli"
+  ],
+  "author": "",
+  "license": "MIT",
+  "scripts": {
+    "connect": "npm run build && node dist/cli.js connect",
+    "connect-inference": "npm run build && node dist/cli.js connect-inference",
+    "dev": "npm run build && node dist/cli.js connect",
+    "build": "./scripts/build.sh",
+    "build:tsc": "npx tsc --project tsconfig.build.json",
+    "start": "node dist/cli.js connect",
+    "type-check": "tsc --noEmit",
+    "prepublishOnly": "npm run check",
+    "format": "biome format --write",
+    "format:check": "biome format",
+    "lint": "biome lint --write",
+    "lint:check": "biome lint",
+    "check": "biome check --write",
+    "check:dry": "biome check",
+    "ci": "biome ci"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.0.0",
+    "@types/inquirer": "^9.0.8"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@aws-sdk/client-ec2": "^3.830.0",
+    "@aws-sdk/client-ecs": "^3.830.0",
+    "@aws-sdk/client-rds": "^3.830.0",
+    "@aws-sdk/client-ssm": "^3.830.0",
+    "@inquirer/prompts": "^7.5.3",
+    "chalk": "^5.4.1",
+    "commander": "^14.0.0",
+    "fuse.js": "^7.1.0",
+    "inquirer": "^12.6.3",
+    "inquirer-search-list": "^1.2.6",
+    "remeda": "^2.23.0",
+    "valibot": "^1.1.0"
+  }
 }
