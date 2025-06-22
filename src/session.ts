@@ -21,7 +21,7 @@ export async function startSSMSession(
 
   messages.empty();
   messages.success(
-    `RDS connection will be available at localhost:${localPort}`,
+    `🌈RDS connection will be available at localhost:${localPort}`,
   );
   messages.empty();
 

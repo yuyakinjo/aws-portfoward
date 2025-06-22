@@ -1,7 +1,6 @@
 import type { Command } from "commander";
 import { safeParse } from "valibot";
-import { connectToRDS } from "../aws-port-forward.js";
-import { connectToRDSWithSimpleUI } from "../aws-port-forward-backup.js";
+import { connectToRDS, connectToRDSWithSimpleUI } from "../aws-port-forward.js";
 import { ConnectOptionsSchema } from "../types.js";
 import {
   displayFriendlyError,

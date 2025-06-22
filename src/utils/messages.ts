@@ -98,7 +98,7 @@ export const messages = {
     }) => {
       console.clear();
       console.log(chalk.bold.white("Select Network Configuration"));
-      console.log();
+      messages.empty();
 
       // Helper function to format line with proper spacing and alignment
       const formatSelectionLine = (
@@ -177,7 +177,7 @@ export const messages = {
       // Local Port selection
       console.log(formatSelectionLine("Local Port", selections.localPort));
 
-      console.log();
+      messages.empty();
     },
   },
 };
