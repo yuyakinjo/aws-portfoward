@@ -116,11 +116,8 @@ export async function getECSTasks(
                   // Format for ECS Exec: ecs:cluster_name_task_id_runtime_id
                   const targetArn = `ecs:${clusterFullName}_${taskId}_${runtimeId}`;
 
-                  // Create more detailed display name
-                  const createdAt = task.createdAt
-                    ? new Date(task.createdAt).toLocaleString("en-US")
-                    : "";
-                  const displayName = `${serviceName} | ${taskId.substring(0, 8)} | ${task.lastStatus} | ${createdAt}`;
+                  // Create simple display name - just service name
+                  const displayName = serviceName;
 
                   tasks.push({
                     taskArn: targetArn,

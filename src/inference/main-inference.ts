@@ -166,5 +166,5 @@ export async function inferECSTargets(
  * Format inference result for display
  */
 export function formatInferenceResult(result: InferenceResult): string {
-  return `${result.cluster.clusterName} → ${result.task.displayName}`;
+  return result.task.serviceName;
 }
