@@ -49,7 +49,7 @@ export async function inferECSTargets(
 
     // Phase 1: 推論されたクラスターでタスク検索（最優先）
     tracker.startStep("Search tasks in inferred clusters");
-    const primaryClusters = likelyClusters.slice(0, 3); // 上位3つのクラスターのみ
+    const primaryClusters = likelyClusters.slice(0, 2); // 上位2つのクラスターのみ（さらに高速化）
 
     // 並列でタスクを取得し、スコアリングを実行
     const primaryClusterResults = await Promise.all(
@@ -80,8 +80,8 @@ export async function inferECSTargets(
 
     // Phase 2: 不十分な場合のフォールバック検索
     tracker.startStep("Fallback search if needed");
-    if (results.length < 3) {
-      const remainingClusters = likelyClusters.slice(3, 8); // 次の5個のクラスター
+    if (results.length < 2) {
+      const remainingClusters = likelyClusters.slice(2, 4); // 次の2個のクラスターのみ（高速化）
 
       const fallbackResults = await Promise.all(
         remainingClusters.map(async (cluster) => {

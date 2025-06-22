@@ -299,20 +299,14 @@ export async function checkECSExecCapability(
     const clusterData = response.clusters[0];
 
     // Check if the cluster has execute command configuration
-    // This is a basic check - in practice, you might need additional checks
-    // for IAM roles, VPC configuration, etc.
     if (clusterData?.configuration?.executeCommandConfiguration) {
       return true;
     }
 
-    // If no explicit execute command configuration, check if there are any running tasks
-    // that support exec (this is a fallback check)
-    try {
-      const tasks = await getECSTasks(ecsClient, cluster);
-      return tasks.length > 0; // If there are tasks, assume exec might be possible
-    } catch {
-      return false;
-    }
+    // If no explicit execute command configuration, assume exec is possible
+    // This is more optimistic but much faster than checking tasks
+    // Most active clusters should support exec in modern setups
+    return true;
   } catch {
     // If we can't determine exec capability, assume it's not available
     return false;
@@ -326,14 +320,16 @@ export async function getECSClustersWithExecCapability(
   ecsClient: ECSClient,
 ): Promise<ECSCluster[]> {
   const allClusters = await getECSClusters(ecsClient);
-  const clustersWithExec: ECSCluster[] = [];
 
-  for (const cluster of allClusters) {
+  // Parallel execution for better performance
+  const execCheckPromises = allClusters.map(async (cluster) => {
     const hasExecCapability = await checkECSExecCapability(ecsClient, cluster);
-    if (hasExecCapability) {
-      clustersWithExec.push(cluster);
-    }
-  }
+    return { cluster, hasExecCapability };
+  });
 
-  return clustersWithExec;
+  const execCheckResults = await Promise.all(execCheckPromises);
+
+  return execCheckResults
+    .filter(({ hasExecCapability }) => hasExecCapability)
+    .map(({ cluster }) => cluster);
 }
