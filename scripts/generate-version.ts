@@ -35,7 +35,10 @@ export const VERSION = "${packageJson.version}";
 } catch (error) {
   console.error("❌ Failed to generate version.ts:");
   if (error instanceof v.ValiError) {
-    console.error("Package.json validation failed:", v.flatten(error.issues).nested);
+    console.error(
+      "Package.json validation failed:",
+      v.flatten(error.issues).nested,
+    );
   } else {
     console.error(error);
   }
