@@ -1,15 +1,21 @@
 #!/usr/bin/env node
 
+import fs from "node:fs";
+import path from "node:path";
 import { Command } from "commander";
 import { registerAllCommands } from "./programs/index.js";
 import { displayFriendlyError, messages } from "./utils/index.js";
+
+// Import version from package.json
+const packageJsonPath = path.join(process.cwd(), "package.json");
+const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
 
 const program = new Command();
 
 program
   .name("aws-port-forward")
   .description("CLI for port-forwarding to RDS via AWS ECS")
-  .version("2.2.0");
+  .version(packageJson.version);
 
 // Register all commands
 registerAllCommands(program);
