@@ -1,6 +1,6 @@
 {
   "name": "ecs-pf",
-  "version": "2.2.3",
+  "version": "2.2.5",
   "description": "CLI for port-forwarding to RDS via AWS ECS",
   "type": "module",
   "main": "dist/cli.js",
@@ -26,6 +26,7 @@
     "dev": "npm run build && node dist/cli.js connect",
     "build": "./scripts/build.sh",
     "build:tsc": "npx tsc --project tsconfig.build.json",
+    "generate-version": "node --experimental-strip-types scripts/generate-version.ts",
     "start": "node dist/cli.js connect",
     "type-check": "tsc --noEmit",
     "test": "npm run type-check && npm run build",
@@ -58,5 +59,8 @@
     "inquirer-search-list": "^1.2.6",
     "remeda": "^2.23.0",
     "valibot": "^1.1.0"
+  },
+  "volta": {
+    "node": "24.2.0"
   }
 }
