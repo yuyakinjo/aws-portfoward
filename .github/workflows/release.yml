@@ -68,7 +68,8 @@ jobs:
       - name: Get current version
         id: current_version
         run: |
-          CURRENT_VERSION=$(npm version --json | jq -r '.["ecs-pf"]')
+          # 最新のタグを取得（vプレフィックス付き）
+          CURRENT_VERSION=$(git describe --tags --abbrev=0)
           echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
           echo "Current version: $CURRENT_VERSION"
 
