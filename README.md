@@ -198,12 +198,22 @@ npm publish
 
 ## CHANGELOG
 
-### v2.2.1 (Current)
+### v2.2.3 (Current)
 
 - **IMPROVED**: UI display optimization - ECS tasks now show service names only
 - **IMPROVED**: Performance optimization for ECS target inference (faster RDS connection)
 - **IMPROVED**: Automatic version detection from package.json
 - **IMPROVED**: Command structure - `connect-ui` as main command (no alias)
+- **UPDATED**: Documentation and README improvements
+
+### v2.2.2
+
+- **FIXED**: TypeScript build configuration improvements
+- **IMPROVED**: Module resolution and JSON import handling
+
+### v2.2.1
+
+- **FIXED**: Minor bug fixes and stability improvements
 
 ### v2.2.0
 
