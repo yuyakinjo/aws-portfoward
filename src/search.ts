@@ -45,7 +45,7 @@ export function fuzzySearchTasks(tasks: ECSTask[], input: string) {
 
   if (!input || input.trim() === "") {
     return tasks.map((task) => ({
-      name: task.displayName,
+      name: task.serviceName,
       value: task.taskArn,
     }));
   }
@@ -56,7 +56,7 @@ export function fuzzySearchTasks(tasks: ECSTask[], input: string) {
   return results
     .sort((a, b) => (a.score || 0) - (b.score || 0))
     .map((result, index) => ({
-      name: `${index === 0 ? chalk.green("•") : "  "} ${result.item.displayName} ${chalk.dim(`[${((1 - (result.score || 0)) * 100).toFixed(0)}%]`)}`,
+      name: `${index === 0 ? chalk.green("•") : "  "} ${result.item.serviceName} ${chalk.dim(`[${((1 - (result.score || 0)) * 100).toFixed(0)}%]`)}`,
       value: result.item.taskArn,
     }));
 }
@@ -74,7 +74,7 @@ export function fuzzySearchRDS(rdsInstances: RDSInstance[], input: string) {
 
   if (!input || input.trim() === "") {
     return rdsInstances.map((rds) => ({
-      name: `(${rds.engine}): ${rds.dbInstanceIdentifier}:${rds.port} - ${rds.endpoint}`,
+      name: `(${rds.engine}): ${rds.dbInstanceIdentifier}`,
       value: rds,
     }));
   }
@@ -85,7 +85,7 @@ export function fuzzySearchRDS(rdsInstances: RDSInstance[], input: string) {
   return results
     .sort((a, b) => (a.score || 0) - (b.score || 0))
     .map((result, index) => ({
-      name: `${index === 0 ? chalk.green("•") : "  "} (${result.item.engine}): ${result.item.dbInstanceIdentifier}:${result.item.port} - ${result.item.endpoint} ${chalk.dim(`[${((1 - (result.score || 0)) * 100).toFixed(0)}%]`)}`,
+      name: `${index === 0 ? chalk.green("•") : "  "} (${result.item.engine}): ${result.item.dbInstanceIdentifier} ${chalk.dim(`[${((1 - (result.score || 0)) * 100).toFixed(0)}%]`)}`,
       value: result.item,
     }));
 }
@@ -135,7 +135,7 @@ export async function searchTasks(tasks: ECSTask[], input: string) {
 
   if (!input || input.trim() === "") {
     return tasks.map((task) => ({
-      name: task.displayName,
+      name: task.serviceName,
       value: task.taskArn,
     }));
   }
@@ -146,7 +146,7 @@ export async function searchTasks(tasks: ECSTask[], input: string) {
   return results
     .sort((a, b) => (a.score || 0) - (b.score || 0))
     .map((result, index) => ({
-      name: `${index === 0 ? chalk.green("•") : "  "} ${result.item.displayName} ${chalk.dim(`[${((1 - (result.score || 0)) * 100).toFixed(0)}%]`)}`,
+      name: `${index === 0 ? chalk.green("•") : "  "} ${result.item.serviceName} ${chalk.dim(`[${((1 - (result.score || 0)) * 100).toFixed(0)}%]`)}`,
       value: result.item.taskArn,
     }));
 }
@@ -164,7 +164,7 @@ export async function searchRDS(rdsInstances: RDSInstance[], input: string) {
 
   if (!input || input.trim() === "") {
     return rdsInstances.map((rds) => ({
-      name: `(${rds.engine}): ${rds.dbInstanceIdentifier}:${rds.port} - ${rds.endpoint}`,
+      name: `(${rds.engine}): ${rds.dbInstanceIdentifier}`,
       value: rds,
     }));
   }
@@ -175,7 +175,7 @@ export async function searchRDS(rdsInstances: RDSInstance[], input: string) {
   return results
     .sort((a, b) => (a.score || 0) - (b.score || 0))
     .map((result, index) => ({
-      name: `${index === 0 ? chalk.green("•") : "  "} ${result.item.engine}: ${result.item.dbInstanceIdentifier}:${result.item.port} - ${result.item.endpoint} ${chalk.dim(`[${((1 - (result.score || 0)) * 100).toFixed(0)}%]`)}`,
+      name: `${index === 0 ? chalk.green("•") : "  "} (${result.item.engine}): ${result.item.dbInstanceIdentifier} ${chalk.dim(`[${((1 - (result.score || 0)) * 100).toFixed(0)}%]`)}`,
       value: result.item,
     }));
 }
