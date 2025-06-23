@@ -52,7 +52,6 @@ export function registerConnectCommand(program: Command): void {
 export function registerConnectSimpleUICommand(program: Command): void {
   program
     .command("connect-ui")
-    .alias("ui")
     .description("Connect to RDS via ECS with step-by-step UI (recommended)")
     .option("-r, --region <region>", "AWS region")
     .option("-c, --cluster <cluster>", "ECS cluster name")

@@ -20,7 +20,7 @@ A modern CLI tool for connecting to RDS databases through AWS ECS tasks using SS
 
 ```bash
 # Interactive guided workflow (recommended for new users)
-npx ecs-pf ui
+npx ecs-pf connect-ui
 ```
 
 ### Traditional Manual Selection
@@ -50,7 +50,7 @@ npx ecs-pf connect \
 
 | Command | Alias | Description | Best For |
 |---------|-------|-------------|-----------|
-| `ui` | `connect-ui` | Step-by-step guided workflow | New users, interactive use |
+| `connect-ui` | - | Step-by-step guided workflow | New users, interactive use |
 | `connect` | - | Traditional manual selection | CLI veterans, automation |
 
 ## Command Line Options
@@ -69,7 +69,7 @@ npx ecs-pf connect \
 ### Step-by-Step UI Workflow
 
 ```bash
-$ npx ecs-pf ui
+$ npx ecs-pf connect-ui
 
 Select Network Configuration
   Region      : ap-northeast-1
@@ -83,24 +83,6 @@ Connection established!
 Database available at: localhost:8888
 ```
 
-### Traditional Workflow
-
-```bash
-$ npx ecs-pf connect
-
-Starting AWS ECS RDS connection tool...
-Region (from CLI): ap-northeast-1
-Getting ECS clusters with exec capability...
-Found 15 clusters with ECS exec capability
-? Search and select ECS cluster: production-cluster
-? Search and select ECS task: api-task (abc123...)
-Getting RDS instances...
-? Search and select RDS instance: production-db (postgres)
-RDS Port (auto-detected): 5432
-? Enter local port number: 8888
-
-Connection established!
-```
 
 ## Prerequisites
 
@@ -195,7 +177,7 @@ npm install
 npm run build
 
 # Run locally
-node dist/cli.js ui
+node dist/cli.js connect-ui
 ```
 
 ### Publishing to npm
@@ -214,11 +196,18 @@ npm publish
 - **Binary**: `dist/cli.js` (Node.js ESM)
 - **Target**: Node.js 16+
 
-## Version History
+## CHANGELOG
 
-### v2.2.0 (Current)
+### v2.2.1 (Current)
 
-- **NEW**: Step-by-step UI workflow (`ui` command)
+- **IMPROVED**: UI display optimization - ECS tasks now show service names only
+- **IMPROVED**: Performance optimization for ECS target inference (faster RDS connection)
+- **IMPROVED**: Automatic version detection from package.json
+- **IMPROVED**: Command structure - `connect-ui` as main command (no alias)
+
+### v2.2.0
+
+- **NEW**: Step-by-step UI workflow (`connect-ui` command)
 - **NEW**: ECS exec capability filtering
 - **IMPROVED**: Clean, emoji-free interface
 - **IMPROVED**: Auto-filled RDS port and cluster detection
