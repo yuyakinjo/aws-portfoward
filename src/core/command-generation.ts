@@ -11,5 +11,5 @@ export function generateReproducibleCommand(
   rdsPort: string,
   localPort: string,
 ): string {
-  return `npx ecs-pf${VERSION} connect --region ${region} --cluster ${cluster} --task ${task} --rds ${rds} --rds-port ${rdsPort} --local-port ${localPort}`;
+  return `npx ecs-pf@${VERSION} connect --region ${region} --cluster ${cluster} --task ${task} --rds ${rds} --rds-port ${rdsPort} --local-port ${localPort}`;
 }
