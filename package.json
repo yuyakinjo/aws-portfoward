@@ -57,7 +57,7 @@
     "fuse.js": "^7.1.0",
     "inquirer": "^12.6.3",
     "inquirer-search-list": "^1.2.6",
-    "remeda": "^2.23.0",
+    "remeda": "^2.23.1",
     "valibot": "^1.1.0"
   },
   "volta": {
