@@ -1,19 +1,56 @@
 import chalk from "chalk";
 import Fuse from "fuse.js";
-import { isEmpty } from "remeda";
+import { isString } from "remeda";
 import {
   formatInferenceResult,
   type InferenceResult,
 } from "./inference/index.js";
 import type { AWSRegion, ECSCluster, ECSTask, RDSInstance } from "./types.js";
 
-// 汎用的な検索アイテムの型定義
+// 検索可能なアイテムの型定義
 interface SearchableItem {
   name: string;
   value: any;
   description?: string;
   metadata?: string;
   isDefault?: boolean;
+}
+
+// Type-safe helper function to check if item has a specific property value
+function hasPropertyValue<T extends Record<string, any>>(
+  item: T,
+  property: string,
+  value: string,
+): boolean {
+  const itemValue = item[property];
+  return typeof itemValue === "string" && itemValue === value;
+}
+
+// Type-safe helper function to check if item matches default value
+function isDefaultItem<T extends Record<string, any>>(
+  item: T,
+  defaultValue: string | T | undefined,
+): boolean {
+  if (!defaultValue) {
+    return false;
+  }
+
+  if (isString(defaultValue)) {
+    // Check common property names for AWS resources
+    const commonProps = [
+      "regionName",
+      "clusterName",
+      "dbInstanceIdentifier",
+    ] as const;
+    return commonProps.some((prop) => {
+      if (prop in item) {
+        return hasPropertyValue(item, prop, defaultValue);
+      }
+      return false;
+    });
+  }
+
+  return item === defaultValue;
 }
 
 // 検索設定の型定義
@@ -40,7 +77,7 @@ interface SearchConfig<T> {
  * 汎用的な検索関数（キーワード絞り込み優先）
  * スペース区切りキーワードでの絞り込みを重視し、ファジー検索は補助的に使用
  */
-export async function universalSearch<T>(
+export async function universalSearch<T extends Record<string, any>>(
   config: SearchConfig<T>,
   input: string,
   defaultValue?: string | T,
@@ -59,40 +96,15 @@ export async function universalSearch<T>(
     // デフォルト値がある場合は先頭に表示
     let sortedItems = items;
     if (defaultValue) {
-      const defaultKey = typeof defaultValue === "string" ? defaultValue : null;
       sortedItems = [
-        ...items.filter((item) => {
-          if (defaultKey) {
-            return (
-              (item as any)?.regionName === defaultKey ||
-              (item as any)?.clusterName === defaultKey ||
-              (item as any)?.dbInstanceIdentifier === defaultKey
-            );
-          }
-          return item === defaultValue;
-        }),
-        ...items.filter((item) => {
-          if (defaultKey) {
-            return (
-              (item as any)?.regionName !== defaultKey &&
-              (item as any)?.clusterName !== defaultKey &&
-              (item as any)?.dbInstanceIdentifier !== defaultKey
-            );
-          }
-          return item !== defaultValue;
-        }),
+        ...items.filter((item) => isDefaultItem(item, defaultValue)),
+        ...items.filter((item) => !isDefaultItem(item, defaultValue)),
       ];
     }
 
     return sortedItems.map((item, index) => {
-      const isDefault =
-        defaultValue &&
-        ((typeof defaultValue === "string" &&
-          ((item as any)?.regionName === defaultValue ||
-            (item as any)?.clusterName === defaultValue ||
-            (item as any)?.dbInstanceIdentifier === defaultValue)) ||
-          item === defaultValue);
-      return emptyInputFormatter(item, index, !!isDefault);
+      const isDefault = isDefaultItem(item, defaultValue);
+      return emptyInputFormatter(item, index, isDefault);
     });
   }
 
@@ -133,18 +145,8 @@ export async function universalSearch<T>(
         .sort((a, b) => {
           // デフォルト値を優先
           if (defaultValue) {
-            const aIsDefault =
-              typeof defaultValue === "string"
-                ? (a as any)?.regionName === defaultValue ||
-                  (a as any)?.clusterName === defaultValue ||
-                  (a as any)?.dbInstanceIdentifier === defaultValue
-                : a === defaultValue;
-            const bIsDefault =
-              typeof defaultValue === "string"
-                ? (b as any)?.regionName === defaultValue ||
-                  (b as any)?.clusterName === defaultValue ||
-                  (b as any)?.dbInstanceIdentifier === defaultValue
-                : b === defaultValue;
+            const aIsDefault = isDefaultItem(a, defaultValue);
+            const bIsDefault = isDefaultItem(b, defaultValue);
 
             if (aIsDefault && !bIsDefault) return -1;
             if (!aIsDefault && bIsDefault) return 1;
@@ -170,14 +172,8 @@ export async function universalSearch<T>(
           return aText.localeCompare(bText);
         })
         .map((item, index) => {
-          const isDefault =
-            defaultValue &&
-            ((typeof defaultValue === "string" &&
-              ((item as any)?.regionName === defaultValue ||
-                (item as any)?.clusterName === defaultValue ||
-                (item as any)?.dbInstanceIdentifier === defaultValue)) ||
-              item === defaultValue);
-          return displayFormatter(item, index, !!isDefault);
+          const isDefault = isDefaultItem(item, defaultValue);
+          return displayFormatter(item, index, isDefault);
         });
     }
   }
@@ -201,18 +197,8 @@ export async function universalSearch<T>(
     .sort((a, b) => {
       // デフォルト値を優先
       if (defaultValue) {
-        const aIsDefault =
-          typeof defaultValue === "string"
-            ? (a.item as any)?.regionName === defaultValue ||
-              (a.item as any)?.clusterName === defaultValue ||
-              (a.item as any)?.dbInstanceIdentifier === defaultValue
-            : a.item === defaultValue;
-        const bIsDefault =
-          typeof defaultValue === "string"
-            ? (b.item as any)?.regionName === defaultValue ||
-              (b.item as any)?.clusterName === defaultValue ||
-              (b.item as any)?.dbInstanceIdentifier === defaultValue
-            : b.item === defaultValue;
+        const aIsDefault = isDefaultItem(a.item, defaultValue);
+        const bIsDefault = isDefaultItem(b.item, defaultValue);
 
         if (aIsDefault && !bIsDefault) return -1;
         if (!aIsDefault && bIsDefault) return 1;
@@ -220,14 +206,8 @@ export async function universalSearch<T>(
       return (a.score || 0) - (b.score || 0);
     })
     .map((result, index) => {
-      const isDefault =
-        defaultValue &&
-        ((typeof defaultValue === "string" &&
-          ((result.item as any)?.regionName === defaultValue ||
-            (result.item as any)?.clusterName === defaultValue ||
-            (result.item as any)?.dbInstanceIdentifier === defaultValue)) ||
-          result.item === defaultValue);
-      return displayFormatter(result.item, index, !!isDefault, result.score);
+      const isDefault = isDefaultItem(result.item, defaultValue);
+      return displayFormatter(result.item, index, isDefault, result.score);
     });
 }
 

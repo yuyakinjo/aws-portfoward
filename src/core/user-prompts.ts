@@ -1,4 +1,5 @@
 import { input, search } from "@inquirer/prompts";
+import { isDefined } from "remeda";
 import {
   formatInferenceResult,
   type InferenceResult,
@@ -41,13 +42,25 @@ export async function promptForCluster(
   // Select ECS cluster with zoxide-style real-time search
   messages.info("filtered as you type (↑↓ to select, Enter to confirm)");
 
-  return (await search({
+  const result = await search({
     message: "Search and select ECS cluster:",
     source: async (input) => {
       return await searchClusters(clusters, input || "");
     },
     pageSize: 50,
-  })) as ECSCluster;
+  });
+
+  // Ensure the result is a valid ECS cluster by finding it in the original array
+  const selectedCluster = clusters.find(
+    (cluster) =>
+      cluster.clusterName === result || cluster.clusterArn === result,
+  );
+
+  if (!isDefined(selectedCluster)) {
+    throw new Error("Selected cluster not found in cluster list");
+  }
+
+  return selectedCluster;
 }
 
 /**
@@ -55,13 +68,19 @@ export async function promptForCluster(
  */
 export async function promptForTask(tasks: ECSTask[]): Promise<string> {
   // Select ECS task with zoxide-style real-time search
-  return (await search({
+  const result = await search({
     message: "Search and select ECS task:",
     source: async (input) => {
       return await searchTasks(tasks, input || "");
     },
     pageSize: 50,
-  })) as string;
+  });
+
+  if (typeof result !== "string") {
+    throw new Error("Invalid task selection result");
+  }
+
+  return result;
 }
 
 /**
@@ -71,13 +90,24 @@ export async function promptForRDS(
   rdsInstances: RDSInstance[],
 ): Promise<RDSInstance> {
   // Select RDS instance with zoxide-style real-time search
-  return (await search({
+  const result = await search({
     message: "Search and select RDS instance:",
     source: async (input) => {
       return await searchRDS(rdsInstances, input || "");
     },
     pageSize: 50,
-  })) as RDSInstance;
+  });
+
+  // Ensure the result is a valid RDS instance by finding it in the original array
+  const selectedRDS = rdsInstances.find(
+    (rds) => rds.dbInstanceIdentifier === result,
+  );
+
+  if (!selectedRDS) {
+    throw new Error("Selected RDS instance not found in RDS list");
+  }
+
+  return selectedRDS;
 }
 
 /**
@@ -88,14 +118,25 @@ export async function promptForInferenceResult(
 ): Promise<InferenceResult> {
   // Filter Examples セクションを削除
 
-  return (await search({
+  const result = await search({
     message:
       "Select ECS target (filter with keywords like 'prod web' or 'staging api'):",
     source: async (input) => {
       return await searchInferenceResults(inferenceResults, input || "");
     },
     pageSize: 15,
-  })) as InferenceResult;
+  });
+
+  // Ensure the result is a valid inference result by finding it in the original array
+  const selectedResult = inferenceResults.find(
+    (inference) => formatInferenceResult(inference) === result,
+  );
+
+  if (!selectedResult) {
+    throw new Error("Selected inference result not found in results list");
+  }
+
+  return selectedResult;
 }
 
 /**

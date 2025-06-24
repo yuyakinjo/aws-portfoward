@@ -2,7 +2,7 @@ import { EC2Client } from "@aws-sdk/client-ec2";
 import { ECSClient } from "@aws-sdk/client-ecs";
 import { RDSClient } from "@aws-sdk/client-rds";
 import { input, search } from "@inquirer/prompts";
-import { isDefined, isEmpty } from "remeda";
+import { isDefined, isEmpty, isString } from "remeda";
 import {
   getAWSRegions,
   getECSClusters,
@@ -124,84 +124,121 @@ export async function selectCluster(
   // Select ECS cluster with zoxide-style real-time search
   messages.info("filtered as you type (↑↓ to select, Enter to confirm)");
 
-  const selectedCluster = (await search({
+  // Clear the loading message
+  process.stdout.write("\x1b[1A");
+  process.stdout.write("\x1b[2K");
+  process.stdout.write("\r");
+
+  const result = await search({
     message: "Search and select ECS cluster:",
     source: async (input) => {
       return await searchClusters(clusters, input || "");
     },
     pageSize: 50,
-  })) as ECSCluster;
+  });
+
+  // Ensure the result is a valid ECS cluster by finding it in the original array
+  const selectedCluster = clusters.find(
+    (cluster) =>
+      cluster.clusterName === result || cluster.clusterArn === result,
+  );
+
+  if (!isDefined(selectedCluster)) {
+    throw new Error("Selected cluster not found in cluster list");
+  }
 
   return selectedCluster;
 }
 
 /**
- * Select ECS task
+ * Select ECS task with appropriate validation
  */
 export async function selectTask(
   ecsClient: ECSClient,
   cluster: ECSCluster,
   options: ValidatedConnectOptions,
 ): Promise<string> {
-  if (options.task) {
-    messages.success(`Task (from CLI): ${options.task}`);
+  if (isDefined(options.task)) {
     return options.task;
   }
 
   messages.warning("Getting ECS tasks...");
   const tasks = await getECSTasks(ecsClient, cluster);
 
-  if (tasks.length === 0) {
-    throw new Error("No running ECS tasks found");
+  if (isEmpty(tasks)) {
+    throw new Error("No ECS tasks found in this cluster");
   }
 
+  // Clear the loading message
+  process.stdout.write("\x1b[1A");
+  process.stdout.write("\x1b[2K");
+  process.stdout.write("\r");
+
   // Select ECS task with zoxide-style real-time search
-  const selectedTask = (await search({
+  const result = await search({
     message: "Search and select ECS task:",
     source: async (input) => {
       return await searchTasks(tasks, input || "");
     },
     pageSize: 50,
-  })) as string;
+  });
 
-  return selectedTask;
+  if (!isString(result)) {
+    throw new Error("Invalid task selection result");
+  }
+
+  return result;
 }
 
 /**
- * Select RDS instance
+ * Select RDS instance with appropriate validation
  */
 export async function selectRDSInstance(
   rdsClient: RDSClient,
   options: ValidatedConnectOptions,
 ): Promise<RDSInstance> {
-  if (options.rds) {
-    messages.warning("Getting RDS instances...");
+  if (isDefined(options.rds)) {
     const rdsInstances = await getRDSInstances(rdsClient);
-    const rdsInstance = rdsInstances.find(
-      (r) => r.dbInstanceIdentifier === options.rds,
+    const selectedRDS = rdsInstances.find(
+      (rds) => rds.dbInstanceIdentifier === options.rds,
     );
-    if (!rdsInstance) {
-      throw new Error(`RDS instance not found: ${options.rds}`);
+
+    if (!selectedRDS) {
+      throw new Error(
+        `RDS instance not found: ${options.rds}. Please check the instance identifier.`,
+      );
     }
-    messages.success(`RDS (from CLI): ${options.rds}`);
-    return rdsInstance;
+
+    return selectedRDS;
   }
 
-  messages.warning("Getting RDS instances...");
   const rdsInstances = await getRDSInstances(rdsClient);
 
-  if (rdsInstances.length === 0) {
-    throw new Error("No RDS instances found");
+  if (isEmpty(rdsInstances)) {
+    throw new Error("No RDS instances found in this region");
   }
 
-  // Select RDS instance with zoxide-style real-time search
-  const selectedRDS = (await search({
+  // Clear the loading message
+  process.stdout.write("\x1b[1A");
+  process.stdout.write("\x1b[2K");
+  process.stdout.write("\r");
+
+  const result = await search({
     message: "Search and select RDS instance:",
     source: async (input) => {
       return await searchRDS(rdsInstances, input || "");
     },
     pageSize: 50,
-  })) as RDSInstance;
+  });
+
+  // Ensure the result is a valid RDS instance by finding it in the original array
+  const selectedRDS = rdsInstances.find(
+    (rds) => rds.dbInstanceIdentifier === result,
+  );
+
+  if (!selectedRDS) {
+    throw new Error("Selected RDS instance not found in RDS list");
+  }
 
   return selectedRDS;
 }

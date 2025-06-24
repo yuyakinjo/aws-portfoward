@@ -2,7 +2,7 @@ import { EC2Client } from "@aws-sdk/client-ec2";
 import { ECSClient } from "@aws-sdk/client-ecs";
 import { input, search } from "@inquirer/prompts";
 import chalk from "chalk";
-import { isEmpty } from "remeda";
+import { isDefined, isEmpty } from "remeda";
 import {
   getAWSRegions,
   getECSClustersWithExecCapability,
@@ -133,14 +133,26 @@ async function execECSTaskWithSimpleUIFlow(
     process.stdout.write("\x1b[2K");
     process.stdout.write("\r");
 
-    selectedCluster = (await search({
+    const result = await search({
       message: "Search and select ECS cluster:",
       source: async (input) => {
         const results = await searchClusters(clusters, input || "");
         return results;
       },
       pageSize: 15,
-    })) as ECSCluster;
+    });
+
+    // Ensure the result is a valid ECS cluster by finding it in the original array
+    const foundCluster = clusters.find(
+      (cluster) =>
+        cluster.clusterName === result || cluster.clusterArn === result,
+    );
+
+    if (!isDefined(foundCluster)) {
+      throw new Error("Selected cluster not found in cluster list");
+    }
+
+    selectedCluster = foundCluster;
 
     selections.cluster = selectedCluster.clusterName;
   }
@@ -160,7 +172,7 @@ async function execECSTaskWithSimpleUIFlow(
     const task = tasks.find(
       (t) => t.taskId === options.task || t.taskArn === options.task,
     );
-    if (!task) {
+    if (!isDefined(task)) {
       throw new Error(
         `ECS task not found or does not support exec: ${options.task}`,
       );
@@ -193,7 +205,13 @@ async function execECSTaskWithSimpleUIFlow(
       pageSize: 15,
     });
 
-    selectedTask = tasks.find((t) => t.taskArn === selectedTaskArn)!;
+    const foundTask = tasks.find((t) => t.taskArn === selectedTaskArn);
+    if (!isDefined(foundTask)) {
+      throw new Error(
+        `Selected task not found in task list: ${selectedTaskArn}`,
+      );
+    }
+    selectedTask = foundTask;
 
     selections.task = selectedTask.taskId;
   }
@@ -263,13 +281,27 @@ async function execECSTaskWithSimpleUIFlow(
   console.log(chalk.gray(`Container: ${selections.container}`));
   console.log(chalk.gray(`Command: ${selections.command}`));
 
+  // Validate all required selections are present
+  if (!selections.region) {
+    throw new Error("Region selection is required");
+  }
+  if (!selections.cluster) {
+    throw new Error("Cluster selection is required");
+  }
+  if (!selections.container) {
+    throw new Error("Container selection is required");
+  }
+  if (!selections.command) {
+    throw new Error("Command selection is required");
+  }
+
   // Execute the command
   await executeECSCommand(
-    selections.region!,
-    selections.cluster!,
+    selections.region,
+    selections.cluster,
     selectedTask.realTaskArn,
-    selections.container!,
-    selections.command!,
+    selections.container,
+    selections.command,
   );
 
   // Display reproducible command
