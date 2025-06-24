@@ -31,11 +31,6 @@ export function registerExecTaskCommand(program: Command): void {
           process.exit(1);
         }
 
-        if (output.dryRun) {
-          messages.info("Starting AWS ECS execute command tool (DRY RUN)...");
-        } else {
-          messages.info("Starting AWS ECS execute command tool...");
-        }
         await execECSTask(output);
       } catch (error) {
         // If error occurs during retry process, error is already displayed, so show brief message
@@ -78,15 +73,6 @@ export function registerExecTaskSimpleUICommand(program: Command): void {
           process.exit(1);
         }
 
-        if (output.dryRun) {
-          messages.info(
-            "Starting AWS ECS execute command tool with Simple UI (DRY RUN)...",
-          );
-        } else {
-          messages.info(
-            "Starting AWS ECS execute command tool with Simple UI...",
-          );
-        }
         await execECSTaskWithSimpleUI(output);
       } catch (error) {
         // If error occurs during retry process, error is already displayed, so show brief message

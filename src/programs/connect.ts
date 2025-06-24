@@ -32,11 +32,6 @@ export function registerConnectCommand(program: Command): void {
           process.exit(1);
         }
 
-        if (output.dryRun) {
-          messages.info("Starting AWS ECS RDS connection tool (DRY RUN)...");
-        } else {
-          messages.info("Starting AWS ECS RDS connection tool...");
-        }
         await connectToRDS(output);
       } catch (error) {
         // If error occurs during retry process, error is already displayed, so show brief message
@@ -78,15 +73,6 @@ export function registerConnectSimpleUICommand(program: Command): void {
           process.exit(1);
         }
 
-        if (output.dryRun) {
-          messages.info(
-            "Starting AWS ECS RDS connection tool with Simple UI (DRY RUN)...",
-          );
-        } else {
-          messages.info(
-            "Starting AWS ECS RDS connection tool with Simple UI...",
-          );
-        }
         await connectToRDSWithSimpleUI(output);
       } catch (error) {
         // If error occurs during retry process, error is already displayed, so show brief message

@@ -86,35 +86,3 @@ export function generateExecDryRun(
     },
   };
 }
-
-/**
- * Generate SSM command string without executing it
- */
-export function generateSSMCommand(
-  taskArn: string,
-  rdsInstance: RDSInstance,
-  rdsPort: string,
-  localPort: string,
-): string {
-  const parameters = {
-    host: [rdsInstance.endpoint],
-    portNumber: [rdsPort],
-    localPortNumber: [localPort],
-  };
-
-  const parametersJson = JSON.stringify(parameters);
-  return `aws ssm start-session --target ${taskArn} --parameters '${parametersJson}' --document-name AWS-StartPortForwardingSessionToRemoteHost`;
-}
-
-/**
- * Generate ECS execute command string without executing it
- */
-export function generateExecCommand(
-  region: string,
-  clusterName: string,
-  taskArn: string,
-  containerName: string,
-  command: string,
-): string {
-  return `aws ecs execute-command --region ${region} --cluster ${clusterName} --task ${taskArn} --container ${containerName} --command "${command}" --interactive`;
-}

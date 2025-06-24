@@ -288,7 +288,7 @@ describe("CLI Commands Integration", () => {
 
       // exec-taskは全パラメータが必要なので失敗するはず
       expect(code).toBe(1);
-      expect(stdout).toContain("Starting AWS ECS execute command tool");
+      expect(stdout).toContain("All required options must be provided");
     });
 
     it("should validate task parameter format", async () => {
@@ -356,7 +356,7 @@ describe("CLI Commands Integration", () => {
       // 有効なパラメータの場合、バリデーションは通過するが
       // 実際のAWS呼び出しで失敗するかタイムアウトする
       expect(code === 1 || code === null).toBe(true);
-      expect(stdout).toContain("Starting AWS ECS execute command tool");
+      expect(stdout).toContain("Executing command in ECS task container");
     });
   });
 
@@ -383,9 +383,7 @@ describe("CLI Commands Integration", () => {
 
       // UIコマンドはインタラクティブなのでタイムアウトまたは失敗する
       expect(code === 1 || code === null).toBe(true);
-      expect(stdout).toContain(
-        "Starting AWS ECS execute command tool with Simple UI",
-      );
+      expect(stdout).toContain("ECS Execute Command Configuration");
     });
 
     it("should validate optional command parameter", async () => {
@@ -412,9 +410,7 @@ describe("CLI Commands Integration", () => {
 
       // UIモードでは部分的なパラメータでも受け入れられるが、最終的にはタイムアウトまたは失敗する
       expect(code === 1 || code === null).toBe(true);
-      expect(stdout).toContain(
-        "Starting AWS ECS execute command tool with Simple UI",
-      );
+      expect(stdout).toContain("ECS Execute Command Configuration");
     });
   });
 
@@ -456,9 +452,7 @@ describe("CLI Commands Integration", () => {
       // プロセスは適切に終了するはず（ハングしない）
       // タイムアウトの場合はnullが返される
       expect(code === 1 || code === null).toBe(true);
-      expect(stdout).toContain(
-        "Starting AWS ECS RDS connection tool with Simple UI",
-      );
+      expect(stdout).toContain("Select Network Configuration");
     });
 
     it("should not leak sensitive information in error messages", async () => {

@@ -63,12 +63,10 @@ async function execECSTaskDryRun(options: ValidatedExecOptions): Promise<void> {
     !options.task ||
     !options.container
   ) {
-    messages.error(
-      "All required options must be provided for direct execution",
-    );
+    messages.error("All required options must be provided for dry-run mode");
     messages.info("Required options: --region, --cluster, --task, --container");
     messages.info("Or use 'exec-task-ui' for interactive selection");
-    throw new Error("Missing required options for direct execution");
+    throw new Error("Missing required options for dry-run mode");
   }
 
   // Set default command if not provided
