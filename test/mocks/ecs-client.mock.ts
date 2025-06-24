@@ -1,0 +1,65 @@
+import { mockECSClusters, mockECSTasks } from "../mock-data/index.js";
+
+export class ECSClient {
+  send(command: any) {
+    const commandName = command.constructor.name;
+    switch (commandName) {
+      case "ListClustersCommand":
+        return Promise.resolve({
+          clusterArns: mockECSClusters.map((c) => c.clusterArn),
+        });
+      case "DescribeClustersCommand":
+        return Promise.resolve({
+          clusters: mockECSClusters,
+        });
+      case "ListServicesCommand":
+        // cluster名でフィルタ
+        return Promise.resolve({
+          serviceArns: mockECSTasks
+            .filter((t) => t.clusterName === command.input.cluster)
+            .map(
+              (t) =>
+                `arn:aws:ecs:ap-northeast-1:123456789012:service/${command.input.cluster}/${t.serviceName}`,
+            ),
+        });
+      case "ListTasksCommand":
+        // cluster, serviceNameでフィルタ
+        return Promise.resolve({
+          taskArns: mockECSTasks
+            .filter(
+              (t) =>
+                t.clusterName === command.input.cluster &&
+                (!command.input.serviceName ||
+                  t.serviceName === command.input.serviceName),
+            )
+            .map((t) => t.realTaskArn),
+        });
+      case "DescribeTasksCommand":
+        // cluster, tasksでフィルタ
+        return Promise.resolve({
+          tasks: mockECSTasks.filter((t) =>
+            command.input.tasks.includes(t.realTaskArn),
+          ),
+        });
+      default:
+        throw new Error(`Unknown command: ${commandName}`);
+    }
+  }
+}
+
+// コマンドクラスのダミー
+export class ListClustersCommand {
+  constructor(public input?: any) {}
+}
+export class DescribeClustersCommand {
+  constructor(public input?: any) {}
+}
+export class ListServicesCommand {
+  constructor(public input?: any) {}
+}
+export class ListTasksCommand {
+  constructor(public input?: any) {}
+}
+export class DescribeTasksCommand {
+  constructor(public input?: any) {}
+}
