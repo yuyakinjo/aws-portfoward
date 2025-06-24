@@ -30,17 +30,13 @@ export async function getECSClusters(
     });
     const describeResponse = await ecsClient.send(describeCommand);
 
-    const clusters: ECSCluster[] = [];
-    if (describeResponse.clusters) {
-      for (const cluster of describeResponse.clusters) {
-        if (cluster.clusterName && cluster.clusterArn) {
-          clusters.push({
-            clusterName: cluster.clusterName,
-            clusterArn: cluster.clusterArn,
-          });
-        }
-      }
-    }
+    const clusters: ECSCluster[] =
+      describeResponse.clusters
+        ?.filter((cluster) => cluster.clusterName && cluster.clusterArn)
+        .map((cluster) => ({
+          clusterName: cluster.clusterName || "",
+          clusterArn: cluster.clusterArn || "",
+        })) || [];
 
     return clusters;
   } catch (error) {
@@ -98,42 +94,43 @@ export async function getECSTasks(
           });
           const describeResponse = await ecsClient.send(describeCommand);
 
-          if (describeResponse.tasks) {
-            for (const task of describeResponse.tasks) {
-              if (
-                task.taskArn &&
-                task.containers &&
-                task.containers.length > 0 &&
-                task.lastStatus === "RUNNING"
-              ) {
-                const taskId = task.taskArn.split("/").pop() || task.taskArn;
+          const validTasks =
+            describeResponse.tasks
+              ?.filter(
+                (task) =>
+                  task.taskArn &&
+                  task.containers &&
+                  task.containers.length > 0 &&
+                  task.lastStatus === "RUNNING",
+              )
+              .map((task) => {
+                const taskId = task.taskArn?.split("/").pop() || task.taskArn;
                 const clusterFullName =
                   cluster.clusterArn.split("/").pop() || cluster.clusterName;
-                // Get RuntimeID (from first container)
-                const runtimeId = task.containers[0]?.runtimeId || "";
+                const runtimeId = task.containers?.[0]?.runtimeId || "";
 
-                if (runtimeId) {
-                  // Format for ECS Exec: ecs:cluster_name_task_id_runtime_id
-                  const targetArn = `ecs:${clusterFullName}_${taskId}_${runtimeId}`;
+                if (!runtimeId) return null;
 
-                  // Create simple display name - just service name
-                  const displayName = serviceName;
+                const targetArn = `ecs:${clusterFullName}_${taskId}_${runtimeId}`;
+                const displayName = serviceName;
 
-                  tasks.push({
-                    taskArn: targetArn,
-                    realTaskArn: task.taskArn,
-                    displayName: displayName,
-                    runtimeId: runtimeId,
-                    taskId: taskId,
-                    clusterName: clusterFullName,
-                    serviceName: serviceName,
-                    taskStatus: task.lastStatus || "UNKNOWN",
-                    createdAt: task.createdAt,
-                  });
-                }
-              }
-            }
-          }
+                return {
+                  taskArn: targetArn,
+                  realTaskArn: task.taskArn || "",
+                  displayName: displayName,
+                  runtimeId: runtimeId,
+                  taskId: taskId || "",
+                  clusterName: clusterFullName,
+                  serviceName: serviceName,
+                  taskStatus: task.lastStatus || "UNKNOWN",
+                  createdAt: task.createdAt,
+                };
+              })
+              .filter(
+                (task): task is NonNullable<typeof task> => task !== null,
+              ) || [];
+
+          tasks.push(...validTasks);
         }
       }
     }
@@ -168,18 +165,11 @@ export async function getAWSRegions(
     const command = new DescribeRegionsCommand({});
     const response = await ec2Client.send(command);
 
-    const regions: AWSRegion[] = [];
-
-    if (response.Regions) {
-      for (const region of response.Regions) {
-        if (region.RegionName) {
-          regions.push({
-            regionName: region.RegionName,
-            optInStatus: region.OptInStatus || "opt-in-not-required",
-          });
-        }
-      }
-    }
+    const regions: AWSRegion[] =
+      response.Regions?.filter((region) => region.RegionName).map((region) => ({
+        regionName: region.RegionName || "",
+        optInStatus: region.OptInStatus || "opt-in-not-required",
+      })) || [];
 
     // Place commonly used regions at the top
     const priorityRegions = [
@@ -228,34 +218,27 @@ export async function getRDSInstances(
     const command = new DescribeDBInstancesCommand({});
     const response = await rdsClient.send(command);
 
-    const rdsInstances: RDSInstance[] = [];
-
-    if (response.DBInstances) {
-      for (const db of response.DBInstances) {
-        if (
+    const rdsInstances: RDSInstance[] =
+      response.DBInstances?.filter(
+        (db) =>
           db.DBInstanceIdentifier &&
           db.Endpoint?.Address &&
           db.Engine &&
-          db.DBInstanceStatus === "available"
-        ) {
-          rdsInstances.push({
-            dbInstanceIdentifier: db.DBInstanceIdentifier,
-            endpoint: db.Endpoint.Address,
-            port: db.Endpoint.Port || 5432, // Default to PostgreSQL port if not available
-            engine: db.Engine,
-            dbInstanceClass: db.DBInstanceClass || "unknown",
-            dbInstanceStatus: db.DBInstanceStatus,
-            allocatedStorage: db.AllocatedStorage || 0,
-            availabilityZone: db.AvailabilityZone || "unknown",
-            vpcSecurityGroups:
-              db.VpcSecurityGroups?.map((sg) => sg.VpcSecurityGroupId || "") ||
-              [],
-            dbSubnetGroup: db.DBSubnetGroup?.DBSubnetGroupName || undefined,
-            createdTime: db.InstanceCreateTime || undefined,
-          });
-        }
-      }
-    }
+          db.DBInstanceStatus === "available",
+      ).map((db) => ({
+        dbInstanceIdentifier: db.DBInstanceIdentifier || "",
+        endpoint: db.Endpoint?.Address || "",
+        port: db.Endpoint?.Port || 5432, // Default to PostgreSQL port if not available
+        engine: db.Engine || "",
+        dbInstanceClass: db.DBInstanceClass || "unknown",
+        dbInstanceStatus: db.DBInstanceStatus || "",
+        allocatedStorage: db.AllocatedStorage || 0,
+        availabilityZone: db.AvailabilityZone || "unknown",
+        vpcSecurityGroups:
+          db.VpcSecurityGroups?.map((sg) => sg.VpcSecurityGroupId || "") || [],
+        dbSubnetGroup: db.DBSubnetGroup?.DBSubnetGroupName || undefined,
+        createdTime: db.InstanceCreateTime || undefined,
+      })) || [];
 
     // Sort by name
     return rdsInstances.sort((a, b) =>
@@ -380,15 +363,12 @@ export async function getECSTaskContainers(
       throw new Error("Task data not found");
     }
 
-    const containers: string[] = [];
-
-    if (task.containers) {
-      for (const container of task.containers) {
-        if (container.name && container.lastStatus === "RUNNING") {
-          containers.push(container.name);
-        }
-      }
-    }
+    const containers: string[] =
+      task.containers
+        ?.filter(
+          (container) => container.name && container.lastStatus === "RUNNING",
+        )
+        .map((container) => container.name || "") || [];
 
     return containers;
   } catch (error) {
