@@ -6,13 +6,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// CLIエントリーポイントのパス
-const CLI_PATH = join(__dirname, "../../dist/cli.js");
+// CLIエントリーポイントのパス（GitHub Actions対応）
+const CLI_PATH = process.env.CI
+  ? join(process.cwd(), "dist/cli.js")
+  : join(__dirname, "../../dist/cli.js");
 
 // CLIプロセス実行ヘルパー
 function runCLI(
   args: string[],
-  timeout = 5000,
+  timeout = process.env.CI ? 10000 : 5000, // CI環境では長めのタイムアウト
 ): Promise<{
   code: number | null;
   stdout: string;
