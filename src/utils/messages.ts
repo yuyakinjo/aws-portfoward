@@ -233,4 +233,60 @@ export const messages = {
       messages.empty();
     },
   },
+
+  // Dry Run functionality
+  dryRun: {
+    header: () => {
+      console.log("");
+      console.log(
+        chalk.cyan("🏃 Dry Run Mode - Commands that would be executed:"),
+      );
+      console.log("");
+    },
+
+    awsCommand: (cmd: string) => {
+      console.log(chalk.blue("AWS Command:"));
+      console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      console.log(cmd);
+      console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      console.log("");
+    },
+
+    reproducibleCommand: (cmd: string) => {
+      console.log(chalk.green("Reproducible Command:"));
+      console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      console.log(cmd);
+      console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      console.log("");
+    },
+
+    sessionInfo: (info: {
+      region: string;
+      cluster: string;
+      task: string;
+      rds?: string;
+      rdsPort?: string;
+      localPort?: string;
+      container?: string;
+      command?: string;
+    }) => {
+      console.log(chalk.yellow("Session Information:"));
+      console.log(`Region: ${info.region}`);
+      console.log(`Cluster: ${info.cluster}`);
+      console.log(`Task: ${info.task}`);
+
+      if (info.rds) {
+        console.log(`RDS: ${info.rds}`);
+        console.log(`RDS Port: ${info.rdsPort}`);
+        console.log(`Local Port: ${info.localPort}`);
+      }
+
+      if (info.container) {
+        console.log(`Container: ${info.container}`);
+        console.log(`Command: ${info.command}`);
+      }
+
+      console.log("");
+    },
+  },
 };

@@ -1,4 +1,4 @@
-[![CI](https://github.com/yuyakinjo/aws-portfoward/actions/workflows/ci.yml/badge.svg)](https://github.com/yuyakinjo/aws-portfoward/actions/workflows/ci.yml)
+[![CI](https://github.com/yuyakinjo/aws-portfoward/actions/workflows/test.yml/badge.svg)](https://github.com/yuyakinjo/aws-portfoward/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/ecs-pf)](https://www.npmjs.com/package/ecs-pf)
 
 # AWS ECS-RDS Port Forwarding CLI
@@ -13,6 +13,7 @@ A modern CLI tool for connecting to RDS databases through AWS ECS tasks using SS
 - **Multiple workflows**: Choose between guided UI or traditional manual selection
 - **Real-time search**: Fuzzy search for all AWS resources
 - **Error prevention**: Pre-validates connections to avoid common failures
+- **Dry Run mode**: Preview commands without execution for testing and debugging
 
 ## Quick Start
 
@@ -44,6 +45,15 @@ npx ecs-pf connect \
   --rds production-db \
   --rds-port 5432 \
   --local-port 8888
+
+# Dry run mode - preview commands without execution
+npx ecs-pf connect --dry-run \
+  --region ap-northeast-1 \
+  --cluster production-cluster \
+  --task arn:aws:ecs:ap-northeast-1:123456789:task/production-cluster/abcdef123456 \
+  --rds production-db \
+  --rds-port 5432 \
+  --local-port 8888
 ```
 
 ## Available Commands
@@ -52,17 +62,21 @@ npx ecs-pf connect \
 |---------|-------|-------------|-----------|
 | `connect-ui` | - | Step-by-step guided workflow | New users, interactive use |
 | `connect` | - | Traditional manual selection | CLI veterans, automation |
+| `exec-task-ui` | - | Interactive ECS task execution | ECS container debugging |
+| `exec-task` | - | Direct ECS task execution | Automation, scripting |
 
-## Command Line Options
+### Execution Options (exec-task commands)
 
-| Option | Short | Description | Example |
-|--------|-------|-------------|---------|
-| `--region` | `-r` | AWS region | `ap-northeast-1` |
-| `--cluster` | `-c` | ECS cluster name | `production-cluster` |
-| `--task` | `-t` | ECS task ARN | `arn:aws:ecs:...` |
-| `--rds` | | RDS instance identifier | `production-db` |
-| `--rds-port` | | RDS port number | `5432` |
-| `--local-port` | `-p` | Local port number | `8888` |
+| Option | Description | Example |
+|--------|-------------|---------|
+| `--container` | Container name | `web` |
+| `--command` | Command to execute | `/bin/bash` |
+
+### Special Options
+
+| Option | Description | Available For |
+|--------|-------------|---------------|
+| `--dry-run` | Preview commands without execution | All commands |
 
 ## Example Usage
 
@@ -81,6 +95,31 @@ Select Network Configuration
 
 Connection established!
 Database available at: localhost:8888
+```
+
+### ECS Task Execution
+
+Execute commands in ECS containers:
+
+```bash
+# Interactive mode
+npx ecs-pf exec-task-ui
+
+# Direct execution
+npx ecs-pf exec-task \
+  --region ap-northeast-1 \
+  --cluster production-cluster \
+  --task arn:aws:ecs:ap-northeast-1:123456789:task/production-cluster/abcdef123456 \
+  --container web \
+  --command "/bin/bash"
+
+# Dry run for exec commands
+npx ecs-pf exec-task --dry-run \
+  --region ap-northeast-1 \
+  --cluster production-cluster \
+  --task arn:aws:ecs:ap-northeast-1:123456789:task/production-cluster/abcdef123456 \
+  --container web \
+  --command "/bin/bash"
 ```
 
 
@@ -180,25 +219,16 @@ npm run build
 node dist/cli.js connect-ui
 ```
 
-### Publishing to npm
-
-```bash
-# Login to npm
-npm login
-
-# Publish package
-npm publish
-```
-
-### Package Configuration
-
-- **Package name**: `ecs-pf`
-- **Binary**: `dist/cli.js` (Node.js ESM)
-- **Target**: Node.js 16+
-
 ## CHANGELOG
 
-### v2.2.3 (Current)
+### v2.2.10 (Current)
+
+- **NEW**: Dry run mode (`--dry-run`) for all commands - preview AWS commands without execution
+- **NEW**: ECS task execution commands (`exec-task`, `exec-task-ui`)
+- **IMPROVED**: Command preview and reproducible command generation
+- **IMPROVED**: Better error handling and validation
+
+### v2.2.3
 
 - **IMPROVED**: UI display optimization - ECS tasks now show service names only
 - **IMPROVED**: Performance optimization for ECS target inference (faster RDS connection)

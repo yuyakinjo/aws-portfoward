@@ -18,6 +18,7 @@ export function registerConnectCommand(program: Command): void {
     .option("--rds <rds>", "RDS instance identifier")
     .option("--rds-port <port>", "RDS port number")
     .option("-p, --local-port <port>", "Local port number")
+    .option("--dry-run", "Show commands without execution")
     .action(async (rawOptions: unknown) => {
       try {
         // Validate options using Valibot
@@ -31,7 +32,6 @@ export function registerConnectCommand(program: Command): void {
           process.exit(1);
         }
 
-        messages.info("Starting AWS ECS RDS connection tool...");
         await connectToRDS(output);
       } catch (error) {
         // If error occurs during retry process, error is already displayed, so show brief message
@@ -59,6 +59,7 @@ export function registerConnectSimpleUICommand(program: Command): void {
     .option("--rds <rds>", "RDS instance identifier")
     .option("--rds-port <port>", "RDS port number")
     .option("-p, --local-port <port>", "Local port number")
+    .option("--dry-run", "Show commands without execution")
     .action(async (rawOptions: unknown) => {
       try {
         // Validate options using Valibot
@@ -72,7 +73,6 @@ export function registerConnectSimpleUICommand(program: Command): void {
           process.exit(1);
         }
 
-        messages.info("Starting AWS ECS RDS connection tool with Simple UI...");
         await connectToRDSWithSimpleUI(output);
       } catch (error) {
         // If error occurs during retry process, error is already displayed, so show brief message
