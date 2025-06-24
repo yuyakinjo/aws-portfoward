@@ -2,7 +2,7 @@ import { EC2Client } from "@aws-sdk/client-ec2";
 import { ECSClient } from "@aws-sdk/client-ecs";
 import { input, search } from "@inquirer/prompts";
 import chalk from "chalk";
-import { isEmpty } from "remeda";
+import { isDefined, isEmpty } from "remeda";
 import {
   getAWSRegions,
   getECSClustersWithExecCapability,
@@ -201,7 +201,11 @@ async function execECSTaskWithSimpleUIFlow(
       pageSize: 15,
     });
 
-    selectedTask = tasks.find((t) => t.taskArn === selectedTaskArn)!;
+    const foundTask = tasks.find((t) => t.taskArn === selectedTaskArn);
+    if (!isDefined(foundTask)) {
+      throw new Error(`Selected task not found: ${selectedTaskArn}`);
+    }
+    selectedTask = foundTask;
 
     selections.task = selectedTask.taskId;
   }

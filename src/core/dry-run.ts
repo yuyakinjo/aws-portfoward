@@ -1,4 +1,3 @@
-import chalk from "chalk";
 import type { DryRunResult, RDSInstance } from "../types.js";
 import { messages } from "../utils/messages.js";
 import { VERSION } from "../version.js";
