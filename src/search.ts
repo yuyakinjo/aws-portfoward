@@ -1,5 +1,6 @@
 import chalk from "chalk";
 import Fuse from "fuse.js";
+import { isEmpty } from "remeda";
 import type { AWSRegion, ECSCluster, ECSTask, RDSInstance } from "./types.js";
 
 // zoxide-style fuzzy search function
@@ -13,7 +14,7 @@ export function fuzzySearchClusters(clusters: ECSCluster[], input: string) {
     findAllMatches: true,
   };
 
-  if (!input || input.trim() === "") {
+  if (!input || isEmpty(input.trim())) {
     return clusters.map((cluster) => ({
       name: `${cluster.clusterName} ${chalk.dim(`(${cluster.clusterArn.split("/").pop()})`)}`,
       value: cluster,

@@ -3,7 +3,7 @@ import { ECSClient } from "@aws-sdk/client-ecs";
 import { RDSClient } from "@aws-sdk/client-rds";
 import { input, search } from "@inquirer/prompts";
 import chalk from "chalk";
-import { isEmpty } from "remeda";
+import { isDefined, isEmpty } from "remeda";
 import { getAWSRegions, getRDSInstances } from "../aws-services.js";
 import {
   formatInferenceResult,
@@ -248,7 +248,7 @@ async function connectToRDSWithSimpleUIInternal(
   messages.ui.displaySelectionState(selections);
 
   // Step 5: Local Port Selection
-  if (options.localPort !== undefined) {
+  if (isDefined(options.localPort)) {
     selections.localPort = `${options.localPort}`;
   } else {
     try {

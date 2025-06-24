@@ -1,5 +1,6 @@
 import { ECSClient } from "@aws-sdk/client-ecs";
 import { RDSClient } from "@aws-sdk/client-rds";
+import { isDefined } from "remeda";
 import { startSSMSession } from "../session.js";
 import type { ValidatedConnectOptions } from "../types.js";
 import {
@@ -84,7 +85,7 @@ async function connectToRDSInternal(
 
   // Use RDS port automatically
   let rdsPort: string;
-  if (options.rdsPort !== undefined) {
+  if (isDefined(options.rdsPort)) {
     rdsPort = `${options.rdsPort}`;
     messages.success(`RDS Port (from CLI): ${rdsPort}`);
   } else {
@@ -97,7 +98,7 @@ async function connectToRDSInternal(
 
   // Specify local port
   let localPort: string;
-  if (options.localPort !== undefined) {
+  if (isDefined(options.localPort)) {
     localPort = `${options.localPort}`;
     messages.success(`Local Port (from CLI): ${localPort}`);
   } else {

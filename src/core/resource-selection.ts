@@ -2,7 +2,7 @@ import { EC2Client } from "@aws-sdk/client-ec2";
 import { ECSClient } from "@aws-sdk/client-ecs";
 import { RDSClient } from "@aws-sdk/client-rds";
 import { input, search } from "@inquirer/prompts";
-import { isEmpty } from "remeda";
+import { isDefined, isEmpty } from "remeda";
 import {
   getAWSRegions,
   getECSClusters,
@@ -213,7 +213,7 @@ export async function getRDSPort(
   rdsInstance: RDSInstance,
   options: ValidatedConnectOptions,
 ): Promise<string> {
-  if (options.rdsPort !== undefined) {
+  if (isDefined(options.rdsPort)) {
     const rdsPort = `${options.rdsPort}`;
     messages.success(`RDS Port (from CLI): ${rdsPort}`);
     return rdsPort;
@@ -233,7 +233,7 @@ export async function getRDSPort(
 export async function getLocalPort(
   options: ValidatedConnectOptions,
 ): Promise<string> {
-  if (options.localPort !== undefined) {
+  if (isDefined(options.localPort)) {
     const localPort = `${options.localPort}`;
     messages.success(`Local Port (from CLI): ${localPort}`);
     return localPort;

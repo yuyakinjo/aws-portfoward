@@ -1,17 +1,9 @@
-import type { ECSClient } from "@aws-sdk/client-ecs";
-import { search } from "@inquirer/prompts";
+import { isEmpty } from "remeda";
 import {
   formatInferenceResult,
   type InferenceResult,
-  inferECSTargets,
 } from "../inference/index.js";
-import type {
-  ECSCluster,
-  RDSInstance,
-  ValidatedConnectOptions,
-} from "../types.js";
-import { messages } from "../utils/index.js";
-import { selectCluster, selectTask } from "./resource-selection.js";
+import type { ECSCluster } from "../types.js";
 
 export interface InferenceWorkflowResult {
   selectedInference?: InferenceResult;
@@ -33,7 +25,7 @@ export function filterInferenceResults(
   results: InferenceResult[],
   input: string,
 ): InferenceResult[] {
-  if (!input || input.trim() === "") {
+  if (!input || isEmpty(input.trim())) {
     return results;
   }
 
