@@ -45,8 +45,11 @@ function runCLI(
       resolve({ code, stdout, stderr });
     });
 
-    child.on("error", () => {
+    child.on("error", (error) => {
       clearTimeout(timeoutId);
+      console.error(`CLI execution error: ${error.message}`);
+      console.error(`CLI path: ${CLI_PATH}`);
+      console.error(`Args: ${JSON.stringify(args)}`);
       resolve({ code: -1, stdout, stderr });
     });
   });
@@ -89,6 +92,13 @@ describe("CLI Commands Integration", () => {
   // CLIファイルの存在確認
   it("should have built CLI file", async () => {
     const fs = await import("fs");
+    console.log(`Checking CLI file at: ${CLI_PATH}`);
+    console.log(`File exists: ${fs.existsSync(CLI_PATH)}`);
+    if (fs.existsSync(CLI_PATH)) {
+      const stats = fs.statSync(CLI_PATH);
+      console.log(`File size: ${stats.size} bytes`);
+      console.log(`File permissions: ${stats.mode.toString(8)}`);
+    }
     expect(fs.existsSync(CLI_PATH)).toBe(true);
   });
 

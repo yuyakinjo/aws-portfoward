@@ -40,6 +40,15 @@ jobs:
       - name: Build project
         run: npm run build
 
+      - name: Debug CLI file
+        run: |
+          echo "Checking CLI file..."
+          ls -la dist/cli.js
+          file dist/cli.js
+          head -n 5 dist/cli.js
+          echo "Testing CLI execution..."
+          node dist/cli.js --version || echo "CLI execution failed with code $?"
+
       - name: Run tests with coverage
         run: npm run test:coverage
 
