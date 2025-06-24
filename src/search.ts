@@ -1,6 +1,5 @@
 import chalk from "chalk";
 import Fuse from "fuse.js";
-import { isEmpty } from "remeda";
 import {
   formatInferenceResult,
   type InferenceResult,
