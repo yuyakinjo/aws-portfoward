@@ -88,16 +88,14 @@ async function execECSTaskWithSimpleUIFlow(
     }
 
     // Clear the loading message and show search prompt
-    process.stdout.write("\x1b[1A"); // Move cursor up
-    process.stdout.write("\x1b[2K"); // Clear line
-    process.stdout.write("\r"); // Move to start
+    messages.clearLoadingMessage();
 
     selections.region = await search({
       message: "Search and select AWS region:",
       source: async (input) => {
         return await searchRegions(regions, input || "");
       },
-      pageSize: 15,
+      pageSize: 50,
     });
   }
 
@@ -129,9 +127,7 @@ async function execECSTaskWithSimpleUIFlow(
     }
 
     // Clear the loading message
-    process.stdout.write("\x1b[1A");
-    process.stdout.write("\x1b[2K");
-    process.stdout.write("\r");
+    messages.clearLoadingMessage();
 
     const result = await search({
       message: "Search and select ECS cluster:",
@@ -139,7 +135,7 @@ async function execECSTaskWithSimpleUIFlow(
         const results = await searchClusters(clusters, input || "");
         return results;
       },
-      pageSize: 15,
+      pageSize: 50,
     });
 
     // Ensure the result is a valid ECS cluster by finding it in the original array
@@ -192,9 +188,7 @@ async function execECSTaskWithSimpleUIFlow(
     }
 
     // Clear the loading message
-    process.stdout.write("\x1b[1A");
-    process.stdout.write("\x1b[2K");
-    process.stdout.write("\r");
+    messages.clearLoadingMessage();
 
     const selectedTaskArn = await search({
       message: "Search and select ECS task:",
@@ -202,7 +196,7 @@ async function execECSTaskWithSimpleUIFlow(
         const results = await searchTasks(tasks, input || "");
         return results;
       },
-      pageSize: 15,
+      pageSize: 50,
     });
 
     const foundTask = tasks.find((t) => t.taskArn === selectedTaskArn);
@@ -235,9 +229,7 @@ async function execECSTaskWithSimpleUIFlow(
     }
 
     // Clear the loading message
-    process.stdout.write("\x1b[1A");
-    process.stdout.write("\x1b[2K");
-    process.stdout.write("\r");
+    messages.clearLoadingMessage();
 
     if (containers.length === 1) {
       // Auto-select if only one container
@@ -249,7 +241,7 @@ async function execECSTaskWithSimpleUIFlow(
           const results = await searchContainers(containers, input || "");
           return results;
         },
-        pageSize: 15,
+        pageSize: 50,
       });
     }
   }

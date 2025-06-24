@@ -29,6 +29,13 @@ export const messages = {
     }
   },
 
+  // Clear loading message (move up one line, clear it, and position cursor at start)
+  clearLoadingMessage: () => {
+    process.stdout.write("\x1b[1A"); // Move cursor up
+    process.stdout.write("\x1b[2K"); // Clear line
+    process.stdout.write("\r"); // Move to start
+  },
+
   // Clear and replace the last line
   clearAndReplace: (
     newMessage: string,

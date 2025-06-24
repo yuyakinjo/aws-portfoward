@@ -121,13 +121,11 @@ export async function selectCluster(
   // Show count of exec-capable clusters
   messages.info(`Found ${clusters.length} clusters with ECS exec capability`);
 
+  // Clear the loading message
+  messages.clearLoadingMessage();
+
   // Select ECS cluster with zoxide-style real-time search
   messages.info("filtered as you type (↑↓ to select, Enter to confirm)");
-
-  // Clear the loading message
-  process.stdout.write("\x1b[1A");
-  process.stdout.write("\x1b[2K");
-  process.stdout.write("\r");
 
   const result = await search({
     message: "Search and select ECS cluster:",
@@ -170,9 +168,7 @@ export async function selectTask(
   }
 
   // Clear the loading message
-  process.stdout.write("\x1b[1A");
-  process.stdout.write("\x1b[2K");
-  process.stdout.write("\r");
+  messages.clearLoadingMessage();
 
   // Select ECS task with zoxide-style real-time search
   const result = await search({
@@ -219,9 +215,7 @@ export async function selectRDSInstance(
   }
 
   // Clear the loading message
-  process.stdout.write("\x1b[1A");
-  process.stdout.write("\x1b[2K");
-  process.stdout.write("\r");
+  messages.clearLoadingMessage();
 
   const result = await search({
     message: "Search and select RDS instance:",

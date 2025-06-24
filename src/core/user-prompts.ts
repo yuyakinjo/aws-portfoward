@@ -124,7 +124,7 @@ export async function promptForInferenceResult(
     source: async (input) => {
       return await searchInferenceResults(inferenceResults, input || "");
     },
-    pageSize: 15,
+    pageSize: 50,
   });
 
   // Ensure the result is a valid inference result by finding it in the original array

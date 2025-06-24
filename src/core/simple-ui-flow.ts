@@ -5,11 +5,7 @@ import { input, search } from "@inquirer/prompts";
 import chalk from "chalk";
 import { isDefined, isEmpty } from "remeda";
 import { getAWSRegions, getRDSInstances } from "../aws-services.js";
-import {
-  formatInferenceResult,
-  type InferenceResult,
-  inferECSTargets,
-} from "../inference/index.js";
+import { type InferenceResult, inferECSTargets } from "../inference/index.js";
 import { searchInferenceResults, searchRDS, searchRegions } from "../search.js";
 import { startSSMSession } from "../session.js";
 import type { RDSInstance, ValidatedConnectOptions } from "../types.js";
@@ -92,16 +88,14 @@ async function connectToRDSWithSimpleUIInternal(
     }
 
     // Clear the loading message and show search prompt
-    process.stdout.write("\x1b[1A"); // Move cursor up
-    process.stdout.write("\x1b[2K"); // Clear line
-    process.stdout.write("\r"); // Move to start
+    messages.clearLoadingMessage();
 
     selections.region = await search({
       message: "Search and select AWS region:",
       source: async (input) => {
         return await searchRegions(regions, input || "");
       },
-      pageSize: 15,
+      pageSize: 50,
     });
   }
 
@@ -134,16 +128,14 @@ async function connectToRDSWithSimpleUIInternal(
     }
 
     // Clear the loading message
-    process.stdout.write("\x1b[1A");
-    process.stdout.write("\x1b[2K");
-    process.stdout.write("\r");
+    messages.clearLoadingMessage();
 
     selectedRDS = (await search({
       message: "Search and select RDS instance:",
       source: async (input) => {
         return await searchRDS(rdsInstances, input || "");
       },
-      pageSize: 15,
+      pageSize: 50,
     })) as RDSInstance;
 
     selections.rds = selectedRDS.dbInstanceIdentifier;
@@ -170,9 +162,7 @@ async function connectToRDSWithSimpleUIInternal(
 
   if (inferenceResults.length > 0) {
     // Clear the loading message
-    process.stdout.write("\x1b[1A");
-    process.stdout.write("\x1b[2K");
-    process.stdout.write("\r");
+    messages.clearLoadingMessage();
 
     console.log(
       chalk.green(`Found ${inferenceResults.length} potential ECS targets`),
@@ -235,9 +225,7 @@ async function connectToRDSWithSimpleUIInternal(
       selections.localPort = `${availablePort}`;
 
       // Clear the loading message
-      process.stdout.write("\x1b[1A");
-      process.stdout.write("\x1b[2K");
-      process.stdout.write("\r");
+      messages.clearLoadingMessage();
     } catch {
       selections.localPort = await input({
         message: "Enter local port number:",
