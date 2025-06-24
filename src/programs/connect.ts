@@ -1,6 +1,7 @@
 import type { Command } from "commander";
 import { safeParse } from "valibot";
 import { connectToRDS, connectToRDSWithSimpleUI } from "../aws-port-forward.js";
+import { connectWithInk } from "../commands/connect/index.js";
 import { ConnectOptionsSchema } from "../types.js";
 import {
   displayFriendlyError,
@@ -85,6 +86,39 @@ export function registerConnectSimpleUICommand(program: Command): void {
           // For unexpected errors, display detailed error screen
           displayFriendlyError(error);
         }
+        process.exit(1);
+      }
+    });
+}
+
+// 新しいInk版のテストコマンド
+export function registerConnectInkCommand(program: Command): void {
+  program
+    .command("connect-ink")
+    .description("Connect to RDS via ECS with Ink UI (v3.0.0 preview)")
+    .option("-r, --region <region>", "AWS region")
+    .option("-c, --cluster <cluster>", "ECS cluster name")
+    .option("-t, --task <task>", "ECS task ID")
+    .option("--rds <rds>", "RDS instance identifier")
+    .option("--rds-port <port>", "RDS port number")
+    .option("-p, --local-port <port>", "Local port number")
+    .option("--dry-run", "Show commands without execution")
+    .action(async (rawOptions: unknown) => {
+      try {
+        // Validate options using Valibot
+        const { success, issues, output } = safeParse(
+          ConnectOptionsSchema,
+          rawOptions,
+        );
+
+        if (!success) {
+          displayValidationErrors(issues);
+          process.exit(1);
+        }
+
+        await connectWithInk(output);
+      } catch (error) {
+        displayFriendlyError(error);
         process.exit(1);
       }
     });

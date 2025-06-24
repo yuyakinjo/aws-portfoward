@@ -10,7 +10,7 @@
 
     // For type checking
     "noEmit": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
 
