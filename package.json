@@ -40,7 +40,7 @@
     "ci": "biome ci"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.0.0",
+    "@biomejs/biome": "^2.0.5",
     "@types/inquirer": "^9.0.8"
   },
   "peerDependencies": {
