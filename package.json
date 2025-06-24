@@ -23,6 +23,8 @@
   "scripts": {
     "connect": "npm run build && node dist/cli.js connect",
     "connect-ui": "npm run build && node dist/cli.js connect-ui",
+    "exec-task": "npm run build && node dist/cli.js exec-task",
+    "exec-task-ui": "npm run build && node dist/cli.js exec-task-ui",
     "dev": "npm run build && node dist/cli.js connect",
     "build": "./scripts/build.sh",
     "build:tsc": "npx tsc --project tsconfig.build.json",
