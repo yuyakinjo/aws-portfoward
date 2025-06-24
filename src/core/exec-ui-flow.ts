@@ -26,12 +26,6 @@ import { displayDryRunResult, generateExecDryRun } from "./dry-run.js";
 export async function execECSTaskWithSimpleUIInternal(
   options: ValidatedExecOptions,
 ): Promise<void> {
-  // Check if dry run mode is enabled
-  if (options.dryRun) {
-    await execECSTaskWithSimpleUIDryRun(options);
-    return;
-  }
-
   let retryCount = 0;
   const maxRetries = 3;
 
@@ -65,23 +59,16 @@ export async function execECSTaskWithSimpleUIInternal(
   }
 }
 
-/**
- * Exec Simple UI workflow with dry run mode
- */
-async function execECSTaskWithSimpleUIDryRun(
-  options: ValidatedExecOptions,
-): Promise<void> {
-  messages.info(
-    "Starting AWS ECS execute command tool with Simple UI (DRY RUN)...",
-  );
-
-  // Use the same flow function but with dry run mode
-  await execECSTaskWithSimpleUIFlow(options);
-}
-
 async function execECSTaskWithSimpleUIFlow(
   options: ValidatedExecOptions,
 ): Promise<void> {
+  // Check if dry run mode is enabled and show appropriate message
+  if (options.dryRun) {
+    messages.info(
+      "Starting AWS ECS execute command tool with Simple UI (DRY RUN)...",
+    );
+  }
+
   // Initialize state object for UI display
   const selections: {
     region?: string;

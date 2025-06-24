@@ -25,11 +25,6 @@ import { displayDryRunResult, generateConnectDryRun } from "./dry-run.js";
 export async function connectToRDSWithSimpleUI(
   options: ValidatedConnectOptions = { dryRun: false },
 ): Promise<void> {
-  // Check if dry run mode is enabled
-  if (options.dryRun) {
-    await connectToRDSWithSimpleUIDryRun(options);
-    return;
-  }
   let retryCount = 0;
   const maxRetries = 3;
 
@@ -63,23 +58,16 @@ export async function connectToRDSWithSimpleUI(
   }
 }
 
-/**
- * Simple UI workflow with dry run mode
- */
-async function connectToRDSWithSimpleUIDryRun(
-  options: ValidatedConnectOptions,
-): Promise<void> {
-  messages.info(
-    "Starting AWS ECS RDS connection tool with Simple UI (DRY RUN)...",
-  );
-
-  // Use the same internal function - it will check options.dryRun
-  await connectToRDSWithSimpleUIInternal(options);
-}
-
 async function connectToRDSWithSimpleUIInternal(
   options: ValidatedConnectOptions,
 ): Promise<void> {
+  // Check if dry run mode is enabled and show appropriate message
+  if (options.dryRun) {
+    messages.info(
+      "Starting AWS ECS RDS connection tool with Simple UI (DRY RUN)...",
+    );
+  }
+
   // Initialize state object for UI display
   const selections: {
     region?: string;

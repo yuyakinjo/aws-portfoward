@@ -470,8 +470,6 @@ describe("CLI Commands Integration", () => {
       // エラーメッセージにセンシティブな情報が含まれていないことを確認
       expect(stdout).not.toContain("password");
       expect(stdout).not.toContain("secret");
-      // ローカルでは成功し、CIでは失敗する。どうテストするのか保留
-      // expect(stdout).toContain("token");
     });
 
     it("should maintain consistent exit codes", async () => {
