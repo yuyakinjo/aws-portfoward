@@ -12,16 +12,21 @@ export class ECSClient {
         return Promise.resolve({
           clusters: mockECSClusters,
         });
-      case "ListServicesCommand":
+      case "ListServicesCommand": {
         // cluster名でフィルタ
+        const clusterTasks = mockECSTasks.filter(
+          (t) => t.clusterName === command.input.cluster,
+        );
+        const uniqueServices = [
+          ...new Set(clusterTasks.map((t) => t.serviceName)),
+        ];
         return Promise.resolve({
-          serviceArns: mockECSTasks
-            .filter((t) => t.clusterName === command.input.cluster)
-            .map(
-              (t) =>
-                `arn:aws:ecs:ap-northeast-1:123456789012:service/${command.input.cluster}/${t.serviceName}`,
-            ),
+          serviceArns: uniqueServices.map(
+            (serviceName) =>
+              `arn:aws:ecs:ap-northeast-1:123456789012:service/${command.input.cluster}/${serviceName}`,
+          ),
         });
+      }
       case "ListTasksCommand":
         // cluster, serviceNameでフィルタ
         return Promise.resolve({
@@ -34,13 +39,48 @@ export class ECSClient {
             )
             .map((t) => t.realTaskArn),
         });
-      case "DescribeTasksCommand":
+      case "DescribeTasksCommand": {
+        // getECSTaskContainers用の単独リクエスト
+        if (
+          command.input.tasks.includes(
+            "arn:aws:ecs:us-east-1:123456789012:task/prod-web/1234567890123456789",
+          )
+        ) {
+          return Promise.resolve({
+            tasks: [
+              {
+                taskArn:
+                  "arn:aws:ecs:us-east-1:123456789012:task/prod-web/1234567890123456789",
+                containers: [
+                  {
+                    name: "web-container",
+                    lastStatus: "RUNNING",
+                  },
+                ],
+              },
+            ],
+          });
+        }
+
         // cluster, tasksでフィルタ
+        const filteredTasks = mockECSTasks.filter((t) =>
+          command.input.tasks.includes(t.realTaskArn),
+        );
         return Promise.resolve({
-          tasks: mockECSTasks.filter((t) =>
-            command.input.tasks.includes(t.realTaskArn),
-          ),
+          tasks: filteredTasks.map((t) => ({
+            taskArn: t.realTaskArn,
+            lastStatus: t.taskStatus,
+            createdAt: t.createdAt,
+            containers: [
+              {
+                name: "web-container",
+                runtimeId: t.runtimeId,
+                lastStatus: "RUNNING",
+              },
+            ],
+          })),
         });
+      }
       default:
         throw new Error(`Unknown command: ${commandName}`);
     }

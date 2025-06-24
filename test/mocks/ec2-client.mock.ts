@@ -6,7 +6,10 @@ export class EC2Client {
     switch (commandName) {
       case "DescribeRegionsCommand":
         return Promise.resolve({
-          Regions: mockAWSRegions,
+          Regions: mockAWSRegions.map((region) => ({
+            RegionName: region.regionName,
+            OptInStatus: region.optInStatus,
+          })),
         });
       default:
         throw new Error(`Unknown command: ${commandName}`);
