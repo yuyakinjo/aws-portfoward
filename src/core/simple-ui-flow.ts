@@ -5,11 +5,7 @@ import { input, search } from "@inquirer/prompts";
 import chalk from "chalk";
 import { isDefined, isEmpty } from "remeda";
 import { getAWSRegions, getRDSInstances } from "../aws-services.js";
-import {
-  formatInferenceResult,
-  type InferenceResult,
-  inferECSTargets,
-} from "../inference/index.js";
+import { type InferenceResult, inferECSTargets } from "../inference/index.js";
 import { searchInferenceResults, searchRDS, searchRegions } from "../search.js";
 import { startSSMSession } from "../session.js";
 import type { RDSInstance, ValidatedConnectOptions } from "../types.js";
@@ -21,13 +17,19 @@ import {
   messages,
 } from "../utils/index.js";
 import { generateReproducibleCommand } from "./command-generation.js";
+import { displayDryRunResult, generateConnectDryRun } from "./dry-run.js";
 
 /**
  * Simple UI workflow with step-by-step selection
  */
 export async function connectToRDSWithSimpleUI(
-  options: ValidatedConnectOptions = {},
+  options: ValidatedConnectOptions = { dryRun: false },
 ): Promise<void> {
+  // Check if dry run mode is enabled
+  if (options.dryRun) {
+    await connectToRDSWithSimpleUIDryRun(options);
+    return;
+  }
   let retryCount = 0;
   const maxRetries = 3;
 
@@ -59,6 +61,20 @@ export async function connectToRDSWithSimpleUI(
       }
     }
   }
+}
+
+/**
+ * Simple UI workflow with dry run mode
+ */
+async function connectToRDSWithSimpleUIDryRun(
+  options: ValidatedConnectOptions,
+): Promise<void> {
+  messages.info(
+    "Starting AWS ECS RDS connection tool with Simple UI (DRY RUN)...",
+  );
+
+  // Use the same internal function - it will check options.dryRun
+  await connectToRDSWithSimpleUIInternal(options);
 }
 
 async function connectToRDSWithSimpleUIInternal(
@@ -265,11 +281,27 @@ async function connectToRDSWithSimpleUIInternal(
     selections.localPort || "",
   );
 
-  await startSSMSession(
-    selectedTask,
-    selectedRDS,
-    rdsPort,
-    selections.localPort || "",
-    reproducibleCommand,
-  );
+  // Check if dry run mode is enabled
+  if (options.dryRun) {
+    // Generate and display dry run result
+    const dryRunResult = generateConnectDryRun(
+      selections.region || "",
+      selections.ecsCluster || selectedInference.cluster.clusterName,
+      selectedTask,
+      selectedRDS,
+      rdsPort,
+      selections.localPort || "",
+    );
+
+    displayDryRunResult(dryRunResult);
+    messages.success("Dry run completed successfully.");
+  } else {
+    await startSSMSession(
+      selectedTask,
+      selectedRDS,
+      rdsPort,
+      selections.localPort || "",
+      reproducibleCommand,
+    );
+  }
 }

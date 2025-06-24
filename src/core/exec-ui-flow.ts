@@ -18,6 +18,7 @@ import {
 import { executeECSCommand } from "../session.js";
 import type { ECSCluster, ECSTask, ValidatedExecOptions } from "../types.js";
 import { askRetry, displayFriendlyError, messages } from "../utils/index.js";
+import { displayDryRunResult, generateExecDryRun } from "./dry-run.js";
 
 /**
  * Execute command in ECS task container with Simple UI workflow
@@ -25,6 +26,12 @@ import { askRetry, displayFriendlyError, messages } from "../utils/index.js";
 export async function execECSTaskWithSimpleUIInternal(
   options: ValidatedExecOptions,
 ): Promise<void> {
+  // Check if dry run mode is enabled
+  if (options.dryRun) {
+    await execECSTaskWithSimpleUIDryRun(options);
+    return;
+  }
+
   let retryCount = 0;
   const maxRetries = 3;
 
@@ -56,6 +63,20 @@ export async function execECSTaskWithSimpleUIInternal(
       }
     }
   }
+}
+
+/**
+ * Exec Simple UI workflow with dry run mode
+ */
+async function execECSTaskWithSimpleUIDryRun(
+  options: ValidatedExecOptions,
+): Promise<void> {
+  messages.info(
+    "Starting AWS ECS execute command tool with Simple UI (DRY RUN)...",
+  );
+
+  // Use the same flow function but with dry run mode
+  await execECSTaskWithSimpleUIFlow(options);
 }
 
 async function execECSTaskWithSimpleUIFlow(
@@ -202,10 +223,12 @@ async function execECSTaskWithSimpleUIFlow(
   messages.ui.displayExecSelectionState(selections);
 
   // Step 4: Select Container
+  let selectedContainer: string;
   if (options.container) {
     selections.container = options.container;
+    selectedContainer = options.container;
   } else {
-    console.log(chalk.yellow("Getting containers in task..."));
+    console.log(chalk.yellow("Getting container list..."));
     const containers = await getECSTaskContainers(
       ecsClient,
       selectedCluster.clusterName,
@@ -213,7 +236,7 @@ async function execECSTaskWithSimpleUIFlow(
     );
 
     if (containers.length === 0) {
-      throw new Error("No running containers found in this task");
+      throw new Error("No containers found in this task");
     }
 
     // Clear the loading message
@@ -221,67 +244,58 @@ async function execECSTaskWithSimpleUIFlow(
     process.stdout.write("\x1b[2K");
     process.stdout.write("\r");
 
-    if (containers.length === 1) {
-      // Auto-select if only one container
-      selections.container = containers[0];
-    } else {
-      selections.container = await search({
-        message: "Search and select container:",
-        source: async (input) => {
-          const results = await searchContainers(containers, input || "");
-          return results;
-        },
-        pageSize: 15,
-      });
-    }
+    selectedContainer = await search({
+      message: "Search and select container:",
+      source: async (input) => {
+        const results = await searchContainers(containers, input || "");
+        return results;
+      },
+      pageSize: 15,
+    });
+
+    selections.container = selectedContainer;
   }
 
   // Update UI with container selection
   messages.ui.displayExecSelectionState(selections);
 
-  // Step 5: Input Command
+  // Step 5: Specify Command
+  let command: string;
   if (options.command) {
     selections.command = options.command;
+    command = options.command;
   } else {
-    selections.command = await input({
+    command = await input({
       message: "Enter command to execute:",
       default: "/bin/bash",
-      validate: (inputValue: string) => {
-        return inputValue.trim().length > 0 ? true : "Command cannot be empty";
-      },
     });
+    selections.command = command;
   }
 
   // Final display with all selections complete
   messages.ui.displayExecSelectionState(selections);
 
-  // Execute the command
-  console.log(chalk.green("Executing command in ECS task container..."));
-  console.log(chalk.gray(`Region: ${selections.region}`));
-  console.log(chalk.gray(`Cluster: ${selections.cluster}`));
-  console.log(chalk.gray(`Task: ${selections.task}`));
-  console.log(chalk.gray(`Container: ${selections.container}`));
-  console.log(chalk.gray(`Command: ${selections.command}`));
+  // Check if dry run mode is enabled
+  if (options.dryRun) {
+    // Generate and display dry run result
+    const dryRunResult = generateExecDryRun(
+      selections.region || "",
+      selectedCluster.clusterName,
+      selectedTask.realTaskArn,
+      selectedContainer,
+      command,
+    );
 
-  // Execute the command
-  await executeECSCommand(
-    selections.region!,
-    selections.cluster!,
-    selectedTask.realTaskArn,
-    selections.container!,
-    selections.command!,
-  );
-
-  // Display reproducible command
-  console.log();
-  console.log(chalk.cyan("🔄 Reproducible command:"));
-  const reproducibleCmd = [
-    "npx ecs-pf exec-task",
-    `--region "${selections.region}"`,
-    `--cluster "${selections.cluster}"`,
-    `--task "${selections.task}"`,
-    `--container "${selections.container}"`,
-    `--command "${selections.command}"`,
-  ].join(" ");
-  console.log(chalk.gray(reproducibleCmd));
+    displayDryRunResult(dryRunResult);
+    messages.success("Dry run completed successfully.");
+  } else {
+    // Execute the command
+    await executeECSCommand(
+      selections.region || "",
+      selectedCluster.clusterName,
+      selectedTask.realTaskArn,
+      selectedContainer,
+      command,
+    );
+  }
 }

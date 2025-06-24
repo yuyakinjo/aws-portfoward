@@ -10,6 +10,7 @@ import {
   messages,
 } from "../utils/index.js";
 import { generateReproducibleCommand } from "./command-generation.js";
+import { displayDryRunResult, generateConnectDryRun } from "./dry-run.js";
 import {
   selectCluster,
   selectRDSInstance,
@@ -22,8 +23,14 @@ import { promptForLocalPort } from "./user-prompts.js";
  * Main entry point for RDS connection workflow (manual selection)
  */
 export async function connectToRDS(
-  options: ValidatedConnectOptions = {},
+  options: ValidatedConnectOptions = { dryRun: false },
 ): Promise<void> {
+  // Check if dry run mode is enabled
+  if (options.dryRun) {
+    await connectToRDSDryRun(options);
+    return;
+  }
+
   let retryCount = 0;
   const maxRetries = 3;
 
@@ -55,6 +62,70 @@ export async function connectToRDS(
       }
     }
   }
+}
+
+/**
+ * Dry run version of RDS connection workflow
+ */
+export async function connectToRDSDryRun(
+  options: ValidatedConnectOptions,
+): Promise<void> {
+  messages.info("Starting AWS ECS RDS connection tool (DRY RUN)...");
+
+  // Get region
+  const region = await selectRegion(options);
+
+  // Initialize AWS clients
+  const ecsClient = new ECSClient({ region });
+  const rdsClient = new RDSClient({ region });
+
+  // Get ECS cluster
+  const selectedCluster = await selectCluster(ecsClient, options);
+  messages.success(`Cluster: ${selectedCluster.clusterName}`);
+
+  // Get ECS task
+  const selectedTask = await selectTask(ecsClient, selectedCluster, options);
+  messages.success(`Task: ${selectedTask}`);
+
+  // Get RDS instance
+  messages.warning("Getting RDS instances...");
+  const selectedRDS = await selectRDSInstance(rdsClient, options);
+  messages.success(`RDS: ${selectedRDS.dbInstanceIdentifier}`);
+
+  // Use RDS port automatically
+  let rdsPort: string;
+  if (isDefined(options.rdsPort)) {
+    rdsPort = `${options.rdsPort}`;
+    messages.success(`RDS Port (from CLI): ${rdsPort}`);
+  } else {
+    // Automatically use the port from RDS instance, fallback to engine default
+    const actualRDSPort = selectedRDS.port;
+    const fallbackPort = getDefaultPortForEngine(selectedRDS.engine);
+    rdsPort = `${actualRDSPort || fallbackPort}`;
+    messages.success(`RDS Port (auto-detected): ${rdsPort}`);
+  }
+
+  // Specify local port
+  let localPort: string;
+  if (isDefined(options.localPort)) {
+    localPort = `${options.localPort}`;
+    messages.success(`Local Port (from CLI): ${localPort}`);
+  } else {
+    localPort = await promptForLocalPort();
+  }
+
+  // Generate and display dry run result
+  const dryRunResult = generateConnectDryRun(
+    region,
+    selectedCluster.clusterName,
+    selectedTask,
+    selectedRDS,
+    rdsPort,
+    localPort,
+  );
+
+  displayDryRunResult(dryRunResult);
+  messages.success("Dry run completed successfully.");
 }
 
 /**

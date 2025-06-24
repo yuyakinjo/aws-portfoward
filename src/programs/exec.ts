@@ -17,6 +17,7 @@ export function registerExecTaskCommand(program: Command): void {
     .option("-t, --task <task>", "ECS task ID")
     .option("--container <container>", "Container name")
     .option("--command <command>", "Command to execute (default: /bin/bash)")
+    .option("--dry-run", "Show commands without execution")
     .action(async (rawOptions: unknown) => {
       try {
         // Validate options using Valibot
@@ -30,7 +31,11 @@ export function registerExecTaskCommand(program: Command): void {
           process.exit(1);
         }
 
-        messages.info("Starting AWS ECS execute command tool...");
+        if (output.dryRun) {
+          messages.info("Starting AWS ECS execute command tool (DRY RUN)...");
+        } else {
+          messages.info("Starting AWS ECS execute command tool...");
+        }
         await execECSTask(output);
       } catch (error) {
         // If error occurs during retry process, error is already displayed, so show brief message
@@ -59,6 +64,7 @@ export function registerExecTaskSimpleUICommand(program: Command): void {
     .option("-t, --task <task>", "ECS task ID")
     .option("--container <container>", "Container name")
     .option("--command <command>", "Command to execute (default: /bin/bash)")
+    .option("--dry-run", "Show commands without execution")
     .action(async (rawOptions: unknown) => {
       try {
         // Validate options using Valibot
@@ -72,9 +78,15 @@ export function registerExecTaskSimpleUICommand(program: Command): void {
           process.exit(1);
         }
 
-        messages.info(
-          "Starting AWS ECS execute command tool with Simple UI...",
-        );
+        if (output.dryRun) {
+          messages.info(
+            "Starting AWS ECS execute command tool with Simple UI (DRY RUN)...",
+          );
+        } else {
+          messages.info(
+            "Starting AWS ECS execute command tool with Simple UI...",
+          );
+        }
         await execECSTaskWithSimpleUI(output);
       } catch (error) {
         // If error occurs during retry process, error is already displayed, so show brief message

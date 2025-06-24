@@ -1,4 +1,5 @@
 import {
+  boolean,
   type InferOutput,
   integer,
   maxValue,
@@ -55,6 +56,7 @@ export interface ConnectOptions {
   rds?: string;
   rdsPort?: string;
   localPort?: string;
+  dryRun?: boolean;
 }
 
 export interface ExecOptions {
@@ -63,6 +65,23 @@ export interface ExecOptions {
   task?: string;
   container?: string;
   command?: string;
+  dryRun?: boolean;
+}
+
+// Dry Run result interface
+export interface DryRunResult {
+  awsCommand: string;
+  reproducibleCommand: string;
+  sessionInfo: {
+    region: string;
+    cluster: string;
+    task: string;
+    rds?: string;
+    rdsPort?: string;
+    localPort?: string;
+    container?: string;
+    command?: string;
+  };
 }
 
 // Valibot schema for ConnectOptions
@@ -97,6 +116,7 @@ export const ConnectOptionsSchema = object({
       maxValue(65535, "Local port must be less than 65536"),
     ),
   ),
+  dryRun: optional(boolean(), false),
 });
 
 // Type derived from schema
@@ -113,6 +133,7 @@ export const ExecOptionsSchema = object({
     pipe(string(), minLength(1, "Container name cannot be empty")),
   ),
   command: optional(pipe(string(), minLength(1, "Command cannot be empty"))),
+  dryRun: optional(boolean(), false),
 });
 
 // Type derived from schema
