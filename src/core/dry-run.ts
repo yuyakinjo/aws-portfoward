@@ -1,48 +1,17 @@
 import chalk from "chalk";
 import type { DryRunResult, RDSInstance } from "../types.js";
+import { messages } from "../utils/messages.js";
 import { VERSION } from "../version.js";
 import { generateReproducibleCommand } from "./command-generation.js";
 
 /**
- * Display dry run results in a formatted way
+ * Display dry run results in a formatted way using messages.dryRun
  */
 export function displayDryRunResult(result: DryRunResult): void {
-  console.log("");
-  console.log(chalk.cyan("🏃 Dry Run Mode - Commands that would be executed:"));
-  console.log("");
-
-  // Display AWS Command
-  console.log(chalk.blue("AWS Command:"));
-  console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-  console.log(result.awsCommand);
-  console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-  console.log("");
-
-  // Display Reproducible Command
-  console.log(chalk.green("Reproducible Command:"));
-  console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-  console.log(result.reproducibleCommand);
-  console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-  console.log("");
-
-  // Display session info
-  console.log(chalk.yellow("Session Information:"));
-  console.log(`Region: ${result.sessionInfo.region}`);
-  console.log(`Cluster: ${result.sessionInfo.cluster}`);
-  console.log(`Task: ${result.sessionInfo.task}`);
-
-  if (result.sessionInfo.rds) {
-    console.log(`RDS: ${result.sessionInfo.rds}`);
-    console.log(`RDS Port: ${result.sessionInfo.rdsPort}`);
-    console.log(`Local Port: ${result.sessionInfo.localPort}`);
-  }
-
-  if (result.sessionInfo.container) {
-    console.log(`Container: ${result.sessionInfo.container}`);
-    console.log(`Command: ${result.sessionInfo.command}`);
-  }
-
-  console.log("");
+  messages.dryRun.header();
+  messages.dryRun.awsCommand(result.awsCommand);
+  messages.dryRun.reproducibleCommand(result.reproducibleCommand);
+  messages.dryRun.sessionInfo(result.sessionInfo);
 }
 
 /**
