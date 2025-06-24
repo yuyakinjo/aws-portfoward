@@ -8,6 +8,12 @@ jobs:
     name: Run Tests with Coverage
     runs-on: ubuntu-latest
 
+    permissions:
+      # Required to checkout the code
+      contents: read
+      # Required to put a comment into the pull-request
+      pull-requests: write
+
     strategy:
       matrix:
         node-version: [24.x]
@@ -40,15 +46,13 @@ jobs:
       - name: Run tests with coverage
         run: npm run test:coverage
 
-      - name: Coverage Summary
-        if: matrix.node-version == '24.x'
-        run: |
-          echo "## 📊 テストカバレッジレポート" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### カバレッジ結果" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          cat coverage/coverage-summary.json | jq -r '.total | "Statements: \(.statements.pct)% (\(.statements.covered)/\(.statements.total))", "Branches: \(.branches.pct)% (\(.branches.covered)/\(.branches.total))", "Functions: \(.functions.pct)% (\(.functions.covered)/\(.functions.total))", "Lines: \(.lines.pct)% (\(.lines.covered)/\(.lines.total))"' >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
+      - name: Vitest Coverage Report
+        uses: davelosert/vitest-coverage-report-action@v2
+        if: always() && matrix.node-version == '24.x'
+        with:
+          name: '📊 AWS Port Forward CLI カバレッジレポート'
+          # カバレッジ閾値をVitest設定から自動読み込み
+          vite-config-path: './vitest.config.ts'
 
       - name: Upload coverage to artifacts
         if: matrix.node-version == '24.x'
@@ -58,12 +62,6 @@ jobs:
           path: |
             coverage/
           retention-days: 30
-
-      - name: Comment coverage on PR
-        if: github.event_name == 'pull_request' && matrix.node-version == '24.x'
-        run: |
-          echo "✅ **全97テスト成功** - カバレッジレポートはArtifactsからダウンロードできます" > pr_comment.txt
-          echo "📊 詳細なカバレッジ情報はワークフローのSummaryタブで確認できます" >> pr_comment.txt
 
   test-e2e:
     name: End-to-End CLI Tests
