@@ -2,9 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [ main, develop ]
   pull_request:
-    branches: [ main, develop ]
 
 jobs:
   lint-and-build:
@@ -39,6 +37,9 @@ jobs:
 
       - name: Build project
         run: npm run build
+
+      - name: Run tests
+        run: npm run test
 
       - name: Check build output
         run: |
