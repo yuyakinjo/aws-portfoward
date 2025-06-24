@@ -135,17 +135,12 @@ export async function selectCluster(
     pageSize: 50,
   });
 
-  // Ensure the result is a valid ECS cluster by finding it in the original array
-  const selectedCluster = clusters.find(
-    (cluster) =>
-      cluster.clusterName === result || cluster.clusterArn === result,
-  );
-
-  if (!isDefined(selectedCluster)) {
+  // result is now an ECSCluster object (not a string)
+  if (!isDefined(result)) {
     throw new Error("Selected cluster not found in cluster list");
   }
 
-  return selectedCluster;
+  return result as ECSCluster;
 }
 
 /**
@@ -225,16 +220,12 @@ export async function selectRDSInstance(
     pageSize: 50,
   });
 
-  // Ensure the result is a valid RDS instance by finding it in the original array
-  const selectedRDS = rdsInstances.find(
-    (rds) => rds.dbInstanceIdentifier === result,
-  );
-
-  if (!selectedRDS) {
+  // result is now an RDSInstance object (not a string)
+  if (!result) {
     throw new Error("Selected RDS instance not found in RDS list");
   }
 
-  return selectedRDS;
+  return result as RDSInstance;
 }
 
 /**

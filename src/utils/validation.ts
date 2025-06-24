@@ -10,11 +10,11 @@ export function displayValidationErrors(
   issues: v.InferIssue<typeof ConnectOptionsSchema>[],
 ): void {
   messages.error("Invalid CLI options:");
-  for (const issue of issues) {
+  issues.forEach((issue) => {
     messages.error(
       `  • ${issue.path?.[0]?.key || "Unknown"}: ${issue.message}`,
     );
-  }
+  });
 }
 
 /**

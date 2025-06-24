@@ -18,6 +18,7 @@ import {
 import { executeECSCommand } from "../session.js";
 import type { ECSCluster, ECSTask, ValidatedExecOptions } from "../types.js";
 import { askRetry, displayFriendlyError, messages } from "../utils/index.js";
+import { VERSION } from "../version.js";
 
 /**
  * Execute command in ECS task container with Simple UI workflow
@@ -138,17 +139,12 @@ async function execECSTaskWithSimpleUIFlow(
       pageSize: 50,
     });
 
-    // Ensure the result is a valid ECS cluster by finding it in the original array
-    const foundCluster = clusters.find(
-      (cluster) =>
-        cluster.clusterName === result || cluster.clusterArn === result,
-    );
-
-    if (!isDefined(foundCluster)) {
+    // result is now an ECSCluster object (not a string)
+    if (!isDefined(result)) {
       throw new Error("Selected cluster not found in cluster list");
     }
 
-    selectedCluster = foundCluster;
+    selectedCluster = result as ECSCluster;
 
     selections.cluster = selectedCluster.clusterName;
   }
@@ -287,6 +283,16 @@ async function execECSTaskWithSimpleUIFlow(
     throw new Error("Command selection is required");
   }
 
+  // Generate reproducible command
+  const reproducibleCmd = [
+    `npx ecs-pf@${VERSION} exec-task`,
+    `--region "${selections.region}"`,
+    `--cluster "${selections.cluster}"`,
+    `--task "${selections.task}"`,
+    `--container "${selections.container}"`,
+    `--command "${selections.command}"`,
+  ].join(" ");
+
   // Execute the command
   await executeECSCommand(
     selections.region,
@@ -294,18 +300,6 @@ async function execECSTaskWithSimpleUIFlow(
     selectedTask.realTaskArn,
     selections.container,
     selections.command,
+    reproducibleCmd,
   );
-
-  // Display reproducible command
-  console.log();
-  console.log(chalk.cyan("🔄 Reproducible command:"));
-  const reproducibleCmd = [
-    "npx ecs-pf exec-task",
-    `--region "${selections.region}"`,
-    `--cluster "${selections.cluster}"`,
-    `--task "${selections.task}"`,
-    `--container "${selections.container}"`,
-    `--command "${selections.command}"`,
-  ].join(" ");
-  console.log(chalk.gray(reproducibleCmd));
 }

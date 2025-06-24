@@ -239,5 +239,29 @@ export const messages = {
 
       messages.empty();
     },
+
+    // Display command execution results in unified format
+    displayCommandResults: (
+      commandString: string,
+      reproducibleCommand?: string,
+      commandLabel: string = "Command executed",
+    ) => {
+      // Display commands after successful termination
+      messages.empty();
+      messages.info(`${commandLabel}:`);
+      messages.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      messages.info(commandString);
+      messages.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      messages.empty();
+
+      // Display reproducible command if provided
+      if (reproducibleCommand) {
+        messages.info("To reproduce this connection, use:");
+        messages.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        messages.info(reproducibleCommand);
+        messages.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        messages.empty();
+      }
+    },
   },
 };

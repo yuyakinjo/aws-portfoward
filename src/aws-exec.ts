@@ -1,5 +1,6 @@
 import type { ValidatedExecOptions } from "./types.js";
 import { messages } from "./utils/index.js";
+import { VERSION } from "./version.js";
 
 /**
  * Execute command in ECS task container (direct execution with provided options)
@@ -32,6 +33,16 @@ export async function execECSTask(
   messages.info(`Container: ${options.container}`);
   messages.info(`Command: ${command}`);
 
+  // Generate reproducible command
+  const reproducibleCmd = [
+    `npx ecs-pf@${VERSION} exec-task`,
+    `--region "${options.region}"`,
+    `--cluster "${options.cluster}"`,
+    `--task "${options.task}"`,
+    `--container "${options.container}"`,
+    `--command "${command}"`,
+  ].join(" ");
+
   // Import required functions
   const { executeECSCommand } = await import("./session.js");
 
@@ -42,6 +53,7 @@ export async function execECSTask(
     options.task,
     options.container,
     command,
+    reproducibleCmd,
   );
 }
 

@@ -114,9 +114,7 @@ export async function universalSearch<T extends Record<string, any>>(
       .map((key) => {
         const keys = key.split(".");
         let value: any = item;
-        for (const k of keys) {
-          value = value?.[k];
-        }
+        value = keys.reduce((acc, k) => acc?.[k], value);
         return value?.toString() || "";
       })
       .filter(Boolean)

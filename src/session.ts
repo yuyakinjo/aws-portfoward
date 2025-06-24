@@ -108,48 +108,22 @@ export async function startSSMSession(
       // Handle user termination (SIGINT/Ctrl+C) as normal termination
       if (signal === "SIGINT" || code === 130 || isUserTermination) {
         messages.success("Process completed successfully");
-
-        // Display commands after successful termination
-        messages.empty();
-        messages.info("Command to execute:");
-        messages.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-        messages.info(commandString);
-        messages.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-        messages.empty();
-
-        // Display reproducible command if provided
-        if (reproducibleCommand) {
-          messages.info("To reproduce this connection, use:");
-          messages.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-          messages.info(reproducibleCommand);
-          messages.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-          messages.empty();
-        }
-
+        messages.ui.displayCommandResults(
+          commandString,
+          reproducibleCommand,
+          "Command to execute",
+        );
         resolve();
         return;
       }
 
       if (code === 0) {
         messages.success("Process completed successfully");
-
-        // Display commands after successful termination
-        messages.empty();
-        messages.info("Command to execute:");
-        messages.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-        messages.info(commandString);
-        messages.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-        messages.empty();
-
-        // Display reproducible command if provided
-        if (reproducibleCommand) {
-          messages.info("To reproduce this connection, use:");
-          messages.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-          messages.info(reproducibleCommand);
-          messages.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-          messages.empty();
-        }
-
+        messages.ui.displayCommandResults(
+          commandString,
+          reproducibleCommand,
+          "Command to execute",
+        );
         resolve();
       } else {
         let errorMessage = `Session terminated with error code ${code}`;
@@ -206,12 +180,13 @@ export async function executeECSCommand(
   taskArn: string,
   containerName: string,
   command: string,
+  reproducibleCommand?: string,
 ): Promise<void> {
   // Build command string
   const commandString = `aws ecs execute-command --region ${region} --cluster ${clusterName} --task ${taskArn} --container ${containerName} --command "${command}" --interactive`;
 
   messages.empty();
-  messages.success(`🚀 Executing command in ECS container: ${containerName}`);
+  messages.success(`Executing command in ECS container: ${containerName}`);
   messages.info(`Command: ${command}`);
   messages.empty();
 
@@ -240,31 +215,15 @@ export async function executeECSCommand(
     child.on("close", (code, signal) => {
       // Handle user termination (SIGINT/Ctrl+C) as normal termination
       if (signal === "SIGINT" || code === 130 || isUserTermination) {
-        messages.success("ECS exec session completed");
-
-        // Display command for reference
-        messages.empty();
-        messages.info("Command executed:");
-        messages.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-        messages.info(commandString);
-        messages.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-        messages.empty();
-
+        messages.success("Process completed successfully");
+        messages.ui.displayCommandResults(commandString, reproducibleCommand);
         resolve();
         return;
       }
 
       if (code === 0) {
-        messages.success("ECS exec session completed successfully");
-
-        // Display command for reference
-        messages.empty();
-        messages.info("Command executed:");
-        messages.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-        messages.info(commandString);
-        messages.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-        messages.empty();
-
+        messages.success("Process completed successfully");
+        messages.ui.displayCommandResults(commandString, reproducibleCommand);
         resolve();
       } else {
         let errorMessage = `ECS exec command failed with error code ${code}`;

@@ -19,7 +19,6 @@ export async function inferECSTargets(
   enablePerformanceTracking = false,
 ): Promise<InferenceResult[]> {
   const tracker = new PerformanceTracker();
-  const results: InferenceResult[] = [];
 
   try {
     tracker.startStep("Load analysis results");
@@ -74,38 +73,41 @@ export async function inferECSTargets(
       }),
     );
 
-    // 結果をフラット化
-    results.push(...primaryClusterResults.flat());
     tracker.endStep();
 
     // Phase 2: 不十分な場合のフォールバック検索
     tracker.startStep("Fallback search if needed");
-    if (results.length < 2) {
-      const remainingClusters = likelyClusters.slice(2, 4); // 次の2個のクラスターのみ（高速化）
+    const needsFallback = primaryClusterResults.flat().length < 2;
 
-      const fallbackResults = await Promise.all(
-        remainingClusters.map(async (cluster) => {
-          try {
-            const tasks = await getECSTasks(ecsClient, cluster);
-            if (tasks.length > 0) {
-              const scored = await scoreTasksByNaming(
-                tasks,
-                cluster,
-                rdsInstance,
-              );
-              return scored;
-            } else {
+    const fallbackResults = needsFallback
+      ? await Promise.all(
+          likelyClusters.slice(2, 4).map(async (cluster) => {
+            try {
+              const tasks = await getECSTasks(ecsClient, cluster);
+              if (tasks.length > 0) {
+                const scored = await scoreTasksByNaming(
+                  tasks,
+                  cluster,
+                  rdsInstance,
+                );
+                return scored;
+              } else {
+                return [];
+              }
+            } catch {
               return [];
             }
-          } catch {
-            return [];
-          }
-        }),
-      );
+          }),
+        )
+      : [];
 
-      results.push(...fallbackResults.flat());
-    }
     tracker.endStep();
+
+    // 全ての結果を統合
+    const results = [
+      ...primaryClusterResults.flat(),
+      ...fallbackResults.flat(),
+    ];
 
     // 有効なタスクと無効なタスクを分離
     const validResults = results.filter((result) => {
