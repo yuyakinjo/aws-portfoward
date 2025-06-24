@@ -23,6 +23,7 @@
   "scripts": {
     "connect": "npm run build && node dist/cli.js connect",
     "connect-ui": "npm run build && node dist/cli.js connect-ui",
+    "connect-ink": "npm run build && node dist/cli.js connect-ink",
     "exec-task": "npm run build && node dist/cli.js exec-task",
     "exec-task-ui": "npm run build && node dist/cli.js exec-task-ui",
     "dev": "npm run build && node dist/cli.js connect",

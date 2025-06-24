@@ -7,7 +7,7 @@ export async function connectWithInk(
   options: ValidatedConnectOptions,
 ): Promise<void> {
   const { waitUntilExit } = render(
-    React.createElement(ConnectApp, { dryRun: options.dryRun }),
+    React.createElement(ConnectApp, { options }),
   );
 
   await waitUntilExit();
