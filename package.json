@@ -23,6 +23,8 @@
   "scripts": {
     "connect": "npm run build && node dist/cli.js connect",
     "connect-ui": "npm run build && node dist/cli.js connect-ui",
+    "exec-task": "npm run build && node dist/cli.js exec-task",
+    "exec-task-ui": "npm run build && node dist/cli.js exec-task-ui",
     "dev": "npm run build && node dist/cli.js connect",
     "build": "./scripts/build.sh",
     "build:tsc": "npx tsc --project tsconfig.build.json",
@@ -40,7 +42,7 @@
     "ci": "biome ci"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.0.0",
+    "@biomejs/biome": "^2.0.5",
     "@types/inquirer": "^9.0.8"
   },
   "peerDependencies": {
@@ -57,7 +59,7 @@
     "fuse.js": "^7.1.0",
     "inquirer": "^12.6.3",
     "inquirer-search-list": "^1.2.6",
-    "remeda": "^2.23.0",
+    "remeda": "^2.23.1",
     "valibot": "^1.1.0"
   },
   "volta": {

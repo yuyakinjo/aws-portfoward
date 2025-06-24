@@ -3,14 +3,14 @@ import { ECSClient } from "@aws-sdk/client-ecs";
 import { RDSClient } from "@aws-sdk/client-rds";
 import { input, search } from "@inquirer/prompts";
 import chalk from "chalk";
-import { isEmpty } from "remeda";
+import { isDefined, isEmpty } from "remeda";
 import { getAWSRegions, getRDSInstances } from "../aws-services.js";
 import {
   formatInferenceResult,
   type InferenceResult,
   inferECSTargets,
 } from "../inference/index.js";
-import { searchRDS, searchRegions } from "../search.js";
+import { searchInferenceResults, searchRDS, searchRegions } from "../search.js";
 import { startSSMSession } from "../session.js";
 import type { RDSInstance, ValidatedConnectOptions } from "../types.js";
 import {
@@ -196,18 +196,7 @@ async function connectToRDSWithSimpleUIInternal(
         selectedInference = (await search({
           message: "Select ECS target:",
           source: async (input) => {
-            return filterInferenceResults(inferenceResults, input || "").map(
-              (result) => {
-                const isUnavailable = result.reason.includes("接続不可");
-                return {
-                  name: formatInferenceResult(result),
-                  value: result,
-                  disabled: isUnavailable
-                    ? "Task stopped - Cannot select"
-                    : undefined,
-                };
-              },
-            );
+            return await searchInferenceResults(inferenceResults, input || "");
           },
           pageSize: 10,
         })) as InferenceResult;
@@ -219,18 +208,7 @@ async function connectToRDSWithSimpleUIInternal(
       selectedInference = (await search({
         message: "Select ECS target:",
         source: async (input) => {
-          return filterInferenceResults(inferenceResults, input || "").map(
-            (result) => {
-              const isUnavailable = result.reason.includes("接続不可");
-              return {
-                name: formatInferenceResult(result),
-                value: result,
-                disabled: isUnavailable
-                  ? "Task stopped - Cannot select"
-                  : undefined,
-              };
-            },
-          );
+          return await searchInferenceResults(inferenceResults, input || "");
         },
         pageSize: 10,
       })) as InferenceResult;
@@ -248,7 +226,7 @@ async function connectToRDSWithSimpleUIInternal(
   messages.ui.displaySelectionState(selections);
 
   // Step 5: Local Port Selection
-  if (options.localPort !== undefined) {
+  if (isDefined(options.localPort)) {
     selections.localPort = `${options.localPort}`;
   } else {
     try {
@@ -294,60 +272,4 @@ async function connectToRDSWithSimpleUIInternal(
     selections.localPort || "",
     reproducibleCommand,
   );
-}
-
-/**
- * Filter inference results using space-separated keywords
- * Supports both English and Japanese search terms
- * Searches through cluster name, task name, service name, confidence, and reason
- *
- * Examples:
- * - "prod web" - finds tasks in production clusters with web services
- * - "staging api" - finds staging API tasks
- * - "high" - finds high confidence matches
- * - "medium 中" - finds medium confidence matches (Japanese)
- */
-function filterInferenceResults(
-  results: InferenceResult[],
-  input: string,
-): InferenceResult[] {
-  if (!input || input.trim() === "") {
-    return results;
-  }
-
-  // Split input into keywords and convert to lowercase
-  const keywords = input
-    .trim()
-    .toLowerCase()
-    .split(/\s+/)
-    .filter((keyword) => keyword.length > 0);
-
-  if (keywords.length === 0) {
-    return results;
-  }
-
-  return results.filter((result) => {
-    // Create searchable text combining multiple fields
-    const searchableText = [
-      result.cluster.clusterName,
-      result.task.displayName,
-      result.task.serviceName,
-      result.task.taskStatus,
-      result.task.runtimeId,
-      result.confidence,
-      result.method,
-      result.reason,
-      formatInferenceResult(result),
-      // Add confidence levels for easier searching
-      result.confidence === "high" ? "high 高" : "",
-      result.confidence === "medium" ? "medium 中" : "",
-      result.confidence === "low" ? "low 低" : "",
-    ]
-      .filter(Boolean)
-      .join(" ")
-      .toLowerCase();
-
-    // All keywords must be found in the searchable text
-    return keywords.every((keyword) => searchableText.includes(keyword));
-  });
 }
