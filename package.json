@@ -31,7 +31,12 @@
     "generate-version": "node --experimental-strip-types scripts/generate-version.ts",
     "start": "node dist/cli.js connect",
     "type-check": "tsc --noEmit",
-    "test": "npm run type-check && npm run build",
+    "test": "npm run type-check && npm run build && npm run test:unit && npm run test:integration",
+    "test:unit": "vitest run test/unit",
+    "test:integration": "vitest run test/integration",
+    "test:watch": "vitest watch",
+    "test:coverage": "vitest run --coverage",
+    "test:ui": "vitest --ui",
     "prepublishOnly": "npm run check",
     "format": "biome format --write",
     "format:check": "biome format",
@@ -43,7 +48,10 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.0.5",
-    "@types/inquirer": "^9.0.8"
+    "@types/inquirer": "^9.0.8",
+    "@vitest/coverage-v8": "^3.2.4",
+    "@vitest/ui": "^3.2.4",
+    "vitest": "^3.2.4"
   },
   "peerDependencies": {
     "typescript": "^5"
