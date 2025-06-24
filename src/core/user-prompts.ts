@@ -5,6 +5,7 @@ import {
 } from "../inference/index.js";
 import {
   searchClusters,
+  searchInferenceResults,
   searchRDS,
   searchRegions,
   searchTasks,
@@ -91,19 +92,7 @@ export async function promptForInferenceResult(
     message:
       "Select ECS target (filter with keywords like 'prod web' or 'staging api'):",
     source: async (input) => {
-      return filterInferenceResults(inferenceResults, input || "").map(
-        (result) => {
-          const isUnavailable = result.reason.includes("接続不可");
-          return {
-            name: formatInferenceResult(result),
-            value: result,
-            // Removed description to clean up UI
-            disabled: isUnavailable
-              ? "Task stopped - Cannot select"
-              : undefined,
-          };
-        },
-      );
+      return await searchInferenceResults(inferenceResults, input || "");
     },
     pageSize: 15,
   })) as InferenceResult;
@@ -122,61 +111,5 @@ export async function promptForLocalPort(): Promise<string> {
         ? true
         : "Please enter a valid port number (1-65535)";
     },
-  });
-}
-
-/**
- * Filter inference results using space-separated keywords
- * Supports both English and Japanese search terms
- * Searches through cluster name, task name, service name, confidence, and reason
- *
- * Examples:
- * - "prod web" - finds tasks in production clusters with web services
- * - "staging api" - finds staging API tasks
- * - "high" - finds high confidence matches
- * - "medium 中" - finds medium confidence matches (Japanese)
- */
-function filterInferenceResults(
-  results: InferenceResult[],
-  input: string,
-): InferenceResult[] {
-  if (!input || input.trim() === "") {
-    return results;
-  }
-
-  // Split input into keywords and convert to lowercase
-  const keywords = input
-    .trim()
-    .toLowerCase()
-    .split(/\s+/)
-    .filter((keyword) => keyword.length > 0);
-
-  if (keywords.length === 0) {
-    return results;
-  }
-
-  return results.filter((result) => {
-    // Create searchable text combining multiple fields
-    const searchableText = [
-      result.cluster.clusterName,
-      result.task.displayName,
-      result.task.serviceName,
-      result.task.taskStatus,
-      result.task.runtimeId,
-      result.confidence,
-      result.method,
-      result.reason,
-      formatInferenceResult(result),
-      // Add confidence levels for easier searching
-      result.confidence === "high" ? "high 高" : "",
-      result.confidence === "medium" ? "medium 中" : "",
-      result.confidence === "low" ? "low 低" : "",
-    ]
-      .filter(Boolean)
-      .join(" ")
-      .toLowerCase();
-
-    // All keywords must be found in the searchable text
-    return keywords.every((keyword) => searchableText.includes(keyword));
   });
 }

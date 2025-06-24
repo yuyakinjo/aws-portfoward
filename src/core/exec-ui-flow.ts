@@ -9,7 +9,12 @@ import {
   getECSTaskContainers,
   getECSTasksWithExecCapability,
 } from "../aws-services.js";
-import { searchRegions } from "../search.js";
+import {
+  searchClusters,
+  searchContainers,
+  searchRegions,
+  searchTasks,
+} from "../search.js";
 import { executeECSCommand } from "../session.js";
 import type { ECSCluster, ECSTask, ValidatedExecOptions } from "../types.js";
 import { askRetry, displayFriendlyError, messages } from "../utils/index.js";
@@ -131,10 +136,8 @@ async function execECSTaskWithSimpleUIFlow(
     selectedCluster = (await search({
       message: "Search and select ECS cluster:",
       source: async (input) => {
-        return filterClusters(clusters, input || "").map((cluster) => ({
-          name: `${cluster.clusterName}`,
-          value: cluster,
-        }));
+        const results = await searchClusters(clusters, input || "");
+        return results;
       },
       pageSize: 15,
     })) as ECSCluster;
@@ -181,16 +184,16 @@ async function execECSTaskWithSimpleUIFlow(
     process.stdout.write("\x1b[2K");
     process.stdout.write("\r");
 
-    selectedTask = (await search({
+    const selectedTaskArn = await search({
       message: "Search and select ECS task:",
       source: async (input) => {
-        return filterTasks(tasks, input || "").map((task) => ({
-          name: `${task.serviceName} (${task.taskId.substring(0, 8)}...)`,
-          value: task,
-        }));
+        const results = await searchTasks(tasks, input || "");
+        return results;
       },
       pageSize: 15,
-    })) as ECSTask;
+    });
+
+    selectedTask = tasks.find((t) => t.taskArn === selectedTaskArn)!;
 
     selections.task = selectedTask.taskId;
   }
@@ -222,19 +225,14 @@ async function execECSTaskWithSimpleUIFlow(
       // Auto-select if only one container
       selections.container = containers[0];
     } else {
-      selections.container = (await search({
+      selections.container = await search({
         message: "Search and select container:",
         source: async (input) => {
-          const searchTerm = input?.toLowerCase() || "";
-          return containers
-            .filter((container) => container.toLowerCase().includes(searchTerm))
-            .map((container) => ({
-              name: container,
-              value: container,
-            }));
+          const results = await searchContainers(containers, input || "");
+          return results;
         },
         pageSize: 15,
-      })) as string;
+      });
     }
   }
 
@@ -273,35 +271,17 @@ async function execECSTaskWithSimpleUIFlow(
     selections.container!,
     selections.command!,
   );
-}
 
-/**
- * Filter ECS clusters using search input
- */
-function filterClusters(clusters: ECSCluster[], input: string): ECSCluster[] {
-  if (!input || input.trim() === "") {
-    return clusters;
-  }
-
-  const searchTerm = input.toLowerCase();
-  return clusters.filter((cluster) =>
-    cluster.clusterName.toLowerCase().includes(searchTerm),
-  );
-}
-
-/**
- * Filter ECS tasks using search input
- */
-function filterTasks(tasks: ECSTask[], input: string): ECSTask[] {
-  if (!input || input.trim() === "") {
-    return tasks;
-  }
-
-  const searchTerm = input.toLowerCase();
-  return tasks.filter(
-    (task) =>
-      task.displayName.toLowerCase().includes(searchTerm) ||
-      task.serviceName.toLowerCase().includes(searchTerm) ||
-      task.taskId.toLowerCase().includes(searchTerm),
-  );
+  // Display reproducible command
+  console.log();
+  console.log(chalk.cyan("🔄 Reproducible command:"));
+  const reproducibleCmd = [
+    "npx ecs-pf exec-task",
+    `--region "${selections.region}"`,
+    `--cluster "${selections.cluster}"`,
+    `--task "${selections.task}"`,
+    `--container "${selections.container}"`,
+    `--command "${selections.command}"`,
+  ].join(" ");
+  console.log(chalk.gray(reproducibleCmd));
 }
