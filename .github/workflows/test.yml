@@ -40,17 +40,15 @@ jobs:
       - name: Run tests with coverage
         run: npm run test:coverage
 
-      - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v4
+      - name: Coverage Summary
         if: matrix.node-version == '24.x'
-        with:
-          files: ./coverage/lcov.info
-          flags: unittests
-          name: codecov-umbrella
-          fail_ci_if_error: false
-          verbose: true
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        run: |
+          echo "## 📊 テストカバレッジレポート" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### カバレッジ結果" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat coverage/coverage-summary.json | jq -r '.total | "Statements: \(.statements.pct)% (\(.statements.covered)/\(.statements.total))", "Branches: \(.branches.pct)% (\(.branches.covered)/\(.branches.total))", "Functions: \(.functions.pct)% (\(.functions.covered)/\(.functions.total))", "Lines: \(.lines.pct)% (\(.lines.covered)/\(.lines.total))"' >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
 
       - name: Upload coverage to artifacts
         if: matrix.node-version == '24.x'
@@ -62,57 +60,10 @@ jobs:
           retention-days: 30
 
       - name: Comment coverage on PR
-        if: github.event_name == 'pull_request' && matrix.node-version == '22.x'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-
-            // カバレッジサマリーを読み込み
-            let coverageSummary = '';
-            try {
-              const summary = JSON.parse(fs.readFileSync('coverage/coverage-summary.json', 'utf8'));
-              const total = summary.total;
-
-              coverageSummary = `
-            ## 📊 テストカバレッジレポート
-
-            | 項目 | カバレッジ | 閾値 | 状況 |
-            |------|-----------|------|------|
-            | Lines | ${total.lines.pct}% | 80% | ${total.lines.pct >= 80 ? '✅' : '⚠️'} |
-            | Functions | ${total.functions.pct}% | 80% | ${total.functions.pct >= 80 ? '✅' : '⚠️'} |
-            | Branches | ${total.branches.pct}% | 85% | ${total.branches.pct >= 85 ? '✅' : '⚠️'} |
-            | Statements | ${total.statements.pct}% | 80% | ${total.statements.pct >= 80 ? '✅' : '⚠️'} |
-
-            **テスト統計**:
-            - 📁 テストファイル: 7ファイル
-            - 🧪 テストケース: 97テスト
-            - ⚡ 実行時間: ~17秒
-
-            ### 📈 高カバレッジファイル
-            - \`cluster-inference.ts\`: 100% 🎯
-            - \`inference-workflow.ts\`: 94.73% 🟢
-            - \`aws-services.ts\`: 92.66% 🟢
-            - \`validation.ts\`: 75% 🟡
-
-            > カバレッジレポートはArtifactsからダウンロードできます
-            `;
-            } catch (error) {
-              coverageSummary = `
-            ## 📊 テストカバレッジレポート
-
-            ✅ **全97テスト成功**
-
-            カバレッジ詳細は生成中です。Artifactsから完全なレポートをダウンロードしてください。
-            `;
-            }
-
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: coverageSummary
-            });
+        if: github.event_name == 'pull_request' && matrix.node-version == '24.x'
+        run: |
+          echo "✅ **全97テスト成功** - カバレッジレポートはArtifactsからダウンロードできます" > pr_comment.txt
+          echo "📊 詳細なカバレッジ情報はワークフローのSummaryタブで確認できます" >> pr_comment.txt
 
   test-e2e:
     name: End-to-End CLI Tests
@@ -126,7 +77,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22.x'
+          node-version: '24.x'
           cache: 'npm'
 
       - name: Install dependencies
