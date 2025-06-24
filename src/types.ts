@@ -13,7 +13,8 @@ import {
 } from "valibot";
 
 export interface ECSTask {
-  taskArn: string;
+  taskArn: string; // Custom format for SSM: ecs:cluster_name_task_id_runtime_id
+  realTaskArn: string; // Actual AWS Task ARN
   displayName: string;
   runtimeId: string;
   taskId: string;
@@ -56,6 +57,14 @@ export interface ConnectOptions {
   localPort?: string;
 }
 
+export interface ExecOptions {
+  region?: string;
+  cluster?: string;
+  task?: string;
+  container?: string;
+  command?: string;
+}
+
 // Valibot schema for ConnectOptions
 export const ConnectOptionsSchema = object({
   region: optional(pipe(string(), minLength(1, "Region cannot be empty"))),
@@ -92,3 +101,19 @@ export const ConnectOptionsSchema = object({
 
 // Type derived from schema
 export type ValidatedConnectOptions = InferOutput<typeof ConnectOptionsSchema>;
+
+// Valibot schema for ExecOptions
+export const ExecOptionsSchema = object({
+  region: optional(pipe(string(), minLength(1, "Region cannot be empty"))),
+  cluster: optional(
+    pipe(string(), minLength(1, "Cluster name cannot be empty")),
+  ),
+  task: optional(pipe(string(), minLength(1, "Task ID cannot be empty"))),
+  container: optional(
+    pipe(string(), minLength(1, "Container name cannot be empty")),
+  ),
+  command: optional(pipe(string(), minLength(1, "Command cannot be empty"))),
+});
+
+// Type derived from schema
+export type ValidatedExecOptions = InferOutput<typeof ExecOptionsSchema>;

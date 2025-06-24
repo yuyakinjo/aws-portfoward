@@ -179,5 +179,58 @@ export const messages = {
 
       messages.empty();
     },
+
+    // Display ECS exec selection state
+    displayExecSelectionState: (selections: {
+      region?: string;
+      cluster?: string;
+      task?: string;
+      container?: string;
+      command?: string;
+    }) => {
+      console.clear();
+      console.log(chalk.bold.white("ECS Execute Command Configuration"));
+      messages.empty();
+
+      // Helper function to format line with proper spacing and alignment
+      const formatSelectionLine = (
+        label: string,
+        value: string | undefined,
+      ) => {
+        const labelWidth = 12;
+        const totalWidth = 60;
+        const paddedLabel = label.padEnd(labelWidth, " ");
+
+        if (!value) {
+          const placeholder = "____________";
+          const spaces = " ".repeat(
+            Math.max(0, totalWidth - labelWidth - 3 - placeholder.length),
+          );
+          return `  ${paddedLabel}: ${spaces}${chalk.gray(placeholder)}`;
+        }
+
+        const spaces = " ".repeat(
+          Math.max(0, totalWidth - labelWidth - 3 - value.length),
+        );
+        return `  ${paddedLabel}: ${spaces}${chalk.cyan(value)}`;
+      };
+
+      // Region selection
+      console.log(formatSelectionLine("Region", selections.region));
+
+      // ECS Cluster selection
+      console.log(formatSelectionLine("Cluster", selections.cluster));
+
+      // ECS Task selection
+      console.log(formatSelectionLine("Task", selections.task));
+
+      // Container selection
+      console.log(formatSelectionLine("Container", selections.container));
+
+      // Command selection
+      console.log(formatSelectionLine("Command", selections.command));
+
+      messages.empty();
+    },
   },
 };

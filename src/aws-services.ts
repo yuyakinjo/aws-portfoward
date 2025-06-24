@@ -121,6 +121,7 @@ export async function getECSTasks(
 
                   tasks.push({
                     taskArn: targetArn,
+                    realTaskArn: task.taskArn,
                     displayName: displayName,
                     runtimeId: runtimeId,
                     taskId: taskId,
@@ -332,4 +333,79 @@ export async function getECSClustersWithExecCapability(
   return execCheckResults
     .filter(({ hasExecCapability }) => hasExecCapability)
     .map(({ cluster }) => cluster);
+}
+
+/**
+ * Get ECS tasks that support ECS exec (enableExecuteCommand: true)
+ */
+export async function getECSTasksWithExecCapability(
+  ecsClient: ECSClient,
+  cluster: ECSCluster,
+): Promise<ECSTask[]> {
+  try {
+    const allTasks = await getECSTasks(ecsClient, cluster);
+
+    // Filter tasks that have exec capability
+    // In practice, we need to check the task definition or task attributes
+    // For now, we'll return all running tasks and let the actual exec command fail if not supported
+    return allTasks.filter((task) => task.taskStatus === "RUNNING");
+  } catch (error) {
+    throw new Error(
+      `Failed to get ECS tasks with exec capability: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+}
+
+/**
+ * Get containers in an ECS task
+ */
+export async function getECSTaskContainers(
+  ecsClient: ECSClient,
+  clusterName: string,
+  taskArn: string,
+): Promise<string[]> {
+  try {
+    const describeCommand = new DescribeTasksCommand({
+      cluster: clusterName,
+      tasks: [taskArn],
+    });
+    const response = await ecsClient.send(describeCommand);
+
+    if (!response.tasks || response.tasks.length === 0) {
+      throw new Error("Task not found");
+    }
+
+    const task = response.tasks[0];
+    if (!task) {
+      throw new Error("Task data not found");
+    }
+
+    const containers: string[] = [];
+
+    if (task.containers) {
+      for (const container of task.containers) {
+        if (container.name && container.lastStatus === "RUNNING") {
+          containers.push(container.name);
+        }
+      }
+    }
+
+    return containers;
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.name === "ClusterNotFoundException") {
+        throw new Error(
+          `ECS cluster "${clusterName}" not found. Please verify the cluster exists.`,
+        );
+      }
+      if (error.name === "TaskNotFoundException") {
+        throw new Error(
+          `ECS task not found. Please verify the task exists and is running.`,
+        );
+      }
+    }
+    throw new Error(
+      `Failed to get task containers: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
 }

@@ -196,3 +196,110 @@ export async function startSSMSession(
     }, 5000);
   });
 }
+
+/**
+ * Execute command in ECS task container using AWS ECS execute-command
+ */
+export async function executeECSCommand(
+  region: string,
+  clusterName: string,
+  taskArn: string,
+  containerName: string,
+  command: string,
+): Promise<void> {
+  // Build command string
+  const commandString = `aws ecs execute-command --region ${region} --cluster ${clusterName} --task ${taskArn} --container ${containerName} --command "${command}" --interactive`;
+
+  messages.empty();
+  messages.success(`🚀 Executing command in ECS container: ${containerName}`);
+  messages.info(`Command: ${command}`);
+  messages.empty();
+
+  return new Promise((resolve, reject) => {
+    let isUserTermination = false;
+
+    // Use inherit mode to pass through stdin/stdout/stderr directly
+    const child = spawn(commandString, [], {
+      stdio: "inherit",
+      env: process.env,
+      shell: true,
+    });
+
+    child.on("error", (error) => {
+      console.error("Command execution error:", error.message);
+
+      if (error.message.includes("ENOENT")) {
+        reject(new Error("AWS CLI may not be installed"));
+      } else if (error.message.includes("EACCES")) {
+        reject(new Error("No permission to execute AWS CLI"));
+      } else {
+        reject(new Error(`Command execution error: ${error.message}`));
+      }
+    });
+
+    child.on("close", (code, signal) => {
+      // Handle user termination (SIGINT/Ctrl+C) as normal termination
+      if (signal === "SIGINT" || code === 130 || isUserTermination) {
+        messages.success("ECS exec session completed");
+
+        // Display command for reference
+        messages.empty();
+        messages.info("Command executed:");
+        messages.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        messages.info(commandString);
+        messages.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        messages.empty();
+
+        resolve();
+        return;
+      }
+
+      if (code === 0) {
+        messages.success("ECS exec session completed successfully");
+
+        // Display command for reference
+        messages.empty();
+        messages.info("Command executed:");
+        messages.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        messages.info(commandString);
+        messages.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        messages.empty();
+
+        resolve();
+      } else {
+        let errorMessage = `ECS exec command failed with error code ${code}`;
+
+        // Detailed messages based on error codes
+        switch (code) {
+          case 1:
+            errorMessage +=
+              "\nGeneral error. Please check your AWS CLI configuration and permissions";
+            break;
+          case 2:
+            errorMessage += "\nConfiguration file or parameter issue";
+            break;
+          case 254:
+            errorMessage +=
+              "\nECS exec not enabled for this task. Please ensure the task definition has enableExecuteCommand: true";
+            break;
+          case 255:
+            errorMessage +=
+              "\nConnection error or timeout. Please check network connection and task status";
+            break;
+          default:
+            errorMessage += "\nUnexpected error. Please check AWS CLI logs";
+        }
+
+        reject(new Error(errorMessage));
+      }
+    });
+
+    // Process termination handling
+    process.on("SIGINT", () => {
+      if (!isUserTermination) {
+        isUserTermination = true;
+        child.kill("SIGINT");
+      }
+    });
+  });
+}
