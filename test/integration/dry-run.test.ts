@@ -103,24 +103,4 @@ describe("Dry Run Integration Tests", () => {
       expect(result.exitCode).toBe(0); // Should succeed in dry run mode
     });
   });
-
-  describe("connect-ui command with --dry-run", () => {
-    it("should show help when --dry-run is used with connect-ui command", async () => {
-      const result = await runCommand(["connect-ui", "--help"]);
-
-      expect(result.exitCode).toBe(0);
-      expect(result.stdout).toContain("--dry-run");
-      expect(result.stdout).toContain("Show commands without execution");
-    });
-  });
-
-  describe("exec-task-ui command with --dry-run", () => {
-    it("should show help when --dry-run is used with exec-task-ui command", async () => {
-      const result = await runCommand(["exec-task-ui", "--help"]);
-
-      expect(result.exitCode).toBe(0);
-      expect(result.stdout).toContain("--dry-run");
-      expect(result.stdout).toContain("Show commands without execution");
-    });
-  });
 });

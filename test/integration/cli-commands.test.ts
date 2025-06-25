@@ -111,9 +111,7 @@ describe("CLI Commands Integration", () => {
       const output = stdout + stderr;
       expect(output).toContain("Usage:");
       expect(output).toContain("connect");
-      expect(output).toContain("connect-ui");
       expect(output).toContain("exec-task");
-      expect(output).toContain("exec-task-ui");
     });
 
     it("should display version with --version flag", async () => {
@@ -145,20 +143,20 @@ describe("CLI Commands Integration", () => {
       const { code, stdout } = await runCLI(["connect", "--help"]);
 
       expect(code).toBe(0);
-      expect(stdout).toContain("Connect to RDS via ECS");
+      expect(stdout).toContain("Connect to RDS via ECS with interactive UI");
       expect(stdout).toContain("--region");
       expect(stdout).toContain("--cluster");
       expect(stdout).toContain("--task");
       expect(stdout).toContain("--rds");
       expect(stdout).toContain("--rds-port");
       expect(stdout).toContain("--local-port");
+      expect(stdout).not.toContain("--no-ui");
     });
 
-    it("should handle missing required parameters gracefully", async () => {
+    it("should handle missing required parameters with interactive UI", async () => {
       const { code } = await runCLI(["connect"], 2000);
 
-      // コマンドは失敗するはずだが、プロセスがハングしないことを確認
-      // タイムアウトした場合はnullが返される
+      // インタラクティブUIコマンドは失敗するかタイムアウトするはず
       expect(code === 1 || code === null).toBe(true);
     });
 
@@ -235,60 +233,25 @@ describe("CLI Commands Integration", () => {
     });
   });
 
-  describe("connect-ui command", () => {
-    it("should show help for connect-ui command", async () => {
-      const { code, stdout } = await runCLI(["connect-ui", "--help"]);
-
-      expect(code).toBe(0);
-      expect(stdout).toContain("Connect to RDS via ECS with step-by-step UI");
-      expect(stdout).toContain("--region");
-      expect(stdout).toContain("--cluster");
-      expect(stdout).toContain("--task");
-      expect(stdout).toContain("--rds");
-      expect(stdout).toContain("--rds-port");
-      expect(stdout).toContain("--local-port");
-    });
-
-    it("should accept optional parameters", async () => {
-      const { code } = await runCLI(
-        ["connect-ui", "--region", "ap-northeast-1"],
-        2000,
-      );
-
-      // UIコマンドはインタラクティブなのでタイムアウトまたは失敗する
-      expect([null, 1]).toContain(code);
-    });
-
-    it("should validate optional parameters", async () => {
-      const { code, stdout } = await runCLI(
-        ["connect-ui", "--region", ""],
-        2000,
-      );
-
-      expect(code).toBe(1);
-      expect(stdout).toContain("Region cannot be empty");
-    });
-  });
-
   describe("exec-task command", () => {
     it("should show help for exec-task command", async () => {
       const { code, stdout } = await runCLI(["exec-task", "--help"]);
 
       expect(code).toBe(0);
-      expect(stdout).toContain("Execute command in ECS task container");
+      expect(stdout).toContain("Execute command in ECS task container with interactive UI");
       expect(stdout).toContain("--region");
       expect(stdout).toContain("--cluster");
       expect(stdout).toContain("--task");
       expect(stdout).toContain("--container");
       expect(stdout).toContain("--command");
+      expect(stdout).not.toContain("--no-ui");
     });
 
-    it("should handle missing required parameters for direct execution", async () => {
-      const { code, stdout } = await runCLI(["exec-task"], 2000);
+    it("should handle missing required parameters with interactive UI", async () => {
+      const { code } = await runCLI(["exec-task"], 2000);
 
-      // exec-taskは全パラメータが必要なので失敗するはず
-      expect(code).toBe(1);
-      expect(stdout).toContain("All required options must be provided");
+      // インタラクティブUIモードでは失敗するかタイムアウトするはず
+      expect(code === 1 || code === null).toBe(true);
     });
 
     it("should validate task parameter format", async () => {
@@ -360,58 +323,6 @@ describe("CLI Commands Integration", () => {
     });
   });
 
-  describe("exec-task-ui command", () => {
-    it("should show help for exec-task-ui command", async () => {
-      const { code, stdout } = await runCLI(["exec-task-ui", "--help"]);
-
-      expect(code).toBe(0);
-      expect(stdout).toContain(
-        "Execute command in ECS task container with step-by-step UI",
-      );
-      expect(stdout).toContain("--region");
-      expect(stdout).toContain("--cluster");
-      expect(stdout).toContain("--task");
-      expect(stdout).toContain("--container");
-      expect(stdout).toContain("--command");
-    });
-
-    it("should accept optional parameters", async () => {
-      const { code, stdout } = await runCLI(
-        ["exec-task-ui", "--region", "ap-northeast-1"],
-        2000,
-      );
-
-      // UIコマンドはインタラクティブなのでタイムアウトまたは失敗する
-      expect(code === 1 || code === null).toBe(true);
-      expect(stdout).toContain("ECS Execute Command Configuration");
-    });
-
-    it("should validate optional command parameter", async () => {
-      const { code, stdout } = await runCLI(
-        ["exec-task-ui", "--command", ""],
-        2000,
-      );
-
-      expect(code === 1 || code === null).toBe(true);
-      expect(stdout).toContain("Command cannot be empty");
-    });
-
-    it("should handle partial parameters for UI mode", async () => {
-      const { code, stdout } = await runCLI(
-        [
-          "exec-task-ui",
-          "--region",
-          "ap-northeast-1",
-          "--cluster",
-          "test-cluster",
-        ],
-        2000,
-      );
-
-      // UIモードでは部分的なパラメータでも受け入れられるが、最終的にはタイムアウトまたは失敗する
-      expect(code === 1 || code === null).toBe(true);
-      expect(stdout).toContain("ECS Execute Command Configuration");
-    });
   });
 
   describe("Command validation consistency", () => {
@@ -422,15 +333,15 @@ describe("CLI Commands Integration", () => {
         2000,
       );
 
-      // connect-uiコマンドでのリージョンバリデーション
-      const { stdout: connectUIError } = await runCLI(
-        ["connect-ui", "--region", ""],
+      // 統合後はconnect-uiコマンドは存在しないので、exec-taskでのバリデーションと比較
+      const { stdout: execTaskError } = await runCLI(
+        ["exec-task", "--region", ""],
         2000,
       );
 
       // 両方とも同じバリデーションエラーメッセージを表示するはず
       expect(connectError).toContain("Region cannot be empty");
-      expect(connectUIError).toContain("Region cannot be empty");
+      expect(execTaskError).toContain("Region cannot be empty");
     });
 
     it("should provide helpful error messages for invalid options", async () => {
