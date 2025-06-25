@@ -537,26 +537,3 @@ export async function searchInferenceResults(
 
   return universalSearch(config, input);
 }
-
-// ===== 旧関数（後方互換性のため残す） =====
-
-/**
- * @deprecated 代わりに searchClusters を使用してください
- */
-export function fuzzySearchClusters(clusters: ECSCluster[], input: string) {
-  return searchClusters(clusters, input);
-}
-
-/**
- * @deprecated 代わりに searchTasks を使用してください
- */
-export function fuzzySearchTasks(tasks: ECSTask[], input: string) {
-  return searchTasks(tasks, input);
-}
-
-/**
- * @deprecated 代わりに searchRDS を使用してください
- */
-export function fuzzySearchRDS(rdsInstances: RDSInstance[], input: string) {
-  return searchRDS(rdsInstances, input);
-}

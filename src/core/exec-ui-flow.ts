@@ -157,7 +157,7 @@ async function execECSTaskWithSimpleUIFlow(
   messages.ui.displayExecSelectionState(selections);
 
   // Step 3: Select ECS Task
-  let selectedTask: ECSTask;
+  let selectedTask: ECSTask | undefined;
   if (options.task) {
     selections.task = options.task;
     console.log(chalk.yellow("Getting ECS tasks..."));
@@ -201,7 +201,10 @@ async function execECSTaskWithSimpleUIFlow(
       pageSize: 15,
     });
 
-    selectedTask = tasks.find((t) => t.taskArn === selectedTaskArn)!;
+    selectedTask = tasks.find((t) => t.taskArn === selectedTaskArn);
+    if (!selectedTask) {
+      throw new Error(`Selected task not found: ${selectedTaskArn}`);
+    }
 
     selections.task = selectedTask.taskId;
   }
@@ -210,6 +213,10 @@ async function execECSTaskWithSimpleUIFlow(
   messages.ui.displayExecSelectionState(selections);
 
   // Step 4: Select Container
+  if (!selectedTask) {
+    throw new Error("No task selected");
+  }
+
   let selectedContainer: string;
   if (options.container) {
     selections.container = options.container;

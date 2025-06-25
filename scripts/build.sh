@@ -4,7 +4,7 @@
 rm -rf dist
 
 # Generate version file from package.json
-node --experimental-strip-types scripts/generate-version.ts
+npm run generate-version
 
 # Build with TypeScript
 npx tsc --project tsconfig.build.json
