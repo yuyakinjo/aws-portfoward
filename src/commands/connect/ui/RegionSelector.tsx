@@ -100,7 +100,7 @@ const RegionSelector = ({ onSelect, preselectedRegion, onCancel }: Props) => {
       {/* Header */}
       <Box marginBottom={1}>
         <Text color="cyan" bold>
-          🌍 Select AWS Region ({filteredRegions.length}/{regions.length})
+          Select AWS Region ({filteredRegions.length}/{regions.length})
         </Text>
       </Box>
 
@@ -120,19 +120,47 @@ const RegionSelector = ({ onSelect, preselectedRegion, onCancel }: Props) => {
         </Box>
       ) : (
         <Box flexDirection="column" marginBottom={1}>
-          {filteredRegions.slice(0, 10).map((region, index) => (
-            <Text
-              key={region}
-              color={index === selectedIndex ? "cyan" : "white"}
-              bold={index === selectedIndex}
-            >
-              {index === selectedIndex ? "▶ " : "  "}
-              {region}
-            </Text>
-          ))}
-          {filteredRegions.length > 10 && (
-            <Text color="gray">... and {filteredRegions.length - 10} more</Text>
-          )}
+          {(() => {
+            const maxVisible = 10;
+            const startIndex = Math.max(
+              0,
+              Math.min(
+                selectedIndex - Math.floor(maxVisible / 2),
+                filteredRegions.length - maxVisible,
+              ),
+            );
+            const endIndex = Math.min(
+              startIndex + maxVisible,
+              filteredRegions.length,
+            );
+            const visibleRegions = filteredRegions.slice(startIndex, endIndex);
+
+            return (
+              <>
+                {startIndex > 0 && (
+                  <Text color="gray">... {startIndex} more above</Text>
+                )}
+                {visibleRegions.map((region, index) => {
+                  const actualIndex = startIndex + index;
+                  return (
+                    <Text
+                      key={region}
+                      color={actualIndex === selectedIndex ? "cyan" : "white"}
+                      bold={actualIndex === selectedIndex}
+                    >
+                      {actualIndex === selectedIndex ? "▶ " : "  "}
+                      {region}
+                    </Text>
+                  );
+                })}
+                {endIndex < filteredRegions.length && (
+                  <Text color="gray">
+                    ... and {filteredRegions.length - endIndex} more
+                  </Text>
+                )}
+              </>
+            );
+          })()}
         </Box>
       )}
 
