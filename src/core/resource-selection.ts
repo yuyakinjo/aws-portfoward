@@ -2,7 +2,7 @@ import { EC2Client } from "@aws-sdk/client-ec2";
 import { ECSClient } from "@aws-sdk/client-ecs";
 import { RDSClient } from "@aws-sdk/client-rds";
 import { input, search } from "@inquirer/prompts";
-import { isDefined, isEmpty, isString } from "remeda";
+import { isDefined, isEmpty } from "remeda";
 import {
   getAWSRegions,
   getECSClusters,
@@ -19,18 +19,47 @@ import {
 import type {
   ECSCluster,
   RDSInstance,
+  RegionName,
+  TaskArn,
   ValidatedConnectOptions,
 } from "../types.js";
+import { isFailure, parseRegionName, parseTaskArn } from "../types.js";
 import {
-  findAvailablePort,
+  findAvailablePortSafe,
   getDefaultPortForEngine,
   messages,
+  parsePort,
 } from "../utils/index.js";
 
+const DEFAULT_PAGE_SIZE = 50;
+
+// Type guards for search results
+function isECSCluster(value: unknown): value is ECSCluster {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "clusterName" in value &&
+    "clusterArn" in value
+  );
+}
+
+function isRDSInstance(value: unknown): value is RDSInstance {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "dbInstanceIdentifier" in value &&
+    "endpoint" in value
+  );
+}
+
+function isTaskArn(value: unknown): value is string {
+  return typeof value === "string";
+}
+
 export interface ResourceSelectionResult {
-  region: string;
+  region: RegionName;
   cluster: ECSCluster;
-  taskArn: string;
+  taskArn: TaskArn;
   rdsInstance: RDSInstance;
   rdsPort: string;
   localPort: string;
@@ -39,62 +68,70 @@ export interface ResourceSelectionResult {
 }
 
 /**
- * Select AWS region
+ * Select AWS region with parse-first approach
  */
 export async function selectRegion(
   options: ValidatedConnectOptions,
-): Promise<string> {
+): Promise<RegionName> {
   if (options.region) {
     messages.success(`Region (from CLI): ${options.region}`);
     return options.region;
   }
 
   // Try to get default region from AWS config
-  let defaultRegion: string | undefined;
-  try {
-    // AWS SDKは自動的に環境変数やconfig fileからリージョンを読み込む
-    const testClient = new EC2Client({});
-    defaultRegion = await testClient.config.region();
-  } catch {
-    // AWS configが設定されていない場合はスキップ
-    defaultRegion = undefined;
-  }
+  const defaultRegion: string | undefined = await (async () => {
+    try {
+      const testClient = new EC2Client({});
+      return await testClient.config.region();
+    } catch {
+      return undefined;
+    }
+  })();
 
   // Initialize EC2 client with default region to get region list
   const defaultEc2Client = new EC2Client({ region: "us-east-1" });
 
   messages.warning("Getting available AWS regions...");
-  const regions = await getAWSRegions(defaultEc2Client);
+  const regionsResult = await getAWSRegions(defaultEc2Client);
 
-  if (isEmpty(regions)) {
-    throw new Error("Failed to get AWS regions");
+  if (isFailure(regionsResult)) {
+    throw new Error(`Failed to get AWS regions: ${regionsResult.error}`);
   }
 
-  // デフォルトリージョンがある場合は優先表示
+  const regions = regionsResult.data;
+  if (isEmpty(regions)) {
+    throw new Error("No AWS regions available");
+  }
+
   if (defaultRegion) {
     messages.info(`Default region from AWS config: ${defaultRegion}`);
   }
 
-  // Select AWS region with zoxide-style real-time search
   messages.info("filtered as you type (↑↓ to select, Enter to confirm)");
 
-  const region = await search({
+  const selectedValue = await search({
     message: "Search and select AWS region:",
     source: async (input) => {
       return await searchRegions(regions, input || "", defaultRegion);
     },
-    pageSize: 50,
+    pageSize: DEFAULT_PAGE_SIZE,
   });
 
-  // リージョン選択後の重複メッセージを削除
-  if (!isString(region)) {
-    throw new Error("Selected region is not a valid string");
+  // Parse the selected region to ensure type safety
+  if (typeof selectedValue !== "string") {
+    throw new Error("Invalid region selection");
   }
-  return region;
+
+  const regionParseResult = parseRegionName(selectedValue);
+  if (isFailure(regionParseResult)) {
+    throw new Error(`Invalid region selected: ${regionParseResult.error}`);
+  }
+
+  return regionParseResult.data;
 }
 
 /**
- * Select ECS cluster
+ * Select ECS cluster with Result-based error handling
  */
 export async function selectCluster(
   ecsClient: ECSClient,
@@ -102,8 +139,14 @@ export async function selectCluster(
 ): Promise<ECSCluster> {
   if (options.cluster) {
     messages.warning("Getting ECS clusters...");
-    const clusters = await getECSClusters(ecsClient);
-    const cluster = clusters.find((c) => c.clusterName === options.cluster);
+    const clustersResult = await getECSClusters(ecsClient);
+    if (isFailure(clustersResult)) {
+      throw new Error(`Failed to get ECS clusters: ${clustersResult.error}`);
+    }
+
+    const cluster = clustersResult.data.find(
+      (c) => c.clusterName === options.cluster,
+    );
     if (!cluster) {
       throw new Error(`ECS cluster not found: ${options.cluster}`);
     }
@@ -112,65 +155,88 @@ export async function selectCluster(
   }
 
   messages.warning("Getting ECS clusters with exec capability...");
-  const clusters = await getECSClustersWithExecCapability(ecsClient);
+  const clustersResult = await getECSClustersWithExecCapability(ecsClient);
 
+  if (isFailure(clustersResult)) {
+    throw new Error(`Failed to get ECS clusters: ${clustersResult.error}`);
+  }
+
+  const clusters = clustersResult.data;
   if (clusters.length === 0) {
     throw new Error(
       "No ECS clusters found with exec capability. Please ensure your clusters have ECS exec enabled.",
     );
   }
 
-  // Show count of exec-capable clusters
   messages.info(`Found ${clusters.length} clusters with ECS exec capability`);
-
-  // Select ECS cluster with zoxide-style real-time search
   messages.info("filtered as you type (↑↓ to select, Enter to confirm)");
 
-  const selectedCluster = (await search({
+  const selectedValue = await search({
     message: "Search and select ECS cluster:",
     source: async (input) => {
       return await searchClusters(clusters, input || "");
     },
-    pageSize: 50,
-  })) as ECSCluster;
+    pageSize: DEFAULT_PAGE_SIZE,
+  });
 
-  return selectedCluster;
+  if (!isECSCluster(selectedValue)) {
+    throw new Error("Invalid cluster selection");
+  }
+
+  return selectedValue;
 }
 
 /**
- * Select ECS task
+ * Select ECS task with Result-based error handling
  */
 export async function selectTask(
   ecsClient: ECSClient,
   cluster: ECSCluster,
   options: ValidatedConnectOptions,
-): Promise<string> {
+): Promise<TaskArn> {
   if (options.task) {
     messages.success(`Task (from CLI): ${options.task}`);
-    return options.task;
+    const parseResult = parseTaskArn(options.task);
+    if (isFailure(parseResult)) {
+      throw new Error(`Invalid task ARN from CLI: ${parseResult.error}`);
+    }
+    return parseResult.data;
   }
 
   messages.warning("Getting ECS tasks...");
-  const tasks = await getECSTasks(ecsClient, cluster);
+  const tasksResult = await getECSTasks(ecsClient, cluster);
 
+  if (isFailure(tasksResult)) {
+    throw new Error(`Failed to get ECS tasks: ${tasksResult.error}`);
+  }
+
+  const tasks = tasksResult.data;
   if (tasks.length === 0) {
     throw new Error("No running ECS tasks found");
   }
 
-  // Select ECS task with zoxide-style real-time search
-  const selectedTask = (await search({
+  const selectedValue = await search({
     message: "Search and select ECS task:",
     source: async (input) => {
       return await searchTasks(tasks, input || "");
     },
-    pageSize: 50,
-  })) as string;
+    pageSize: DEFAULT_PAGE_SIZE,
+  });
 
-  return selectedTask;
+  if (!isTaskArn(selectedValue)) {
+    throw new Error("Invalid task selection");
+  }
+
+  const parseResult = parseTaskArn(selectedValue);
+  if (isFailure(parseResult)) {
+    throw new Error(`Invalid task ARN: ${parseResult.error}`);
+  }
+
+  return parseResult.data;
 }
 
 /**
- * Select RDS instance
+ * Select RDS instance with Result-based error handling
  */
 export async function selectRDSInstance(
   rdsClient: RDSClient,
@@ -178,8 +244,14 @@ export async function selectRDSInstance(
 ): Promise<RDSInstance> {
   if (options.rds) {
     messages.warning("Getting RDS instances...");
-    const rdsInstances = await getRDSInstances(rdsClient);
-    const rdsInstance = rdsInstances.find(
+    const rdsInstancesResult = await getRDSInstances(rdsClient);
+    if (isFailure(rdsInstancesResult)) {
+      throw new Error(
+        `Failed to get RDS instances: ${rdsInstancesResult.error}`,
+      );
+    }
+
+    const rdsInstance = rdsInstancesResult.data.find(
       (r) => r.dbInstanceIdentifier === options.rds,
     );
     if (!rdsInstance) {
@@ -190,22 +262,30 @@ export async function selectRDSInstance(
   }
 
   messages.warning("Getting RDS instances...");
-  const rdsInstances = await getRDSInstances(rdsClient);
+  const rdsInstancesResult = await getRDSInstances(rdsClient);
 
+  if (isFailure(rdsInstancesResult)) {
+    throw new Error(`Failed to get RDS instances: ${rdsInstancesResult.error}`);
+  }
+
+  const rdsInstances = rdsInstancesResult.data;
   if (rdsInstances.length === 0) {
     throw new Error("No RDS instances found");
   }
 
-  // Select RDS instance with zoxide-style real-time search
-  const selectedRDS = (await search({
+  const selectedValue = await search({
     message: "Search and select RDS instance:",
     source: async (input) => {
       return await searchRDS(rdsInstances, input || "");
     },
-    pageSize: 50,
-  })) as RDSInstance;
+    pageSize: DEFAULT_PAGE_SIZE,
+  });
 
-  return selectedRDS;
+  if (!isRDSInstance(selectedValue)) {
+    throw new Error("Invalid RDS instance selection");
+  }
+
+  return selectedValue;
 }
 
 /**
@@ -230,7 +310,7 @@ export async function getRDSPort(
 }
 
 /**
- * Get local port (from CLI or automatically find available port starting from 8888)
+ * Get local port with type-safe parsing (from CLI or automatically find available port starting from 8888)
  */
 export async function getLocalPort(
   options: ValidatedConnectOptions,
@@ -242,27 +322,28 @@ export async function getLocalPort(
   }
 
   // Automatically find available port starting from 8888
-  try {
-    const availablePort = await findAvailablePort(8888);
-    messages.success(`Local Port (auto-selected): ${availablePort}`);
-    return `${availablePort}`;
-  } catch {
-    // Fallback to asking user if automatic port finding fails
-    messages.warning(
-      "Could not find available port automatically. Please specify manually:",
-    );
-    const localPort = await input({
-      message: "Enter local port number:",
-      default: "8888",
-      validate: (inputValue: string) => {
-        const port = parseInt(inputValue || "8888");
-        return port > 0 && port < 65536
-          ? true
-          : "Please enter a valid port number (1-65535)";
-      },
-    });
-    return localPort;
+  const availablePortResult = await findAvailablePortSafe(8888);
+  if (availablePortResult.success) {
+    const port = Number(availablePortResult.data);
+    messages.success(`Local Port (auto-selected): ${port}`);
+    return `${port}`;
   }
+
+  // Fallback to asking user if automatic port finding fails
+  messages.warning(
+    "Could not find available port automatically. Please specify manually:",
+  );
+  const localPortInput = await input({
+    message: "Enter local port number:",
+    default: "8888",
+    validate: (inputValue: string) => {
+      const parseResult = parsePort(inputValue || "8888");
+      return parseResult.success
+        ? true
+        : `Invalid port: ${parseResult.error.map((e) => e.message).join(", ")}`;
+    },
+  });
+  return localPortInput;
 }
 
 /**

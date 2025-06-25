@@ -11,17 +11,150 @@ import {
   DescribeDBInstancesCommand,
   type RDSClient,
 } from "@aws-sdk/client-rds";
-import type { AWSRegion, ECSCluster, ECSTask, RDSInstance } from "./types.js";
+import type {
+  AWSRegion,
+  ClusterName,
+  ContainerName,
+  ECSCluster,
+  ECSTask,
+  RDSInstance,
+  Result,
+  TaskArn,
+} from "./types.js";
+import {
+  failure,
+  parseClusterArn,
+  parseClusterName,
+  parseContainerName,
+  parseDatabaseEngine,
+  parseDBEndpoint,
+  parseDBInstanceIdentifier,
+  parsePortNumber,
+  parseRegionName,
+  parseRuntimeId,
+  parseServiceName,
+  parseTaskArn,
+  parseTaskId,
+  parseTaskStatus,
+  success,
+} from "./types.js";
+
+export async function getECSClustersWithExecCapability(
+  ecsClient: ECSClient,
+): Promise<Result<ECSCluster[], string>> {
+  const allClustersResult = await getECSClustersResult(ecsClient);
+  if (!allClustersResult.success) {
+    return allClustersResult;
+  }
+  const allClusters = allClustersResult.data;
+  const execCheckPromises = allClusters.map(async (cluster: ECSCluster) => {
+    const hasExecCapability = await checkECSExecCapability(ecsClient, cluster);
+    return { cluster, hasExecCapability };
+  });
+  const execCheckResults = await Promise.all(execCheckPromises);
+  const clustersWithExec = execCheckResults
+    .filter(({ hasExecCapability }) => hasExecCapability)
+    .map(({ cluster }) => cluster);
+  return success(clustersWithExec);
+}
+
+export async function getAWSRegions(
+  ec2Client: EC2Client,
+): Promise<Result<AWSRegion[], string>> {
+  return getAWSRegionsResult(ec2Client);
+}
 
 export async function getECSClusters(
   ecsClient: ECSClient,
-): Promise<ECSCluster[]> {
+): Promise<Result<ECSCluster[], string>> {
+  return getECSClustersResult(ecsClient);
+}
+
+export async function getECSTasks(
+  ecsClient: ECSClient,
+  cluster: ECSCluster,
+): Promise<Result<ECSTask[], string>> {
+  return getECSTasksResult(ecsClient, cluster);
+}
+
+export async function getRDSInstances(
+  rdsClient: RDSClient,
+): Promise<Result<RDSInstance[], string>> {
+  return getRDSInstancesResult(rdsClient);
+}
+
+export async function getECSTasksWithExecCapability(
+  ecsClient: ECSClient,
+  cluster: ECSCluster,
+): Promise<Result<ECSTask[], string>> {
+  const allTasksResult = await getECSTasksResult(ecsClient, cluster);
+  if (!allTasksResult.success) {
+    return allTasksResult; // Propagate error
+  }
+  const runningTasks = allTasksResult.data.filter(
+    (task: ECSTask) => task.taskStatus === "RUNNING",
+  );
+  return success(runningTasks);
+}
+
+export async function getECSTaskContainers(
+  ecsClient: ECSClient,
+  clusterName: ClusterName,
+  taskArn: TaskArn,
+): Promise<Result<ContainerName[], string>> {
+  try {
+    const describeCommand = new DescribeTasksCommand({
+      cluster: clusterName,
+      tasks: [taskArn],
+    });
+    const response = await ecsClient.send(describeCommand);
+    if (!response.tasks || response.tasks.length === 0) {
+      return failure("Task not found");
+    }
+    const task = response.tasks[0];
+    if (!task) {
+      return failure("Task data not found");
+    }
+    const containers: ContainerName[] = [];
+    if (task.containers) {
+      for (const container of task.containers) {
+        if (container.name && container.lastStatus === "RUNNING") {
+          const containerNameResult = parseContainerName(container.name);
+          if (containerNameResult.success) {
+            containers.push(containerNameResult.data);
+          }
+        }
+      }
+    }
+    return success(containers);
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.name === "ClusterNotFoundException") {
+        return failure(
+          `ECS cluster "${clusterName}" not found. Please verify the cluster exists.`,
+        );
+      }
+      if (error.name === "TaskNotFoundException") {
+        return failure(
+          `ECS task not found. Please verify the task exists and is running.`,
+        );
+      }
+    }
+    return failure(
+      `Failed to get task containers: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+}
+
+async function getECSClustersResult(
+  ecsClient: ECSClient,
+): Promise<Result<ECSCluster[], string>> {
   try {
     const listCommand = new ListClustersCommand({});
     const listResponse = await ecsClient.send(listCommand);
 
     if (!listResponse.clusterArns || listResponse.clusterArns.length === 0) {
-      return [];
+      return success([]);
     }
 
     // Get detailed cluster information
@@ -34,15 +167,22 @@ export async function getECSClusters(
     if (describeResponse.clusters) {
       for (const cluster of describeResponse.clusters) {
         if (cluster.clusterName && cluster.clusterArn) {
-          clusters.push({
-            clusterName: cluster.clusterName,
-            clusterArn: cluster.clusterArn,
-          });
+          // Parse cluster data safely with branded types
+          const clusterNameResult = parseClusterName(cluster.clusterName);
+          const clusterArnResult = parseClusterArn(cluster.clusterArn);
+
+          if (clusterNameResult.success && clusterArnResult.success) {
+            clusters.push({
+              clusterName: clusterNameResult.data,
+              clusterArn: clusterArnResult.data,
+            });
+          }
+          // Skip invalid clusters instead of throwing error
         }
       }
     }
 
-    return clusters;
+    return success(clusters);
   } catch (error) {
     if (error instanceof Error) {
       // Provide more specific error messages
@@ -50,26 +190,24 @@ export async function getECSClusters(
         error.name === "UnauthorizedOperation" ||
         error.name === "AccessDenied"
       ) {
-        throw new Error(
+        return failure(
           "Access denied to ECS clusters. Please check your IAM policies.",
         );
       }
       if (error.message.includes("region")) {
-        throw new Error(
-          "ECS service is not available in the specified region.",
-        );
+        return failure("ECS service is not available in the specified region.");
       }
     }
-    throw new Error(
+    return failure(
       `Failed to get ECS clusters: ${error instanceof Error ? error.message : String(error)}`,
     );
   }
 }
 
-export async function getECSTasks(
+async function getECSTasksResult(
   ecsClient: ECSClient,
   cluster: ECSCluster,
-): Promise<ECSTask[]> {
+): Promise<Result<ECSTask[], string>> {
   try {
     // Get services first
     const servicesCommand = new ListServicesCommand({
@@ -82,10 +220,16 @@ export async function getECSTasks(
     if (servicesResponse.serviceArns) {
       // Get tasks for each service
       for (const serviceArn of servicesResponse.serviceArns) {
-        const serviceName = serviceArn.split("/").pop() || serviceArn;
+        const serviceNameStr = serviceArn.split("/").pop() || serviceArn;
+        const serviceNameResult = parseServiceName(serviceNameStr);
+
+        if (!serviceNameResult.success) {
+          continue; // Skip invalid service names
+        }
+
         const tasksCommand = new ListTasksCommand({
           cluster: cluster.clusterName,
-          serviceName,
+          serviceName: serviceNameStr,
           desiredStatus: "RUNNING",
         });
         const tasksResponse = await ecsClient.send(tasksCommand);
@@ -106,30 +250,49 @@ export async function getECSTasks(
                 task.containers.length > 0 &&
                 task.lastStatus === "RUNNING"
               ) {
-                const taskId = task.taskArn.split("/").pop() || task.taskArn;
-                const clusterFullName =
+                const taskIdStr = task.taskArn.split("/").pop() || task.taskArn;
+                const clusterFullNameStr =
                   cluster.clusterArn.split("/").pop() || cluster.clusterName;
                 // Get RuntimeID (from first container)
-                const runtimeId = task.containers[0]?.runtimeId || "";
+                const runtimeIdStr = task.containers[0]?.runtimeId || "";
 
-                if (runtimeId) {
+                // Parse all components safely
+                const taskIdResult = parseTaskId(taskIdStr);
+                const clusterNameResult = parseClusterName(clusterFullNameStr);
+                const runtimeIdResult = parseRuntimeId(runtimeIdStr);
+                const realTaskArnResult = parseTaskArn(task.taskArn);
+                const taskStatusResult = parseTaskStatus(
+                  task.lastStatus || "UNKNOWN",
+                );
+
+                if (
+                  runtimeIdResult.success &&
+                  taskIdResult.success &&
+                  clusterNameResult.success &&
+                  realTaskArnResult.success &&
+                  taskStatusResult.success &&
+                  serviceNameResult.success
+                ) {
                   // Format for ECS Exec: ecs:cluster_name_task_id_runtime_id
-                  const targetArn = `ecs:${clusterFullName}_${taskId}_${runtimeId}`;
+                  const targetArnStr = `ecs:${clusterFullNameStr}_${taskIdStr}_${runtimeIdStr}`;
+                  const targetArnResult = parseTaskArn(targetArnStr);
 
-                  // Create simple display name - just service name
-                  const displayName = serviceName;
+                  if (targetArnResult.success) {
+                    // Create simple display name - just service name
+                    const displayName = serviceNameStr;
 
-                  tasks.push({
-                    taskArn: targetArn,
-                    realTaskArn: task.taskArn,
-                    displayName: displayName,
-                    runtimeId: runtimeId,
-                    taskId: taskId,
-                    clusterName: clusterFullName,
-                    serviceName: serviceName,
-                    taskStatus: task.lastStatus || "UNKNOWN",
-                    createdAt: task.createdAt,
-                  });
+                    tasks.push({
+                      taskArn: targetArnResult.data,
+                      realTaskArn: realTaskArnResult.data,
+                      displayName: displayName,
+                      runtimeId: runtimeIdResult.data,
+                      taskId: taskIdResult.data,
+                      clusterName: clusterNameResult.data,
+                      serviceName: serviceNameResult.data,
+                      taskStatus: taskStatusResult.data,
+                      createdAt: task.createdAt,
+                    });
+                  }
                 }
               }
             }
@@ -138,11 +301,11 @@ export async function getECSTasks(
       }
     }
 
-    return tasks;
+    return success(tasks);
   } catch (error) {
     if (error instanceof Error) {
       if (error.name === "ClusterNotFoundException") {
-        throw new Error(
+        return failure(
           `ECS cluster "${cluster.clusterName}" not found. Please verify the cluster exists.`,
         );
       }
@@ -150,20 +313,20 @@ export async function getECSTasks(
         error.name === "UnauthorizedOperation" ||
         error.name === "AccessDenied"
       ) {
-        throw new Error(
+        return failure(
           "Access denied to ECS tasks. Please check your IAM policies.",
         );
       }
     }
-    throw new Error(
+    return failure(
       `Failed to get ECS tasks: ${error instanceof Error ? error.message : String(error)}`,
     );
   }
 }
 
-export async function getAWSRegions(
+async function getAWSRegionsResult(
   ec2Client: EC2Client,
-): Promise<AWSRegion[]> {
+): Promise<Result<AWSRegion[], string>> {
   try {
     const command = new DescribeRegionsCommand({});
     const response = await ec2Client.send(command);
@@ -173,10 +336,14 @@ export async function getAWSRegions(
     if (response.Regions) {
       for (const region of response.Regions) {
         if (region.RegionName) {
-          regions.push({
-            regionName: region.RegionName,
-            optInStatus: region.OptInStatus || "opt-in-not-required",
-          });
+          const regionNameResult = parseRegionName(region.RegionName);
+          if (regionNameResult.success) {
+            regions.push({
+              regionName: regionNameResult.data,
+              optInStatus: region.OptInStatus || "opt-in-not-required",
+            });
+          }
+          // Skip invalid region names
         }
       }
     }
@@ -184,13 +351,13 @@ export async function getAWSRegions(
     // Place commonly used regions at the top
     const priorityRegions = [
       "ap-northeast-1",
+      "ap-northeast-2",
       "us-east-1",
       "us-west-2",
       "eu-west-1",
-      "ap-northeast-2",
     ];
 
-    return regions.sort((a, b) => {
+    const sortedRegions = regions.sort((a, b) => {
       const aIndex = priorityRegions.indexOf(a.regionName);
       const bIndex = priorityRegions.indexOf(b.regionName);
 
@@ -204,26 +371,28 @@ export async function getAWSRegions(
         return a.regionName.localeCompare(b.regionName);
       }
     });
+
+    return success(sortedRegions);
   } catch (error) {
     if (error instanceof Error) {
       if (
         error.name === "UnauthorizedOperation" ||
         error.name === "AccessDenied"
       ) {
-        throw new Error(
+        return failure(
           "Access denied to AWS regions. Please check your AWS credentials and IAM permissions.",
         );
       }
     }
-    throw new Error(
+    return failure(
       `Failed to get AWS regions: ${error instanceof Error ? error.message : String(error)}`,
     );
   }
 }
 
-export async function getRDSInstances(
+async function getRDSInstancesResult(
   rdsClient: RDSClient,
-): Promise<RDSInstance[]> {
+): Promise<Result<RDSInstance[], string>> {
   try {
     const command = new DescribeDBInstancesCommand({});
     const response = await rdsClient.send(command);
@@ -238,49 +407,63 @@ export async function getRDSInstances(
           db.Engine &&
           db.DBInstanceStatus === "available"
         ) {
-          rdsInstances.push({
-            dbInstanceIdentifier: db.DBInstanceIdentifier,
-            endpoint: db.Endpoint.Address,
-            port: db.Endpoint.Port || 5432, // Default to PostgreSQL port if not available
-            engine: db.Engine,
-            dbInstanceClass: db.DBInstanceClass || "unknown",
-            dbInstanceStatus: db.DBInstanceStatus,
-            allocatedStorage: db.AllocatedStorage || 0,
-            availabilityZone: db.AvailabilityZone || "unknown",
-            vpcSecurityGroups:
-              db.VpcSecurityGroups?.map((sg) => sg.VpcSecurityGroupId || "") ||
-              [],
-            dbSubnetGroup: db.DBSubnetGroup?.DBSubnetGroupName || undefined,
-            createdTime: db.InstanceCreateTime || undefined,
-          });
+          // Parse all DB instance components safely
+          const dbIdResult = parseDBInstanceIdentifier(db.DBInstanceIdentifier);
+          const endpointResult = parseDBEndpoint(db.Endpoint.Address);
+          const portResult = parsePortNumber(db.Endpoint.Port || 5432);
+          const engineResult = parseDatabaseEngine(db.Engine);
+
+          if (
+            dbIdResult.success &&
+            endpointResult.success &&
+            portResult.success &&
+            engineResult.success
+          ) {
+            rdsInstances.push({
+              dbInstanceIdentifier: dbIdResult.data,
+              endpoint: endpointResult.data,
+              port: portResult.data,
+              engine: engineResult.data,
+              dbInstanceClass: db.DBInstanceClass || "unknown",
+              dbInstanceStatus: "available", // We already filtered for this
+              allocatedStorage: db.AllocatedStorage || 0,
+              availabilityZone: db.AvailabilityZone || "unknown",
+              vpcSecurityGroups:
+                db.VpcSecurityGroups?.map(
+                  (sg) => sg.VpcSecurityGroupId || "",
+                ) || [],
+              dbSubnetGroup: db.DBSubnetGroup?.DBSubnetGroupName || undefined,
+              createdTime: db.InstanceCreateTime || undefined,
+            });
+          }
+          // Skip instances with invalid data instead of throwing error
         }
       }
     }
 
     // Sort by name
-    return rdsInstances.sort((a, b) =>
+    const sortedInstances = rdsInstances.sort((a, b) =>
       a.dbInstanceIdentifier.localeCompare(b.dbInstanceIdentifier),
     );
+
+    return success(sortedInstances);
   } catch (error) {
     if (error instanceof Error) {
       if (
         error.name === "UnauthorizedOperation" ||
         error.name === "AccessDenied"
       ) {
-        throw new Error(
+        return failure(
           "Access denied to RDS instances. Please check your IAM policies.",
         );
       }
     }
-    throw new Error(
+    return failure(
       `Failed to get RDS instances: ${error instanceof Error ? error.message : String(error)}`,
     );
   }
 }
 
-/**
- * Check if ECS cluster supports ECS exec
- */
 export async function checkECSExecCapability(
   ecsClient: ECSClient,
   cluster: ECSCluster,
@@ -311,101 +494,5 @@ export async function checkECSExecCapability(
   } catch {
     // If we can't determine exec capability, assume it's not available
     return false;
-  }
-}
-
-/**
- * Filter ECS clusters to only include those that support ECS exec
- */
-export async function getECSClustersWithExecCapability(
-  ecsClient: ECSClient,
-): Promise<ECSCluster[]> {
-  const allClusters = await getECSClusters(ecsClient);
-
-  // Parallel execution for better performance
-  const execCheckPromises = allClusters.map(async (cluster) => {
-    const hasExecCapability = await checkECSExecCapability(ecsClient, cluster);
-    return { cluster, hasExecCapability };
-  });
-
-  const execCheckResults = await Promise.all(execCheckPromises);
-
-  return execCheckResults
-    .filter(({ hasExecCapability }) => hasExecCapability)
-    .map(({ cluster }) => cluster);
-}
-
-/**
- * Get ECS tasks that support ECS exec (enableExecuteCommand: true)
- */
-export async function getECSTasksWithExecCapability(
-  ecsClient: ECSClient,
-  cluster: ECSCluster,
-): Promise<ECSTask[]> {
-  try {
-    const allTasks = await getECSTasks(ecsClient, cluster);
-
-    // Filter tasks that have exec capability
-    // In practice, we need to check the task definition or task attributes
-    // For now, we'll return all running tasks and let the actual exec command fail if not supported
-    return allTasks.filter((task) => task.taskStatus === "RUNNING");
-  } catch (error) {
-    throw new Error(
-      `Failed to get ECS tasks with exec capability: ${error instanceof Error ? error.message : String(error)}`,
-    );
-  }
-}
-
-/**
- * Get containers in an ECS task
- */
-export async function getECSTaskContainers(
-  ecsClient: ECSClient,
-  clusterName: string,
-  taskArn: string,
-): Promise<string[]> {
-  try {
-    const describeCommand = new DescribeTasksCommand({
-      cluster: clusterName,
-      tasks: [taskArn],
-    });
-    const response = await ecsClient.send(describeCommand);
-
-    if (!response.tasks || response.tasks.length === 0) {
-      throw new Error("Task not found");
-    }
-
-    const task = response.tasks[0];
-    if (!task) {
-      throw new Error("Task data not found");
-    }
-
-    const containers: string[] = [];
-
-    if (task.containers) {
-      for (const container of task.containers) {
-        if (container.name && container.lastStatus === "RUNNING") {
-          containers.push(container.name);
-        }
-      }
-    }
-
-    return containers;
-  } catch (error) {
-    if (error instanceof Error) {
-      if (error.name === "ClusterNotFoundException") {
-        throw new Error(
-          `ECS cluster "${clusterName}" not found. Please verify the cluster exists.`,
-        );
-      }
-      if (error.name === "TaskNotFoundException") {
-        throw new Error(
-          `ECS task not found. Please verify the task exists and is running.`,
-        );
-      }
-    }
-    throw new Error(
-      `Failed to get task containers: ${error instanceof Error ? error.message : String(error)}`,
-    );
   }
 }

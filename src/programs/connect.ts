@@ -4,7 +4,7 @@ import { connectToRDSWithSimpleUI } from "../aws-port-forward.js";
 import { ConnectOptionsSchema } from "../types.js";
 import {
   displayFriendlyError,
-  displayValidationErrors,
+  displayParsingErrors,
   messages,
 } from "../utils/index.js";
 
@@ -28,7 +28,7 @@ export function registerConnectCommand(program: Command): void {
         );
 
         if (!success) {
-          displayValidationErrors(issues);
+          displayParsingErrors(issues);
           process.exit(1);
         }
 

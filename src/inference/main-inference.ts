@@ -1,9 +1,11 @@
 import type { ECSClient } from "@aws-sdk/client-ecs";
 import {
   getECSClustersWithExecCapability,
-  getECSTasks,
+  getECSTasksWithExecCapability,
 } from "../aws-services.js";
 import type { ECSCluster, RDSInstance } from "../types.js";
+import { parseClusterName } from "../types.js";
+import { messages } from "../utils/messages.js";
 import { loadAnalysisResults } from "./analysis-loader.js";
 import { inferClustersFromRDSName } from "./cluster-inference.js";
 import type { InferenceResult } from "./index.js";
@@ -27,7 +29,9 @@ export async function inferECSTargets(
     tracker.endStep();
 
     tracker.startStep("Get ECS clusters with exec capability");
-    const allClusters = await getECSClustersWithExecCapability(ecsClient);
+    const clustersResult = await getECSClustersWithExecCapability(ecsClient);
+    if (!clustersResult.success) throw new Error(clustersResult.error);
+    const allClusters = clustersResult.data;
     const clusterMap = new Map(allClusters.map((c) => [c.clusterName, c]));
     tracker.endStep();
 
@@ -37,14 +41,14 @@ export async function inferECSTargets(
       rdsInstance.dbInstanceIdentifier,
       allClusters,
     );
+    // likelyClusterNamesはstring[]の可能性があるのでparseしてbranded typesに
     const likelyClusters = likelyClusterNames
-      .map((name: string) => clusterMap.get(name))
-      .filter(Boolean) as ECSCluster[];
-
-    // 詳細なクラスター情報表示を削除
-    // console.log(
-    //   `RDS "${rdsInstance.dbInstanceIdentifier}" から推論されたクラスター: ${likelyClusterNames.length}個`,
-    // );
+      .map((name: string) => {
+        const clusterNameResult = parseClusterName(name);
+        if (!clusterNameResult.success) return undefined;
+        return clusterMap.get(clusterNameResult.data);
+      })
+      .filter((cluster): cluster is ECSCluster => cluster !== undefined);
     tracker.endStep();
 
     // Phase 1: 推論されたクラスターでタスク検索（最優先）
@@ -55,7 +59,12 @@ export async function inferECSTargets(
     const primaryClusterResults = await Promise.all(
       primaryClusters.map(async (cluster) => {
         try {
-          const tasks = await getECSTasks(ecsClient, cluster);
+          const tasksResult = await getECSTasksWithExecCapability(
+            ecsClient,
+            cluster,
+          );
+          if (!tasksResult.success) return [];
+          const tasks = tasksResult.data;
           if (tasks.length > 0) {
             const scored = await scoreTasksAgainstRDS(
               ecsClient,
@@ -86,7 +95,12 @@ export async function inferECSTargets(
       const fallbackResults = await Promise.all(
         remainingClusters.map(async (cluster) => {
           try {
-            const tasks = await getECSTasks(ecsClient, cluster);
+            const tasksResult = await getECSTasksWithExecCapability(
+              ecsClient,
+              cluster,
+            );
+            if (!tasksResult.success) return [];
+            const tasks = tasksResult.data;
             if (tasks.length > 0) {
               const scored = await scoreTasksByNaming(
                 tasks,
@@ -142,22 +156,21 @@ export async function inferECSTargets(
       })),
     ];
 
-    // Debug: 推論結果のサマリーを表示
     if (enablePerformanceTracking) {
-      console.log(`\n推論結果サマリー:`);
-      console.log(`  - 推論クラスター: ${likelyClusterNames.length}個`);
-      console.log(`  - 検索済みタスク: ${results.length}個`);
-      console.log(`  - 接続可能: ${validResults.length}個`);
-      console.log(`  - 接続不可: ${invalidResults.length}個`);
+      messages.debug(`推論結果サマリー:`);
+      messages.debug(`  - 推論クラスター: ${likelyClusterNames.length}個`);
+      messages.debug(`  - 検索済みタスク: ${results.length}個`);
+      messages.debug(`  - 接続可能: ${validResults.length}個`);
+      messages.debug(`  - 接続不可: ${invalidResults.length}個`);
     }
 
     return finalResults;
   } catch (error) {
-    console.error("Error during ECS target inference:", error);
+    messages.error(`Error during ECS target inference: ${String(error)}`);
     throw error;
   } finally {
     if (enablePerformanceTracking) {
-      console.log(tracker.getReport());
+      messages.debug(tracker.getReport());
     }
   }
 }

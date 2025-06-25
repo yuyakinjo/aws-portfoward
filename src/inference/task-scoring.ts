@@ -192,12 +192,12 @@ export async function scoreTasksAgainstRDS(
   const envResults = envCheckResults
     .filter(({ envCheck }) => envCheck.hasMatch)
     .map(({ task, envCheck }) => {
-      const confidence =
+      const confidence: "high" | "medium" | "low" =
         envCheck.score >= 80 ? "high" : envCheck.score >= 50 ? "medium" : "low";
       return {
         cluster,
         task,
-        confidence: confidence as "high" | "medium" | "low",
+        confidence,
         method: "environment" as const,
         score: envCheck.score,
         reason: "データベース接続関連",
@@ -223,10 +223,11 @@ export async function scoreTasksAgainstRDS(
           : match.confidence === "medium"
             ? 75
             : 45;
+      const confidence: "high" | "medium" | "low" = match.confidence;
       return {
         cluster,
         task,
-        confidence: match.confidence as "high" | "medium" | "low",
+        confidence,
         method: "environment" as const,
         score,
         reason: "データベース接続関連",

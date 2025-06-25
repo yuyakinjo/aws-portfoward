@@ -1,9 +1,9 @@
 import { spawn } from "node:child_process";
-import type { RDSInstance } from "./types.js";
+import type { RDSInstance, TaskArn } from "./types.js";
 import { messages } from "./utils/index.js";
 
 export async function startSSMSession(
-  taskArn: string,
+  taskArn: TaskArn | string,
   rdsInstance: RDSInstance,
   rdsPort: string,
   localPort: string,
@@ -17,7 +17,7 @@ export async function startSSMSession(
 
   // Build command string (properly escape JSON parameters)
   const parametersJson = JSON.stringify(parameters);
-  const commandString = `aws ssm start-session --target ${taskArn} --parameters '${parametersJson}' --document-name AWS-StartPortForwardingSessionToRemoteHost`;
+  const commandString = `aws ssm start-session --target ${String(taskArn)} --parameters '${parametersJson}' --document-name AWS-StartPortForwardingSessionToRemoteHost`;
 
   messages.empty();
   messages.success(
@@ -26,8 +26,10 @@ export async function startSSMSession(
   messages.empty();
 
   return new Promise((resolve, reject) => {
-    let isUserTermination = false;
-    let hasSessionStarted = false;
+    const state = {
+      isUserTermination: false,
+      hasSessionStarted: false,
+    };
 
     // Use pipe mode to capture output while still showing it to user
     const child = spawn(commandString, [], {
@@ -49,8 +51,8 @@ export async function startSSMSession(
         output.includes("Port forwarding session started") ||
         (output.includes("Session") && output.includes("started"))
       ) {
-        if (!hasSessionStarted) {
-          hasSessionStarted = true;
+        if (!state.hasSessionStarted) {
+          state.hasSessionStarted = true;
           clearTimeout(timeout);
         }
       }
@@ -62,22 +64,22 @@ export async function startSSMSession(
 
       // Check for critical errors first
       if (output.includes("TargetNotConnected")) {
-        console.error("Cannot connect to target");
-        console.error(
+        messages.error("Cannot connect to target");
+        messages.error(
           "Please verify that the ECS task is running and SSM Agent is enabled",
         );
         child.kill("SIGTERM");
         reject(new Error("Cannot connect to target"));
         return;
       } else if (output.includes("AccessDenied")) {
-        console.error("Access denied");
-        console.error("Please verify you have SSM-related IAM permissions");
+        messages.error("Access denied");
+        messages.error("Please verify you have SSM-related IAM permissions");
         child.kill("SIGTERM");
         reject(new Error("Access denied"));
         return;
       } else if (output.includes("InvalidTarget")) {
-        console.error("Invalid target");
-        console.error(
+        messages.error("Invalid target");
+        messages.error(
           "Please verify the specified ECS task exists and is running",
         );
         child.kill("SIGTERM");
@@ -91,7 +93,7 @@ export async function startSSMSession(
 
     child.on("error", (error) => {
       clearTimeout(timeout);
-      console.error("Command execution error:", error.message);
+      messages.error(`Command execution error: ${error.message}`);
 
       if (error.message.includes("ENOENT")) {
         reject(new Error("AWS CLI may not be installed"));
@@ -106,7 +108,7 @@ export async function startSSMSession(
       clearTimeout(timeout);
 
       // Handle user termination (SIGINT/Ctrl+C) as normal termination
-      if (signal === "SIGINT" || code === 130 || isUserTermination) {
+      if (signal === "SIGINT" || code === 130 || state.isUserTermination) {
         messages.success("Process completed successfully");
 
         // Display commands after successful termination
@@ -177,8 +179,8 @@ export async function startSSMSession(
 
     // Process termination handling
     process.on("SIGINT", () => {
-      if (!isUserTermination) {
-        isUserTermination = true;
+      if (!state.isUserTermination) {
+        state.isUserTermination = true;
         child.kill("SIGINT");
       }
     });
@@ -186,8 +188,8 @@ export async function startSSMSession(
     // Optimistic timeout - assume session will start successfully after 5 seconds
     // if no explicit errors are encountered
     const timeout = setTimeout(() => {
-      if (!hasSessionStarted) {
-        hasSessionStarted = true;
+      if (!state.hasSessionStarted) {
+        state.hasSessionStarted = true;
         messages.success("Port forwarding session should be active");
         messages.info(
           "If connection fails, the session may still be starting. Please wait a moment and try again.",
@@ -203,12 +205,12 @@ export async function startSSMSession(
 export async function executeECSCommand(
   region: string,
   clusterName: string,
-  taskArn: string,
+  taskArn: TaskArn | string,
   containerName: string,
   command: string,
 ): Promise<void> {
   // Build command string
-  const commandString = `aws ecs execute-command --region ${region} --cluster ${clusterName} --task ${taskArn} --container ${containerName} --command "${command}" --interactive`;
+  const commandString = `aws ecs execute-command --region ${region} --cluster ${clusterName} --task ${String(taskArn)} --container ${containerName} --command "${command}" --interactive`;
 
   messages.empty();
   messages.success(`🚀 Executing command in ECS container: ${containerName}`);
@@ -216,7 +218,7 @@ export async function executeECSCommand(
   messages.empty();
 
   return new Promise((resolve, reject) => {
-    let isUserTermination = false;
+    const state = { isUserTermination: false };
 
     // Use inherit mode to pass through stdin/stdout/stderr directly
     const child = spawn(commandString, [], {
@@ -226,7 +228,7 @@ export async function executeECSCommand(
     });
 
     child.on("error", (error) => {
-      console.error("Command execution error:", error.message);
+      messages.error(`Command execution error: ${error.message}`);
 
       if (error.message.includes("ENOENT")) {
         reject(new Error("AWS CLI may not be installed"));
@@ -239,7 +241,7 @@ export async function executeECSCommand(
 
     child.on("close", (code, signal) => {
       // Handle user termination (SIGINT/Ctrl+C) as normal termination
-      if (signal === "SIGINT" || code === 130 || isUserTermination) {
+      if (signal === "SIGINT" || code === 130 || state.isUserTermination) {
         messages.success("ECS exec session completed");
 
         // Display command for reference
@@ -296,8 +298,8 @@ export async function executeECSCommand(
 
     // Process termination handling
     process.on("SIGINT", () => {
-      if (!isUserTermination) {
-        isUserTermination = true;
+      if (!state.isUserTermination) {
+        state.isUserTermination = true;
         child.kill("SIGINT");
       }
     });

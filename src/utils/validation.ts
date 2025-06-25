@@ -13,6 +13,15 @@ import {
 } from "../types.js";
 import { messages } from "./messages.js";
 
+/**
+ * Checks if an array or string is empty
+ * @param value Array or string to check
+ * @returns true if the array or string is empty, false otherwise
+ */
+export function isEmpty<T>(value: T[] | string): boolean {
+  return value.length === 0;
+}
+
 // =============================================================================
 // Parse-first Validation Functions
 // =============================================================================
@@ -130,17 +139,20 @@ export async function findAvailablePortSafe(
     return failure(`Invalid starting port: ${startPort}`);
   }
 
-  let currentPort = parseResult.data;
   const maxPort = 65535;
 
-  while (Number(currentPort) <= maxPort) {
+  const findPort = async (currentPort: Port): Promise<Result<Port, string>> => {
+    if (Number(currentPort) > maxPort) {
+      return failure(`No available ports found starting from ${startPort}`);
+    }
+
     if (await isPortAvailableSafe(currentPort)) {
       return success(currentPort);
     }
 
     const nextPortNumber = Number(currentPort) + 1;
     if (nextPortNumber > maxPort) {
-      break; // Exit the loop instead of trying to parse beyond max port
+      return failure(`No available ports found starting from ${startPort}`);
     }
 
     // Increment port and parse again to maintain type safety
@@ -148,10 +160,11 @@ export async function findAvailablePortSafe(
     if (!nextPortResult.success) {
       return failure(`Port range exceeded maximum value: ${maxPort}`);
     }
-    currentPort = nextPortResult.data;
-  }
 
-  return failure(`No available ports found starting from ${startPort}`);
+    return findPort(nextPortResult.data);
+  };
+
+  return findPort(parseResult.data);
 }
 
 /**
@@ -165,18 +178,4 @@ export async function findAvailablePort(startPort = 8888): Promise<number> {
   } else {
     throw new Error(result.error);
   }
-}
-
-// =============================================================================
-// Backward Compatibility Functions
-// =============================================================================
-
-/**
- * Legacy validation error display function
- * @deprecated Use displayParsingErrors() instead for better type safety
- */
-export function displayValidationErrors(
-  issues: InferIssue<typeof ConnectOptionsSchema>[],
-): void {
-  displayParsingErrors(issues);
 }

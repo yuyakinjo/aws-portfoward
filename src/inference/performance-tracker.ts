@@ -47,23 +47,28 @@ export class PerformanceTracker {
     const metrics = this.getMetrics();
     const total = this.getTotalDuration();
 
-    let report = "\n🕐 Performance Report\n";
-    report += `${"=".repeat(50)}\n`;
+    const reportLines = ["\n🕐 Performance Report\n", `${"=".repeat(50)}\n`];
 
     for (const metric of metrics) {
       const percentage =
         total > 0 ? ((metric.duration / total) * 100).toFixed(1) : "0.0";
-      report += `${metric.step.padEnd(30)} ${metric.duration.toFixed(0).padStart(6)}ms (${percentage}%)\n`;
+      reportLines.push(
+        `${metric.step.padEnd(30)} ${metric.duration.toFixed(0).padStart(6)}ms (${percentage}%)\n`,
+      );
     }
 
-    report += `${"=".repeat(50)}\n`;
-    report += `${"Total".padEnd(30)} ${total.toFixed(0).padStart(6)}ms (100.0%)\n`;
+    reportLines.push(
+      `${"=".repeat(50)}\n`,
+      `${"Total".padEnd(30)} ${total.toFixed(0).padStart(6)}ms (100.0%)\n`,
+    );
 
     if (total > 3000) {
-      report += "\nWarning: Total time exceeds 3 seconds threshold\n";
+      reportLines.push("\nWarning: Total time exceeds 3 seconds threshold\n");
     } else {
-      report += "\nPerformance within acceptable range (<3s)\n";
+      reportLines.push("\nPerformance within acceptable range (<3s)\n");
     }
+
+    const report = reportLines.join("");
 
     return report;
   }

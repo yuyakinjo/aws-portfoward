@@ -1,3 +1,4 @@
+import { splitByHyphenUnderscore, splitByWordSeparators } from "../regex.js";
 import type { ECSCluster } from "../types.js";
 
 /**
@@ -7,8 +8,8 @@ export function inferClustersFromRDSName(
   rdsName: string,
   allClusters: ECSCluster[],
 ): string[] {
-  const rdsSegments = rdsName.toLowerCase().split(/[-_]/);
-  const rdsWords = rdsName.toLowerCase().split(/[-_\s]/);
+  const rdsSegments = splitByHyphenUnderscore(rdsName.toLowerCase());
+  const rdsWords = splitByWordSeparators(rdsName.toLowerCase());
   const rdsLower = rdsName.toLowerCase();
 
   const envIndicators = [

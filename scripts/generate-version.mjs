@@ -30,7 +30,10 @@ export const PACKAGE_NAME = "${packageJson.name}";
   const versionPath = path.join(__dirname, "..", "src", "version.ts");
   fs.writeFileSync(versionPath, versionContent, "utf8");
 
-  console.log(`✅ Generated version.ts with version ${packageJson.version}`);
+  // Use encodeURIComponent to sanitize user input before logging
+  console.log(
+    `✅ Generated version.ts with version ${encodeURIComponent(packageJson.version)}`,
+  );
 } catch (error) {
   console.error("❌ Error generating version.ts:", error.message);
   process.exit(1);

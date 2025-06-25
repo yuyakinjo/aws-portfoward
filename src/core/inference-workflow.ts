@@ -3,6 +3,7 @@ import {
   formatInferenceResult,
   type InferenceResult,
 } from "../inference/index.js";
+import { splitByWhitespace } from "../regex.js";
 import type { ECSCluster } from "../types.js";
 
 export interface InferenceWorkflowResult {
@@ -30,11 +31,9 @@ export function filterInferenceResults(
   }
 
   // Split input into keywords and convert to lowercase
-  const keywords = input
-    .trim()
-    .toLowerCase()
-    .split(/\s+/)
-    .filter((keyword) => keyword.length > 0);
+  const keywords = splitByWhitespace(input.trim().toLowerCase()).filter(
+    (keyword) => keyword.length > 0,
+  );
 
   if (keywords.length === 0) {
     return results;
