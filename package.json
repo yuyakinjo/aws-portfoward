@@ -26,7 +26,7 @@
     "dev": "npm run build && node dist/cli.js connect",
     "build": "./scripts/build.sh",
     "build:tsc": "npx tsc --project tsconfig.build.json",
-    "generate-version": "node --experimental-strip-types scripts/generate-version.ts",
+    "generate-version": "tsx scripts/generate-version.ts",
     "start": "node dist/cli.js connect",
     "type-check": "tsc --noEmit",
     "test": "npm run type-check && npm run build && npm run test:unit && npm run test:integration",
@@ -49,6 +49,7 @@
     "@types/inquirer": "^9.0.8",
     "@vitest/coverage-v8": "^3.2.4",
     "@vitest/ui": "^3.2.4",
+    "tsx": "^4.20.3",
     "vitest": "^3.2.4"
   },
   "peerDependencies": {
