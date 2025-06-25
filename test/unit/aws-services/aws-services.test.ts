@@ -12,10 +12,15 @@ import {
   getECSTasksWithExecCapability,
   getRDSInstances,
 } from "../../../src/aws-services.js";
-import { mockECSClusters, mockECSTasks } from "../../mock-data/index.js";
+import { mockECSClusters } from "../../mock-data/index.js";
 import { EC2Client as MockEC2Client } from "../../mocks/ec2-client.mock.js";
 import { ECSClient as MockECSClient } from "../../mocks/ecs-client.mock.js";
 import { RDSClient as MockRDSClient } from "../../mocks/rds-client.mock.js";
+
+// Type for mock clients
+type MockClient = {
+  send: ReturnType<typeof vi.fn>;
+};
 
 describe("AWS Services", () => {
   let ecsClient: ECSClient;
@@ -23,9 +28,9 @@ describe("AWS Services", () => {
   let ec2Client: EC2Client;
 
   beforeEach(() => {
-    ecsClient = new MockECSClient() as any;
-    rdsClient = new MockRDSClient() as any;
-    ec2Client = new MockEC2Client() as any;
+    ecsClient = new MockECSClient() as unknown as ECSClient;
+    rdsClient = new MockRDSClient() as unknown as RDSClient;
+    ec2Client = new MockEC2Client() as unknown as EC2Client;
     vi.clearAllMocks();
   });
 
@@ -41,34 +46,34 @@ describe("AWS Services", () => {
     });
 
     it("should handle empty cluster list", async () => {
-      const mockClient = {
+      const mockClient: MockClient = {
         send: vi.fn().mockResolvedValue({ clusterArns: [] }),
-      } as any;
+      };
 
-      const clusters = await getECSClusters(mockClient);
+      const clusters = await getECSClusters(mockClient as unknown as ECSClient);
       expect(clusters).toHaveLength(0);
     });
 
     it("should handle AccessDenied error", async () => {
       const error = new Error("Access denied");
       error.name = "AccessDenied";
-      const mockClient = {
+      const mockClient: MockClient = {
         send: vi.fn().mockRejectedValue(error),
-      } as any;
+      };
 
-      await expect(getECSClusters(mockClient)).rejects.toThrow(
-        "Access denied to ECS clusters",
-      );
+      await expect(
+        getECSClusters(mockClient as unknown as ECSClient),
+      ).rejects.toThrow("Access denied to ECS clusters");
     });
 
     it("should handle region availability error", async () => {
-      const mockClient = {
+      const mockClient: MockClient = {
         send: vi.fn().mockRejectedValue(new Error("region not available")),
-      } as any;
+      };
 
-      await expect(getECSClusters(mockClient)).rejects.toThrow(
-        "ECS service is not available in the specified region",
-      );
+      await expect(
+        getECSClusters(mockClient as unknown as ECSClient),
+      ).rejects.toThrow("ECS service is not available in the specified region");
     });
   });
 
@@ -95,7 +100,7 @@ describe("AWS Services", () => {
       error.name = "ClusterNotFoundException";
       const mockClient = {
         send: vi.fn().mockRejectedValue(error),
-      } as any;
+      } satisfies MockClient;
 
       await expect(getECSTasks(mockClient, cluster)).rejects.toThrow(
         'ECS cluster "nonexistent" not found',
@@ -105,7 +110,7 @@ describe("AWS Services", () => {
     it("should handle no services in cluster", async () => {
       const mockClient = {
         send: vi.fn().mockResolvedValue({ serviceArns: [] }),
-      } as any;
+      } satisfies MockClient;
       const cluster = mockECSClusters[0];
 
       const tasks = await getECSTasks(mockClient, cluster);
@@ -138,7 +143,7 @@ describe("AWS Services", () => {
       error.name = "AccessDenied";
       const mockClient = {
         send: vi.fn().mockRejectedValue(error),
-      } as any;
+      } satisfies MockClient;
 
       await expect(getAWSRegions(mockClient)).rejects.toThrow(
         "Access denied to AWS regions",
@@ -181,7 +186,7 @@ describe("AWS Services", () => {
       error.name = "AccessDenied";
       const mockClient = {
         send: vi.fn().mockRejectedValue(error),
-      } as any;
+      } satisfies MockClient;
 
       await expect(getRDSInstances(mockClient)).rejects.toThrow(
         "Access denied to RDS instances",
@@ -207,7 +212,7 @@ describe("AWS Services", () => {
             },
           ],
         }),
-      } as any;
+      } satisfies MockClient;
       const cluster = mockECSClusters[0];
 
       const hasExec = await checkECSExecCapability(mockClient, cluster);
@@ -217,7 +222,7 @@ describe("AWS Services", () => {
     it("should return false on error", async () => {
       const mockClient = {
         send: vi.fn().mockRejectedValue(new Error("Network error")),
-      } as any;
+      } satisfies MockClient;
       const cluster = mockECSClusters[0];
 
       const hasExec = await checkECSExecCapability(mockClient, cluster);
@@ -272,7 +277,7 @@ describe("AWS Services", () => {
             ],
           })
           .mockRejectedValueOnce(new Error("No exec capability")), // Second exec check
-      } as any;
+      } satisfies MockClient;
 
       const clusters = await getECSClustersWithExecCapability(mockClient);
       expect(clusters).toHaveLength(1);
@@ -326,7 +331,7 @@ describe("AWS Services", () => {
       error.name = "ClusterNotFoundException";
       const mockClient = {
         send: vi.fn().mockRejectedValue(error),
-      } as any;
+      } satisfies MockClient;
 
       await expect(
         getECSTaskContainers(mockClient, "nonexistent", "task-arn"),
@@ -338,7 +343,7 @@ describe("AWS Services", () => {
       error.name = "TaskNotFoundException";
       const mockClient = {
         send: vi.fn().mockRejectedValue(error),
-      } as any;
+      } satisfies MockClient;
 
       await expect(
         getECSTaskContainers(mockClient, "cluster", "nonexistent-task"),
@@ -350,7 +355,7 @@ describe("AWS Services", () => {
         send: vi.fn().mockResolvedValue({
           tasks: [{ taskArn: "task-arn", containers: [] }],
         }),
-      } as any;
+      } satisfies MockClient;
 
       const containers = await getECSTaskContainers(
         mockClient,

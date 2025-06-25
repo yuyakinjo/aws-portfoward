@@ -1,6 +1,6 @@
-import { spawn } from "child_process";
-import { dirname, join } from "path";
-import { fileURLToPath } from "url";
+import { spawn } from "node:child_process";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -91,7 +91,7 @@ afterEach(() => {
 describe("CLI Commands Integration", () => {
   // CLIファイルの存在確認
   it("should have built CLI file", async () => {
-    const fs = await import("fs");
+    const fs = await import("node:fs");
     console.log(`Checking CLI file at: ${CLI_PATH}`);
     console.log(`File exists: ${fs.existsSync(CLI_PATH)}`);
     if (fs.existsSync(CLI_PATH)) {

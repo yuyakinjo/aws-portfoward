@@ -6,10 +6,32 @@ import {
 } from "./inference/index.js";
 import type { AWSRegion, ECSCluster, ECSTask, RDSInstance } from "./types.js";
 
+// Helper functions for type-safe property access
+function hasRegionName(item: unknown): item is AWSRegion {
+  return typeof item === "object" && item !== null && "regionName" in item;
+}
+
+function hasClusterName(item: unknown): item is ECSCluster {
+  return typeof item === "object" && item !== null && "clusterName" in item;
+}
+
+function hasDbInstanceIdentifier(item: unknown): item is RDSInstance {
+  return (
+    typeof item === "object" && item !== null && "dbInstanceIdentifier" in item
+  );
+}
+
+function getResourceIdentifier(item: unknown): string | undefined {
+  if (hasRegionName(item)) return item.regionName;
+  if (hasClusterName(item)) return item.clusterName;
+  if (hasDbInstanceIdentifier(item)) return item.dbInstanceIdentifier;
+  return undefined;
+}
+
 // 汎用的な検索アイテムの型定義
 interface SearchableItem {
   name: string;
-  value: any;
+  value: unknown;
   description?: string;
   metadata?: string;
   isDefault?: boolean;
@@ -62,21 +84,13 @@ export async function universalSearch<T>(
       sortedItems = [
         ...items.filter((item) => {
           if (defaultKey) {
-            return (
-              (item as any)?.regionName === defaultKey ||
-              (item as any)?.clusterName === defaultKey ||
-              (item as any)?.dbInstanceIdentifier === defaultKey
-            );
+            return getResourceIdentifier(item) === defaultKey;
           }
           return item === defaultValue;
         }),
         ...items.filter((item) => {
           if (defaultKey) {
-            return (
-              (item as any)?.regionName !== defaultKey &&
-              (item as any)?.clusterName !== defaultKey &&
-              (item as any)?.dbInstanceIdentifier !== defaultKey
-            );
+            return getResourceIdentifier(item) !== defaultKey;
           }
           return item !== defaultValue;
         }),
@@ -87,9 +101,7 @@ export async function universalSearch<T>(
       const isDefault =
         defaultValue &&
         ((typeof defaultValue === "string" &&
-          ((item as any)?.regionName === defaultValue ||
-            (item as any)?.clusterName === defaultValue ||
-            (item as any)?.dbInstanceIdentifier === defaultValue)) ||
+          getResourceIdentifier(item) === defaultValue) ||
           item === defaultValue);
       return emptyInputFormatter(item, index, !!isDefault);
     });
@@ -100,9 +112,12 @@ export async function universalSearch<T>(
     return searchKeys
       .map((key) => {
         const keys = key.split(".");
-        let value: any = item;
+        let value: unknown = item;
         for (const k of keys) {
-          value = value?.[k];
+          value =
+            value && typeof value === "object" && k in value
+              ? (value as Record<string, unknown>)[k]
+              : undefined;
         }
         return value?.toString() || "";
       })
@@ -134,15 +149,11 @@ export async function universalSearch<T>(
           if (defaultValue) {
             const aIsDefault =
               typeof defaultValue === "string"
-                ? (a as any)?.regionName === defaultValue ||
-                  (a as any)?.clusterName === defaultValue ||
-                  (a as any)?.dbInstanceIdentifier === defaultValue
+                ? getResourceIdentifier(a) === defaultValue
                 : a === defaultValue;
             const bIsDefault =
               typeof defaultValue === "string"
-                ? (b as any)?.regionName === defaultValue ||
-                  (b as any)?.clusterName === defaultValue ||
-                  (b as any)?.dbInstanceIdentifier === defaultValue
+                ? getResourceIdentifier(b) === defaultValue
                 : b === defaultValue;
 
             if (aIsDefault && !bIsDefault) return -1;
@@ -172,9 +183,7 @@ export async function universalSearch<T>(
           const isDefault =
             defaultValue &&
             ((typeof defaultValue === "string" &&
-              ((item as any)?.regionName === defaultValue ||
-                (item as any)?.clusterName === defaultValue ||
-                (item as any)?.dbInstanceIdentifier === defaultValue)) ||
+              getResourceIdentifier(item) === defaultValue) ||
               item === defaultValue);
           return displayFormatter(item, index, !!isDefault);
         });
@@ -202,15 +211,11 @@ export async function universalSearch<T>(
       if (defaultValue) {
         const aIsDefault =
           typeof defaultValue === "string"
-            ? (a.item as any)?.regionName === defaultValue ||
-              (a.item as any)?.clusterName === defaultValue ||
-              (a.item as any)?.dbInstanceIdentifier === defaultValue
+            ? getResourceIdentifier(a.item) === defaultValue
             : a.item === defaultValue;
         const bIsDefault =
           typeof defaultValue === "string"
-            ? (b.item as any)?.regionName === defaultValue ||
-              (b.item as any)?.clusterName === defaultValue ||
-              (b.item as any)?.dbInstanceIdentifier === defaultValue
+            ? getResourceIdentifier(b.item) === defaultValue
             : b.item === defaultValue;
 
         if (aIsDefault && !bIsDefault) return -1;
@@ -222,9 +227,7 @@ export async function universalSearch<T>(
       const isDefault =
         defaultValue &&
         ((typeof defaultValue === "string" &&
-          ((result.item as any)?.regionName === defaultValue ||
-            (result.item as any)?.clusterName === defaultValue ||
-            (result.item as any)?.dbInstanceIdentifier === defaultValue)) ||
+          getResourceIdentifier(result.item) === defaultValue) ||
           result.item === defaultValue);
       return displayFormatter(result.item, index, !!isDefault, result.score);
     });
@@ -323,7 +326,7 @@ export async function searchClusters(
         value: cluster,
       };
     },
-    emptyInputFormatter: (cluster, index) => {
+    emptyInputFormatter: (cluster, _index) => {
       const icon = "  ";
       const clusterShortName = cluster.clusterArn.split("/").pop();
 
