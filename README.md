@@ -1,9 +1,7 @@
-[![CI](https://github.com/yuyakinjo/aws-portfoward/actions/workflows/test.yml/badge.svg)](https://githu# Interactive UI (default)
-npx ecs-pf exec-task
-
-# Example with dry run
-npx ecs-pf exec-task --dry-runkinjo/aws-portfoward/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/ecs-pf)](https://www.npmjs.com/package/ecs-pf)
+[![CI](https://github.com/yuyakinjo/aws-portfoward/actions/workflows/test.yml/badge.svg)](https://github.com/yuyakinjo/aws-portfoward/actions/workflows/test.yml)
+[![npm](https://img.shields.io/npm/dt/ecs-pf)](https://www.npmjs.com/package/ecs-pf)
+
 
 # AWS ECS-RDS Port Forwarding CLI
 
@@ -11,74 +9,19 @@ A modern CLI tool for connecting to RDS databases through AWS ECS tasks using SS
 
 ## Features
 
-- **Step-by-step UI**: Clean, guided workflow with progressive disclosure
-- **ECS Exec filtering**: Automatically excludes clusters without ECS exec capability
-- **Auto-detection**: RDS port and ECS cluster information filled automatically
-- **Multiple workflows**: Choose between guided UI or traditional manual selection
-- **Real-time search**: Fuzzy search for all AWS resources
-- **Error prevention**: Pre-validates connections to avoid common failures
-- **Dry Run mode**: Preview commands without execution for testing and debugging
-
+- **Port Forwarding**: Easily forward RDS ports through ECS tasks
+- **ECS Exec**: Execute commands in ECS containers with interactive UI
 ## Quick Start
 
-### Interactive UI (Default)
+### Interactive UI
 
 ```bash
-# Interactive guided workflow (recommended for all users)
 npx ecs-pf connect
 ```
-npx ecs-pf connect
-```
-
-### With Command Line Arguments
-
-```bash
-# Pre-specify some options
-npx ecs-pf connect --region ap-northeast-1 --cluster production-cluster
-
-# Specify all options (no interaction needed)
-npx ecs-pf connect \
-  --region ap-northeast-1 \
-  --cluster production-cluster \
-  --task arn:aws:ecs:ap-northeast-1:123456789:task/production-cluster/abcdef123456 \
-  --rds production-db \
-  --rds-port 5432 \
-  --local-port 8888
-
-# Dry run mode - preview commands without execution
-npx ecs-pf connect --dry-run \
-  --region ap-northeast-1 \
-  --cluster production-cluster \
-  --task arn:aws:ecs:ap-northeast-1:123456789:task/production-cluster/abcdef123456 \
-  --rds production-db \
-  --rds-port 5432 \
-  --local-port 8888
-```
-
-## Available Commands
-
-| Command | Description |
-|---------|-------------|
-| `connect` | RDS port forwarding via ECS with interactive UI |
-| `exec-task` | ECS task container execution with interactive UI |
-
-### Execution Options (exec-task commands)
-
-| Option | Description | Example |
-|--------|-------------|---------|
-| `--container` | Container name | `web` |
-| `--command` | Command to execute | `/bin/bash` |
-
-### Special Options
-
-| Option | Description | Available For |
-|--------|-------------|---------------|
-| `--dry-run` | Preview commands without execution | All commands |
 
 ## Example Usage
 
-### Step-by-Step UI Workflow
-
+### Interactive guided workflow
 ```bash
 $ npx ecs-pf connect
 
@@ -100,7 +43,7 @@ Execute commands in ECS containers:
 
 ```bash
 # Interactive mode
-npx ecs-pf exec-task-ui
+npx ecs-pf exec-task
 
 # Direct execution
 npx ecs-pf exec-task \
@@ -129,38 +72,6 @@ npx ecs-pf exec-task --dry-run \
 3. **AWS CLI**: Installed and configured with appropriate credentials
 4. **Session Manager Plugin**: Installed for AWS CLI
 
-### ECS Exec Configuration
-
-Enable ECS exec on your service:
-
-```bash
-aws ecs update-service \
-  --cluster your-cluster \
-  --service your-service \
-  --enable-execute-command
-```
-
-## Database Connection
-
-Once port forwarding is established, connect from another terminal:
-
-### PostgreSQL
-
-```bash
-psql -h localhost -p 8888 -U username -d database_name
-
-# Connection string format
-postgresql://username:password@localhost:8888/database_name
-```
-
-### MySQL
-
-```bash
-mysql -h localhost -P 8888 -u username -p database_name
-
-# Connection string format
-mysql://username:password@localhost:8888/database_name
-```
 
 ## Troubleshooting
 
@@ -215,46 +126,3 @@ npm run build
 # Run locally (interactive UI - default)
 node dist/cli.js connect
 ```
-
-## CHANGELOG
-
-### v2.2.10 (Current)
-
-- **SIMPLIFIED**: Unified command interface - `connect` and `exec-task` now use interactive UI only
-- **NEW**: Dry run mode (`--dry-run`) for all commands - preview AWS commands without execution
-- **IMPROVED**: Command preview and reproducible command generation
-- **IMPROVED**: Better error handling and validation
-- **REMOVED**: `--no-ui` flag and direct mode for simplified user experience
-- **DEPRECATED**: `connect-ui` and `exec-task-ui` commands merged into main commands
-
-### v2.2.3
-
-- **IMPROVED**: UI display optimization - ECS tasks now show service names only
-- **IMPROVED**: Performance optimization for ECS target inference (faster RDS connection)
-- **IMPROVED**: Automatic version detection from package.json
-- **UPDATED**: Documentation and README improvements
-
-### v2.2.2
-
-- **FIXED**: TypeScript build configuration improvements
-- **IMPROVED**: Module resolution and JSON import handling
-
-### v2.2.1
-
-- **FIXED**: Minor bug fixes and stability improvements
-
-### v2.2.0
-
-- **NEW**: Interactive UI workflow as default for `connect` command
-- **NEW**: ECS exec capability filtering
-- **IMPROVED**: Clean, emoji-free interface
-- **IMPROVED**: Auto-filled RDS port and cluster detection
-
-### v2.1.0
-
-- Enhanced error handling
-- Improved inference capabilities
-
-## License
-
-MIT License

@@ -5,6 +5,9 @@ import {
   isPortAvailable,
 } from "../../../src/utils/validation.js";
 
+// Type definition for mocked createServer function
+type MockCreateServer = ReturnType<typeof vi.fn>;
+
 // net.createServerをモック化
 vi.mock("node:net", () => {
   const actualNet = vi.importActual<typeof net>("node:net");
@@ -14,8 +17,17 @@ vi.mock("node:net", () => {
   };
 });
 
+// Type definitions for mocks
+type MockServer = {
+  listen: ReturnType<typeof vi.fn>;
+  close: ReturnType<typeof vi.fn>;
+  on: ReturnType<typeof vi.fn>;
+};
+
+type ErrorHandler = (error: Error) => void;
+
 describe("isPortAvailable", () => {
-  let mockServer: any;
+  let mockServer: MockServer;
 
   beforeEach(() => {
     mockServer = {
@@ -23,7 +35,7 @@ describe("isPortAvailable", () => {
       close: vi.fn(),
       on: vi.fn(),
     };
-    (net.createServer as any).mockReturnValue(mockServer);
+    (net.createServer as MockCreateServer).mockReturnValue(mockServer);
   });
 
   afterEach(() => {
@@ -33,7 +45,7 @@ describe("isPortAvailable", () => {
   it("利用可能なポートの場合はtrueを返す", async () => {
     // listenが成功し、closeコールバックが呼ばれる
     mockServer.listen.mockImplementation(
-      (port: number, host: string, callback: () => void) => {
+      (_port: number, _host: string, callback: () => void) => {
         callback();
       },
     );
@@ -54,7 +66,7 @@ describe("isPortAvailable", () => {
 
   it("使用中のポートの場合はfalseを返す", async () => {
     // listenでエラーが発生
-    mockServer.on.mockImplementation((event: string, handler: Function) => {
+    mockServer.on.mockImplementation((event: string, handler: ErrorHandler) => {
       if (event === "error") {
         handler(new Error("EADDRINUSE"));
       }
@@ -62,8 +74,8 @@ describe("isPortAvailable", () => {
     mockServer.listen.mockImplementation(() => {
       // エラーイベントをトリガー
       const errorHandler = mockServer.on.mock.calls.find(
-        (call: any) => call[0] === "error",
-      )?.[1];
+        (call: unknown[]) => call[0] === "error",
+      )?.[1] as ErrorHandler;
       if (errorHandler) {
         errorHandler(new Error("EADDRINUSE"));
       }
@@ -75,15 +87,15 @@ describe("isPortAvailable", () => {
   });
 
   it("その他のエラーの場合もfalseを返す", async () => {
-    mockServer.on.mockImplementation((event: string, handler: Function) => {
+    mockServer.on.mockImplementation((event: string, handler: ErrorHandler) => {
       if (event === "error") {
         handler(new Error("EACCES"));
       }
     });
     mockServer.listen.mockImplementation(() => {
       const errorHandler = mockServer.on.mock.calls.find(
-        (call: any) => call[0] === "error",
-      )?.[1];
+        (call: unknown[]) => call[0] === "error",
+      )?.[1] as ErrorHandler;
       if (errorHandler) {
         errorHandler(new Error("EACCES"));
       }
@@ -95,17 +107,15 @@ describe("isPortAvailable", () => {
 });
 
 describe("findAvailablePort", () => {
-  let mockServer: any;
-  let portCheckCount = 0;
+  let mockServer: MockServer;
 
   beforeEach(() => {
-    portCheckCount = 0;
     mockServer = {
       listen: vi.fn(),
       close: vi.fn(),
       on: vi.fn(),
     };
-    (net.createServer as any).mockReturnValue(mockServer);
+    (net.createServer as MockCreateServer).mockReturnValue(mockServer);
   });
 
   afterEach(() => {
@@ -115,7 +125,7 @@ describe("findAvailablePort", () => {
   it("最初のポートが利用可能な場合はそのポートを返す", async () => {
     // 全てのポートが利用可能
     mockServer.listen.mockImplementation(
-      (port: number, host: string, callback: () => void) => {
+      (_port: number, _host: string, callback: () => void) => {
         callback();
       },
     );
@@ -132,16 +142,18 @@ describe("findAvailablePort", () => {
     let checkCount = 0;
 
     mockServer.listen.mockImplementation(
-      (port: number, host: string, callback?: () => void) => {
+      (port: number, _host: string, callback?: () => void) => {
         checkCount++;
 
         // onハンドラーを先に設定
-        const errorHandlers: Function[] = [];
-        mockServer.on.mockImplementation((event: string, handler: Function) => {
-          if (event === "error") {
-            errorHandlers.push(handler);
-          }
-        });
+        const errorHandlers: ErrorHandler[] = [];
+        mockServer.on.mockImplementation(
+          (event: string, handler: ErrorHandler) => {
+            if (event === "error") {
+              errorHandlers.push(handler);
+            }
+          },
+        );
 
         // ポートによって動作を分岐
         if (port === 8888 || port === 8889) {
@@ -169,7 +181,7 @@ describe("findAvailablePort", () => {
 
   it("デフォルトのスタートポート(8888)から検索を開始する", async () => {
     mockServer.listen.mockImplementation(
-      (port: number, host: string, callback: () => void) => {
+      (_port: number, _host: string, callback: () => void) => {
         callback();
       },
     );
@@ -183,7 +195,7 @@ describe("findAvailablePort", () => {
 
   it("最大ポート番号(65535)まで検索して見つからない場合はエラーをスローする", async () => {
     // 全てのポートが使用中
-    mockServer.on.mockImplementation((event: string, handler: Function) => {
+    mockServer.on.mockImplementation((event: string, handler: ErrorHandler) => {
       if (event === "error") {
         // 即座にエラーを返す
         Promise.resolve().then(() => handler(new Error("EADDRINUSE")));
@@ -191,8 +203,8 @@ describe("findAvailablePort", () => {
     });
     mockServer.listen.mockImplementation(() => {
       const errorHandler = mockServer.on.mock.calls.find(
-        (call: any) => call[0] === "error",
-      )?.[1];
+        (call: unknown[]) => call[0] === "error",
+      )?.[1] as ErrorHandler;
       if (errorHandler) {
         errorHandler(new Error("EADDRINUSE"));
       }
@@ -206,7 +218,7 @@ describe("findAvailablePort", () => {
   it("カスタムスタートポートから検索を開始する", async () => {
     let checkedPort = 0;
     mockServer.listen.mockImplementation(
-      (port: number, host: string, callback: () => void) => {
+      (port: number, _host: string, callback: () => void) => {
         checkedPort = port;
         callback();
       },

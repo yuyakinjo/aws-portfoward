@@ -20,6 +20,9 @@ import type { ECSCluster, ECSTask, ValidatedExecOptions } from "../types.js";
 import { askRetry, displayFriendlyError, messages } from "../utils/index.js";
 import { displayDryRunResult, generateExecDryRun } from "./dry-run.js";
 
+// UI Configuration constants
+const DEFAULT_PAGE_SIZE = 50;
+
 /**
  * Execute command in ECS task container with Simple UI workflow
  */
@@ -100,13 +103,13 @@ async function execECSTaskWithSimpleUIFlow(
     process.stdout.write("\x1b[2K"); // Clear line
     process.stdout.write("\r"); // Move to start
 
-    selections.region = await search({
+    selections.region = (await search({
       message: "Search and select AWS region:",
       source: async (input) => {
         return await searchRegions(regions, input || "");
       },
-      pageSize: 15,
-    });
+      pageSize: DEFAULT_PAGE_SIZE,
+    })) as string;
   }
 
   // Update UI with region selection
@@ -147,7 +150,7 @@ async function execECSTaskWithSimpleUIFlow(
         const results = await searchClusters(clusters, input || "");
         return results;
       },
-      pageSize: 15,
+      pageSize: DEFAULT_PAGE_SIZE,
     })) as ECSCluster;
 
     selections.cluster = selectedCluster.clusterName;
@@ -198,7 +201,7 @@ async function execECSTaskWithSimpleUIFlow(
         const results = await searchTasks(tasks, input || "");
         return results;
       },
-      pageSize: 15,
+      pageSize: DEFAULT_PAGE_SIZE,
     });
 
     selectedTask = tasks.find((t) => t.taskArn === selectedTaskArn);
@@ -238,14 +241,14 @@ async function execECSTaskWithSimpleUIFlow(
     process.stdout.write("\x1b[2K");
     process.stdout.write("\r");
 
-    selectedContainer = await search({
+    selectedContainer = (await search({
       message: "Search and select container:",
       source: async (input) => {
         const results = await searchContainers(containers, input || "");
         return results;
       },
-      pageSize: 15,
-    });
+      pageSize: DEFAULT_PAGE_SIZE,
+    })) as string;
 
     selections.container = selectedContainer;
   }

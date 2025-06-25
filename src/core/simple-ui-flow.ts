@@ -116,13 +116,13 @@ async function connectToRDSWithSimpleUIInternal(
     process.stdout.write("\x1b[2K"); // Clear line
     process.stdout.write("\r"); // Move to start
 
-    selections.region = await search({
+    selections.region = (await search({
       message: "Search and select AWS region:",
       source: async (input) => {
         return await searchRegions(regions, input || "");
       },
-      pageSize: 15,
-    });
+      pageSize: 50,
+    })) as string;
   }
 
   // Update UI with region selection
@@ -164,7 +164,7 @@ async function connectToRDSWithSimpleUIInternal(
       source: async (input) => {
         return await searchRDS(rdsInstances, input || "");
       },
-      pageSize: 15,
+      pageSize: 50,
     })) as RDSInstance;
 
     selections.rds = selectedRDS.dbInstanceIdentifier;

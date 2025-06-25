@@ -2,7 +2,7 @@ import { EC2Client } from "@aws-sdk/client-ec2";
 import { ECSClient } from "@aws-sdk/client-ecs";
 import { RDSClient } from "@aws-sdk/client-rds";
 import { input, search } from "@inquirer/prompts";
-import { isDefined, isEmpty } from "remeda";
+import { isDefined, isEmpty, isString } from "remeda";
 import {
   getAWSRegions,
   getECSClusters,
@@ -87,7 +87,9 @@ export async function selectRegion(
   });
 
   // リージョン選択後の重複メッセージを削除
-  // messages.success(`Region: ${region}`);
+  if (!isString(region)) {
+    throw new Error("Selected region is not a valid string");
+  }
   return region;
 }
 
