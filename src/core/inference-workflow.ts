@@ -35,7 +35,7 @@ export function filterInferenceResults(
     (keyword) => keyword.length > 0,
   );
 
-  if (keywords.length === 0) {
+  if (isEmpty(keywords)) {
     return results;
   }
 

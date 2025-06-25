@@ -162,7 +162,7 @@ export async function selectCluster(
   }
 
   const clusters = clustersResult.data;
-  if (clusters.length === 0) {
+  if (isEmpty(clusters)) {
     throw new Error(
       "No ECS clusters found with exec capability. Please ensure your clusters have ECS exec enabled.",
     );
@@ -211,7 +211,7 @@ export async function selectTask(
   }
 
   const tasks = tasksResult.data;
-  if (tasks.length === 0) {
+  if (isEmpty(tasks)) {
     throw new Error("No running ECS tasks found");
   }
 
@@ -269,7 +269,7 @@ export async function selectRDSInstance(
   }
 
   const rdsInstances = rdsInstancesResult.data;
-  if (rdsInstances.length === 0) {
+  if (isEmpty(rdsInstances)) {
     throw new Error("No RDS instances found");
   }
 

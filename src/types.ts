@@ -382,7 +382,7 @@ export const PortNumberSchema = pipe(
  * Safely parse a cluster name from AWS API response
  */
 export function parseClusterName(name: unknown): Result<ClusterName, string> {
-  if (typeof name !== "string" || name.length === 0) {
+  if (typeof name !== "string" || isEmpty(name)) {
     return failure("Invalid cluster name");
   }
   if (name.trim() !== name) {

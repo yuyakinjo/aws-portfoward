@@ -23,7 +23,7 @@ import {
   parseTaskArn,
   parseTaskId,
 } from "../types.js";
-import { askRetry, displayFriendlyError, messages } from "../utils/index.js";
+import { askRetry, displayFriendlyError, isEmpty, messages } from "../utils/index.js";
 import { displayDryRunResult, generateExecDryRun } from "./dry-run.js";
 
 // UI Configuration constants
@@ -229,7 +229,7 @@ async function execECSTaskWithSimpleUIFlow(
         );
         if (!tasksResult.success) throw new Error(tasksResult.error);
         const tasks = tasksResult.data;
-        if (tasks.length === 0) {
+        if (isEmpty(tasks)) {
           throw new Error(
             "No ECS tasks found with exec capability in this cluster",
           );
@@ -283,7 +283,7 @@ async function execECSTaskWithSimpleUIFlow(
           if (!containersResult.success)
             throw new Error(containersResult.error);
           const containers = containersResult.data;
-          if (containers.length === 0) {
+          if (isEmpty(containers)) {
             throw new Error("No containers found in this task");
           }
           process.stdout.write("\x1b[1A");

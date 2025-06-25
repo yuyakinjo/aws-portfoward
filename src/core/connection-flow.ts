@@ -2,15 +2,8 @@ import { ECSClient } from "@aws-sdk/client-ecs";
 import { RDSClient } from "@aws-sdk/client-rds";
 import { isDefined } from "remeda";
 import { startSSMSession } from "../session.js";
-import type {
-  Port,
-  ValidatedConnectOptions,
-} from "../types.js";
-import {
-  isFailure,
-  parsePortNumber,
-  parseTaskId,
-} from "../types.js";
+import type { Port, ValidatedConnectOptions } from "../types.js";
+import { isFailure, parsePortNumber, parseTaskId } from "../types.js";
 import {
   askRetry,
   displayFriendlyError,
@@ -220,8 +213,8 @@ async function connectToRDSInternal(
     selectedCluster.clusterName,
     taskArn,
     selectedRDS.dbInstanceIdentifier,
-    `${Number(rdsPort)}`,
-    `${Number(localPort)}`,
+    rdsPort,
+    localPort,
   );
 
   // Start SSM session
@@ -230,8 +223,8 @@ async function connectToRDSInternal(
   await startSSMSession(
     taskArn,
     selectedRDS,
-    String(Number(rdsPort)),
-    String(Number(localPort)),
+    rdsPort,
+    localPort,
     reproducibleCommand,
   );
 }

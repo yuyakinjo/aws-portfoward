@@ -243,7 +243,7 @@ export function keywordSearch<T>(
     (keyword) => keyword.length > 0,
   );
 
-  if (keywords.length === 0) {
+  if (isEmpty(keywords)) {
     return items;
   }
 

@@ -108,7 +108,7 @@ export async function getECSTaskContainers(
       tasks: [taskArn],
     });
     const response = await ecsClient.send(describeCommand);
-    if (!response.tasks || response.tasks.length === 0) {
+    if (!response.tasks || isEmpty(response.tasks)) {
       return failure("Task not found");
     }
     const task = response.tasks[0];
@@ -153,7 +153,7 @@ async function getECSClustersResult(
     const listCommand = new ListClustersCommand({});
     const listResponse = await ecsClient.send(listCommand);
 
-    if (!listResponse.clusterArns || listResponse.clusterArns.length === 0) {
+    if (!listResponse.clusterArns || isEmpty(listResponse.clusterArns)) {
       return success([]);
     }
 
@@ -476,7 +476,7 @@ export async function checkECSExecCapability(
     });
     const response = await ecsClient.send(describeCommand);
 
-    if (!response.clusters || response.clusters.length === 0) {
+    if (!response.clusters || isEmpty(response.clusters)) {
       return false;
     }
 

@@ -49,7 +49,7 @@ export async function selectRDSInstance(
   }
   
   const rdsInstances = rdsInstancesResult.data;
-  if (rdsInstances.length === 0) {
+  if (isEmpty(rdsInstances)) {
     throw new Error("No RDS instances found");
   }
 

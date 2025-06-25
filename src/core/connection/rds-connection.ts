@@ -36,13 +36,20 @@ export async function handleConnection(
   if (!taskResult.success) throw new Error(taskResult.error);
 
   // Generate reproducible command
+  const rdsPortNumber = parsePortNumber(Number(rdsPort));
+  if (!rdsPortNumber.success) throw new Error(rdsPortNumber.error);
+  
+  const localPortStr = selections.localPort || "";
+  const localPortNumber = parsePortNumber(Number(localPortStr || "8888"));
+  if (!localPortNumber.success) throw new Error(localPortNumber.error);
+  
   const reproducibleCommand = generateReproducibleCommand(
     regionResult.data,
     clusterResult.data,
     taskResult.data,
     selectedRDS.dbInstanceIdentifier,
-    rdsPort,
-    selections.localPort || "",
+    rdsPortNumber.data,
+    localPortNumber.data,
   );
 
   // Check if dry run mode is enabled

@@ -1,12 +1,12 @@
 import { spawn } from "node:child_process";
-import type { RDSInstance, TaskArn } from "./types.js";
+import type { Port, RDSInstance, TaskArn } from "./types.js";
 import { messages } from "./utils/index.js";
 
 export async function startSSMSession(
-  taskArn: TaskArn | string,
+  taskArn: TaskArn,
   rdsInstance: RDSInstance,
-  rdsPort: string,
-  localPort: string,
+  rdsPort: Port,
+  localPort: Port,
   reproducibleCommand?: string,
 ): Promise<void> {
   const parameters = {
