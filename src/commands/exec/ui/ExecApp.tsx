@@ -151,11 +151,11 @@ export const ExecApp = ({ options }: Props) => {
       case "exec":
         return (
           <ExecEstablisher
-            region={state.region!}
-            cluster={state.cluster!}
-            task={state.task!}
-            container={state.container!}
-            command={state.command!}
+            region={state.region || ""}
+            cluster={state.cluster || ""}
+            task={state.task || ""}
+            container={state.container || ""}
+            command={state.command || ""}
             isDryRun={state.options.dryRun || false}
             onBack={() => goToStep("command")}
             onComplete={complete}
