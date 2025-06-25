@@ -60,7 +60,7 @@ describe("scoreTasksByNaming", () => {
       (r) => r.task.serviceName === "api-service",
     );
     expect(apiServiceResult).toBeDefined();
-    expect(apiServiceResult!.score).toBeGreaterThan(25); // ベーススコア以上
+    expect(apiServiceResult?.score).toBeGreaterThan(25); // ベーススコア以上
   });
 
   it("セグメント一致でもスコアを付与する", async () => {

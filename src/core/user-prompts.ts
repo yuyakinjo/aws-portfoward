@@ -1,8 +1,5 @@
 import { input, search } from "@inquirer/prompts";
-import {
-  formatInferenceResult,
-  type InferenceResult,
-} from "../inference/index.js";
+import type { InferenceResult } from "../inference/index.js";
 import {
   searchClusters,
   searchInferenceResults,
