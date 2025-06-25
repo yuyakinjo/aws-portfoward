@@ -20,13 +20,13 @@ export async function promptForRegion(
   // Select AWS region with zoxide-style real-time search
   messages.info("filtered as you type (↑↓ to select, Enter to confirm)");
 
-  return await search({
+  return (await search({
     message: "Search and select AWS region:",
     source: async (input) => {
       return await searchRegions(regions, input || "", defaultRegion);
     },
     pageSize: 50,
-  });
+  })) as string;
 }
 
 /**
@@ -91,7 +91,7 @@ export async function promptForInferenceResult(
     source: async (input) => {
       return await searchInferenceResults(inferenceResults, input || "");
     },
-    pageSize: 15,
+    pageSize: 50,
   })) as InferenceResult;
 }
 

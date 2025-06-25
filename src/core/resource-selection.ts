@@ -88,7 +88,7 @@ export async function selectRegion(
 
   // リージョン選択後の重複メッセージを削除
   // messages.success(`Region: ${region}`);
-  return region;
+  return region as string;
 }
 
 /**
