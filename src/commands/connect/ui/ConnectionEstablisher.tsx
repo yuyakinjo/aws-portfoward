@@ -46,10 +46,6 @@ export const ConnectionEstablisher = ({
   );
   const [connectionEndTime, setConnectionEndTime] = useState<Date | null>(null);
   const [awsCommand, setAwsCommand] = useState<string>("");
-  const [sessionResult, setSessionResult] = useState<{
-    awsCommand: string;
-    reproducibleCommand: string;
-  } | null>(null);
 
   // Generate command
   useEffect(() => {
@@ -106,13 +102,6 @@ export const ConnectionEstablisher = ({
           localPort,
         );
         setConnectionEndTime(new Date());
-
-        // Set session result for display
-        setSessionResult({
-          awsCommand,
-          reproducibleCommand,
-        });
-
         setConnectionState("showingResults");
         // Don't call onComplete() immediately - let user see the results
       }
@@ -130,8 +119,6 @@ export const ConnectionEstablisher = ({
     rdsInstance,
     rdsPort,
     localPort,
-    awsCommand,
-    reproducibleCommand,
     exit,
     onError,
   ]);
@@ -270,6 +257,43 @@ export const ConnectionEstablisher = ({
 
         {renderConnectionSummary()}
 
+        {/* Show commands for actual connection */}
+        {!isDryRun && (
+          <>
+            {/* AWS Command to Execute */}
+            <Box
+              flexDirection="column"
+              marginBottom={1}
+              paddingLeft={2}
+              borderStyle="single"
+              borderColor="green"
+            >
+              <Text color="green" bold>
+                AWS Command to Execute:
+              </Text>
+              <Text color="white" wrap="wrap">
+                {awsCommand}
+              </Text>
+            </Box>
+
+            {/* Reproduction Command */}
+            <Box
+              flexDirection="column"
+              marginBottom={1}
+              paddingLeft={2}
+              borderStyle="single"
+              borderColor="cyan"
+            >
+              <Text color="cyan" bold>
+                Reproduction Command:
+              </Text>
+              <Text color="white" wrap="wrap">
+                {reproducibleCommand}
+              </Text>
+            </Box>
+          </>
+        )}
+
         <Text color="gray">
           {isDryRun
             ? "Running command verification and test..."
@@ -308,52 +332,14 @@ export const ConnectionEstablisher = ({
         {isDryRun ? (
           renderDryRunResult()
         ) : (
-          <>
-            <Box flexDirection="column" marginBottom={1}>
-              <Text color="green">Process completed successfully</Text>
-              {connectionStartTime && connectionEndTime && (
-                <Text color="cyan">
-                  Connection duration: {getConnectionDuration()}
-                </Text>
-              )}
-            </Box>
-
-            {sessionResult && (
-              <>
-                {/* AWS Command Executed */}
-                <Box
-                  flexDirection="column"
-                  marginBottom={1}
-                  paddingLeft={2}
-                  borderStyle="single"
-                  borderColor="green"
-                >
-                  <Text color="green" bold>
-                    Command to execute:
-                  </Text>
-                  <Text color="white" wrap="wrap">
-                    {sessionResult.awsCommand}
-                  </Text>
-                </Box>
-
-                {/* Reproduction Command */}
-                <Box
-                  flexDirection="column"
-                  marginBottom={1}
-                  paddingLeft={2}
-                  borderStyle="single"
-                  borderColor="cyan"
-                >
-                  <Text color="cyan" bold>
-                    To reproduce this connection, use:
-                  </Text>
-                  <Text color="white" wrap="wrap">
-                    {sessionResult.reproducibleCommand}
-                  </Text>
-                </Box>
-              </>
+          <Box flexDirection="column" marginBottom={1}>
+            <Text color="green">Process completed successfully</Text>
+            {connectionStartTime && connectionEndTime && (
+              <Text color="cyan">
+                Connection duration: {getConnectionDuration()}
+              </Text>
             )}
-          </>
+          </Box>
         )}
 
         <Text color="gray">Enter/Esc: Exit</Text>
