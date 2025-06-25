@@ -22,14 +22,24 @@ export interface ConnectWorkflowState {
 }
 
 export function useConnectWorkflow(initialOptions: ValidatedConnectOptions) {
+  // Determine initial step based on preset values
+  const determineInitialStep = (): ConnectStep => {
+    if (!initialOptions.region) return "region";
+    if (!initialOptions.rds) return "rds";
+    if (!initialOptions.cluster || !initialOptions.task) return "ecs";
+    if (!initialOptions.localPort) return "localPort";
+    return "connect";
+  };
+
   const [state, setState] = useState<ConnectWorkflowState>({
-    currentStep: "region",
+    currentStep: determineInitialStep(),
     options: initialOptions,
     // Pre-populate from options
     region: initialOptions.region,
     rds: initialOptions.rds,
     rdsPort: initialOptions.rdsPort?.toString(),
     ecsCluster: initialOptions.cluster,
+    ecsTarget: initialOptions.task, // task should be mapped to ecsTarget
     localPort: initialOptions.localPort?.toString(),
   });
 

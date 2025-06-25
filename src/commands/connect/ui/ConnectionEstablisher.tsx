@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { generateReproducibleCommand } from "../../../core/command-generation.js";
 import { generateConnectDryRun } from "../../../core/dry-run.js";
 import type { InferenceResult } from "../../../inference/index.js";
-import { startSSMSession } from "../../../session.js";
+import { startSSMSession, startSSMSessionSilent } from "../../../session.js";
 import type { DryRunResult, RDSInstance } from "../../../types.js";
 
 interface Props {
@@ -18,7 +18,12 @@ interface Props {
   onError: (error: string) => void;
 }
 
-type ConnectionState = "confirming" | "connecting" | "connected" | "error";
+type ConnectionState =
+  | "confirming"
+  | "connecting"
+  | "connected"
+  | "error"
+  | "showingResults";
 
 export const ConnectionEstablisher = ({
   region,
@@ -36,6 +41,15 @@ export const ConnectionEstablisher = ({
     useState<ConnectionState>("confirming");
   const [reproducibleCommand, setReproducibleCommand] = useState<string>("");
   const [dryRunResult, setDryRunResult] = useState<DryRunResult | null>(null);
+  const [connectionStartTime, setConnectionStartTime] = useState<Date | null>(
+    null,
+  );
+  const [connectionEndTime, setConnectionEndTime] = useState<Date | null>(null);
+  const [awsCommand, setAwsCommand] = useState<string>("");
+  const [sessionResult, setSessionResult] = useState<{
+    awsCommand: string;
+    reproducibleCommand: string;
+  } | null>(null);
 
   // Generate command
   useEffect(() => {
@@ -48,6 +62,16 @@ export const ConnectionEstablisher = ({
       localPort,
     );
     setReproducibleCommand(command);
+
+    // Generate AWS command for display
+    const parameters = {
+      host: [rdsInstance.endpoint],
+      portNumber: [rdsPort],
+      localPortNumber: [localPort],
+    };
+    const parametersJson = JSON.stringify(parameters);
+    const awsCmd = `aws ssm start-session --target ${inferenceResult.task.taskArn} --parameters '${parametersJson}' --document-name AWS-StartPortForwardingSessionToRemoteHost`;
+    setAwsCommand(awsCmd);
   }, [region, inferenceResult, rdsInstance, rdsPort, localPort]);
 
   // Connection process
@@ -67,21 +91,30 @@ export const ConnectionEstablisher = ({
         );
 
         setDryRunResult(result);
-        setConnectionState("connected");
-        onComplete();
+        setConnectionState("showingResults");
+        // Don't call onComplete() immediately - let user see the results
       } else {
-        // Start actual connection
-        await startSSMSession(
+        // Start actual connection with time tracking
+        setConnectionStartTime(new Date());
+        await startSSMSessionSilent(
           inferenceResult.task.taskArn,
           rdsInstance,
           rdsPort,
           localPort,
-          reproducibleCommand,
         );
-        setConnectionState("connected");
-        onComplete();
+        setConnectionEndTime(new Date());
+
+        // Set session result for display
+        setSessionResult({
+          awsCommand,
+          reproducibleCommand,
+        });
+
+        setConnectionState("showingResults");
+        // Don't call onComplete() immediately - let user see the results
       }
     } catch (error) {
+      setConnectionEndTime(new Date());
       setConnectionState("error");
       onError(
         `Connection error: ${error instanceof Error ? error.message : "Unknown error"}`,
@@ -102,9 +135,13 @@ export const ConnectionEstablisher = ({
       ) {
         onBack();
       }
-    } else if (connectionState === "connected" || connectionState === "error") {
+    } else if (
+      connectionState === "connected" ||
+      connectionState === "error" ||
+      connectionState === "showingResults"
+    ) {
       if (key.return || key.escape) {
-        exit();
+        exit(); // Just exit without calling onComplete to keep the results visible
       }
     }
   });
@@ -304,7 +341,21 @@ export const ConnectionEstablisher = ({
     );
   }
 
-  if (connectionState === "connected") {
+  if (connectionState === "connected" || connectionState === "showingResults") {
+    const getConnectionDuration = () => {
+      if (!connectionStartTime || !connectionEndTime) return "Unknown";
+      const duration =
+        connectionEndTime.getTime() - connectionStartTime.getTime();
+      const seconds = Math.floor(duration / 1000);
+      const minutes = Math.floor(seconds / 60);
+      const remainingSeconds = seconds % 60;
+
+      if (minutes > 0) {
+        return `${minutes}m ${remainingSeconds}s`;
+      }
+      return `${remainingSeconds}s`;
+    };
+
     return (
       <Box flexDirection="column">
         <Box marginBottom={1}>
@@ -320,19 +371,50 @@ export const ConnectionEstablisher = ({
           renderDryRunResult()
         ) : (
           <>
-            {renderConnectionSummary()}
-
             <Box flexDirection="column" marginBottom={1}>
-              <Text color="green">Port forwarding has started!</Text>
-              <Text color="gray">
-                You can access RDS via localhost:{localPort}
-              </Text>
-              <Text color="gray">
-                Example: mysql -h localhost -P {localPort} -u username -p
-              </Text>
+              <Text color="green">Process completed successfully</Text>
+              {connectionStartTime && connectionEndTime && (
+                <Text color="cyan">
+                  Connection duration: {getConnectionDuration()}
+                </Text>
+              )}
             </Box>
 
-            {renderReproducibleCommand()}
+            {sessionResult && (
+              <>
+                {/* AWS Command Executed */}
+                <Box
+                  flexDirection="column"
+                  marginBottom={1}
+                  paddingLeft={2}
+                  borderStyle="single"
+                  borderColor="green"
+                >
+                  <Text color="green" bold>
+                    Command to execute:
+                  </Text>
+                  <Text color="white" wrap="wrap">
+                    {sessionResult.awsCommand}
+                  </Text>
+                </Box>
+
+                {/* Reproduction Command */}
+                <Box
+                  flexDirection="column"
+                  marginBottom={1}
+                  paddingLeft={2}
+                  borderStyle="single"
+                  borderColor="cyan"
+                >
+                  <Text color="cyan" bold>
+                    To reproduce this connection, use:
+                  </Text>
+                  <Text color="white" wrap="wrap">
+                    {sessionResult.reproducibleCommand}
+                  </Text>
+                </Box>
+              </>
+            )}
           </>
         )}
 

@@ -38,7 +38,7 @@ export const ConnectApp = ({ options }: Props) => {
 
   // プリセット値がある場合のRDSインスタンス情報の復元
   useEffect(() => {
-    if (state.rds && state.currentStep === "ecs" && !selectedRDSInstance) {
+    if (state.rds && !selectedRDSInstance) {
       // 注意: 実際の実装では、RDSインスタンス情報をAPIから取得する必要があります
       // ここでは簡易的な実装として、最低限の情報を設定します
       const mockRDSInstance: RDSInstance = {
@@ -54,22 +54,11 @@ export const ConnectApp = ({ options }: Props) => {
       };
       setSelectedRDSInstance(mockRDSInstance);
     }
-  }, [
-    state.rds,
-    state.currentStep,
-    state.rdsPort,
-    state.region,
-    selectedRDSInstance,
-  ]);
+  }, [state.rds, state.rdsPort, state.region, selectedRDSInstance]);
 
   // プリセット値がある場合のECS推論結果の復元
   useEffect(() => {
-    if (
-      state.ecsTarget &&
-      state.ecsCluster &&
-      (state.currentStep === "localPort" || state.currentStep === "connect") &&
-      !selectedInferenceResult
-    ) {
+    if (state.ecsTarget && state.ecsCluster && !selectedInferenceResult) {
       // 注意: 実際の実装では、ECS推論結果をAPIから取得する必要があります
       // ここでは簡易的な実装として、最低限の情報を設定します
       const mockInferenceResult: InferenceResult = {
@@ -78,8 +67,8 @@ export const ConnectApp = ({ options }: Props) => {
           clusterArn: `arn:aws:ecs:${state.region}:account:cluster/${state.ecsCluster}`,
         },
         task: {
-          taskArn: `arn:aws:ecs:${state.region}:account:task/${state.ecsCluster}/task-id`,
-          realTaskArn: `arn:aws:ecs:${state.region}:account:task/${state.ecsCluster}/task-id`,
+          taskArn: state.ecsTarget, // Use the task ARN directly
+          realTaskArn: state.ecsTarget,
           displayName: state.ecsTarget,
           runtimeId: "runtime-id",
           taskId: "task-id",
@@ -97,7 +86,6 @@ export const ConnectApp = ({ options }: Props) => {
   }, [
     state.ecsTarget,
     state.ecsCluster,
-    state.currentStep,
     state.region,
     selectedInferenceResult,
   ]);
@@ -136,13 +124,6 @@ export const ConnectApp = ({ options }: Props) => {
           !["region", "rds", "ecs", "localPort"].includes(state.currentStep),
         current: state.currentStep === "localPort",
         value: state.localPort,
-      },
-      {
-        id: "connect",
-        title: "Establish Connection",
-        completed: state.currentStep === "completed",
-        current: state.currentStep === "connect",
-        value: state.currentStep === "completed" ? "completed" : undefined,
       },
     ],
     [state],
@@ -211,6 +192,21 @@ export const ConnectApp = ({ options }: Props) => {
         );
 
       case "connect":
+        // データが準備できるまで待つ
+        if (state.rds && !selectedRDSInstance) {
+          return (
+            <Box>
+              <Text color="yellow">Preparing RDS instance data...</Text>
+            </Box>
+          );
+        }
+        if (state.ecsTarget && !selectedInferenceResult) {
+          return (
+            <Box>
+              <Text color="yellow">Preparing ECS target data...</Text>
+            </Box>
+          );
+        }
         if (!selectedRDSInstance || !selectedInferenceResult) {
           return (
             <Box>
