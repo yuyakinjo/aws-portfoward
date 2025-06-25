@@ -2,7 +2,8 @@ import { EC2Client } from "@aws-sdk/client-ec2";
 import { ECSClient } from "@aws-sdk/client-ecs";
 import { RDSClient } from "@aws-sdk/client-rds";
 import { input, search } from "@inquirer/prompts";
-import { isDefined, isEmpty } from "remeda";
+import { isDefined } from "remeda";
+import { isEmpty } from "../utils/index.js";
 import {
   getAWSRegions,
   getECSClusters,

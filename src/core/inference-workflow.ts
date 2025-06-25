@@ -1,4 +1,4 @@
-import { isEmpty } from "remeda";
+import { isEmpty } from "../utils/index.js";
 import {
   formatInferenceResult,
   type InferenceResult,
