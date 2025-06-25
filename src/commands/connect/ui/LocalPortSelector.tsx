@@ -1,21 +1,15 @@
 import { Box, Text, useInput } from "ink";
-import type React from "react";
 import { useEffect, useState } from "react";
 import { findAvailablePort } from "../../../utils/validation.js";
 
-interface LocalPortSelectorProps {
+interface Props {
   defaultPort?: string;
   onSelect: (port: string) => void;
   onBack: () => void;
   onError: (error: string) => void;
 }
 
-export const LocalPortSelector: React.FC<LocalPortSelectorProps> = ({
-  defaultPort,
-  onSelect,
-  onBack,
-  onError,
-}) => {
+export const LocalPortSelector = ({ defaultPort, onSelect, onBack }: Props) => {
   const [isLoading, setIsLoading] = useState(true);
   const [suggestedPort, setSuggestedPort] = useState<string>("");
   const [inputPort, setInputPort] = useState(defaultPort || "");

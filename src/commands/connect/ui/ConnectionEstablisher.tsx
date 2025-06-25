@@ -1,5 +1,4 @@
 import { Box, Text, useApp, useInput } from "ink";
-import type React from "react";
 import { useEffect, useState } from "react";
 import { generateReproducibleCommand } from "../../../core/command-generation.js";
 import { generateConnectDryRun } from "../../../core/dry-run.js";
@@ -7,7 +6,7 @@ import type { InferenceResult } from "../../../inference/index.js";
 import { startSSMSession } from "../../../session.js";
 import type { DryRunResult, RDSInstance } from "../../../types.js";
 
-interface ConnectionEstablisherProps {
+interface Props {
   region: string;
   rdsInstance: RDSInstance;
   rdsPort: string;
@@ -21,7 +20,7 @@ interface ConnectionEstablisherProps {
 
 type ConnectionState = "confirming" | "connecting" | "connected" | "error";
 
-export const ConnectionEstablisher: React.FC<ConnectionEstablisherProps> = ({
+export const ConnectionEstablisher = ({
   region,
   rdsInstance,
   rdsPort,
@@ -31,7 +30,7 @@ export const ConnectionEstablisher: React.FC<ConnectionEstablisherProps> = ({
   onBack,
   onComplete,
   onError,
-}) => {
+}: Props) => {
   const { exit } = useApp();
   const [connectionState, setConnectionState] =
     useState<ConnectionState>("confirming");

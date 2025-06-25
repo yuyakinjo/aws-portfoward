@@ -1,7 +1,6 @@
 import { Box, Text } from "ink";
-import type React from "react";
 
-export interface ProgressStepInfo {
+export interface StepInfo {
   id: string;
   title: string;
   completed: boolean;
@@ -9,13 +8,11 @@ export interface ProgressStepInfo {
   value?: string; // 選択された値
 }
 
-interface ProgressWithSelectionsProps {
-  steps: ProgressStepInfo[];
+interface Props {
+  steps: StepInfo[];
 }
 
-export const ProgressWithSelections: React.FC<ProgressWithSelectionsProps> = ({
-  steps,
-}) => {
+export const ProgressWithSelections = ({ steps }: Props) => {
   return (
     <Box flexDirection="column" marginBottom={1}>
       <Text color="cyan" bold>

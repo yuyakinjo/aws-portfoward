@@ -1,19 +1,18 @@
 import { Box, Text } from "ink";
-import type React from "react";
 import type { StepInfo } from "../types.js";
 
-interface ProgressStepsProps {
+interface Props {
   steps: StepInfo[];
 }
 
-export const ProgressSteps: React.FC<ProgressStepsProps> = ({ steps }) => {
+export const ProgressSteps = ({ steps }: Props) => {
   return (
     <Box flexDirection="column" marginBottom={1}>
       <Text bold color="cyan">
         Progress
       </Text>
       <Box flexDirection="column" marginLeft={2}>
-        {steps.map((step, index) => {
+        {steps.map((step) => {
           const symbol = step.completed ? "✓" : step.current ? "◯" : "○";
           const color = step.completed
             ? "green"

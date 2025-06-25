@@ -1,16 +1,12 @@
 import { Box, Text } from "ink";
-import type React from "react";
 import type { SelectionState } from "../types.js";
 
-interface SelectionSummaryProps {
+interface Props {
   selections: SelectionState;
   showEmpty?: boolean;
 }
 
-export const SelectionSummary: React.FC<SelectionSummaryProps> = ({
-  selections,
-  showEmpty = false,
-}) => {
+export const SelectionSummary = ({ selections, showEmpty = false }: Props) => {
   const items = [
     { label: "Region", value: selections.region },
     { label: "RDS Instance", value: selections.rds },

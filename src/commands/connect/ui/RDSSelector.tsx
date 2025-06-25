@@ -1,7 +1,5 @@
-import { ECSClient } from "@aws-sdk/client-ecs";
 import { RDSClient } from "@aws-sdk/client-rds";
 import { Box, Text, useInput } from "ink";
-import type React from "react";
 import { useEffect, useState } from "react";
 import { getRDSInstances } from "../../../aws-services.js";
 import { searchRDS } from "../../../search.js";
@@ -10,7 +8,7 @@ import { LoadingSpinner } from "../../../ui/components/index.js";
 import { useAsyncState } from "../../../ui/hooks/index.js";
 import { getDefaultPortForEngine } from "../../../utils/index.js";
 
-interface RDSSelectorProps {
+interface Props {
   region: string;
   onSelect: (rds: RDSInstance, rdsPort: string) => void;
   preselectedRDS?: string;
@@ -18,13 +16,13 @@ interface RDSSelectorProps {
   onBack?: () => void;
 }
 
-export const RDSSelector: React.FC<RDSSelectorProps> = ({
+export const RDSSelector = ({
   region,
   onSelect,
   preselectedRDS,
   onCancel,
   onBack,
-}) => {
+}: Props) => {
   const [searchInput, setSearchInput] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [rdsInstances, setRdsInstances] = useState<RDSInstance[]>([]);

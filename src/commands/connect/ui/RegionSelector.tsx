@@ -1,6 +1,5 @@
 import { EC2Client } from "@aws-sdk/client-ec2";
 import { Box, Text, useInput } from "ink";
-import type React from "react";
 import { useEffect, useState } from "react";
 import { getAWSRegions } from "../../../aws-services.js";
 import { searchRegions } from "../../../search.js";
@@ -8,17 +7,17 @@ import type { AWSRegion } from "../../../types.js";
 import { LoadingSpinner } from "../../../ui/components/index.js";
 import { useAsyncState } from "../../../ui/hooks/index.js";
 
-interface RegionSelectorProps {
+interface Props {
   onSelect: (region: string) => void;
   preselectedRegion?: string;
   onCancel?: () => void;
 }
 
-export const RegionSelector: React.FC<RegionSelectorProps> = ({
+export const RegionSelector = ({
   onSelect,
   preselectedRegion,
   onCancel,
-}) => {
+}: Props) => {
   const [searchInput, setSearchInput] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [regions, setRegions] = useState<AWSRegion[]>([]);

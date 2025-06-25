@@ -1,16 +1,15 @@
 import { Box, Text } from "ink";
 import Spinner from "ink-spinner";
-import type React from "react";
 
-interface LoadingSpinnerProps {
+interface Props {
   text?: string;
   type?: "dots" | "line" | "pipe" | "simpleDots";
 }
 
-export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
+export const LoadingSpinner = ({
   text = "Loading...",
   type = "dots",
-}) => {
+}: Props) => {
   return (
     <Box>
       <Box marginRight={1}>

@@ -1,5 +1,4 @@
 import { Box, Text, useApp } from "ink";
-import type React from "react";
 import { useEffect, useMemo, useState } from "react";
 import type { InferenceResult } from "../../../inference/index.js";
 import type { RDSInstance, ValidatedConnectOptions } from "../../../types.js";
@@ -12,11 +11,11 @@ import { LocalPortSelector } from "./LocalPortSelector.js";
 import RDSSelector from "./RDSSelector.js";
 import RegionSelector from "./RegionSelector.js";
 
-interface ConnectAppProps {
+interface Props {
   options: ValidatedConnectOptions;
 }
 
-export const ConnectApp: React.FC<ConnectAppProps> = ({ options }) => {
+export const ConnectApp = ({ options }: Props) => {
   const { exit } = useApp();
   const {
     state,

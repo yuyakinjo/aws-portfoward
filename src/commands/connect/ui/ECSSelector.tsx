@@ -1,6 +1,5 @@
 import { ECSClient } from "@aws-sdk/client-ecs";
 import { Box, Text, useInput } from "ink";
-import type React from "react";
 import { useEffect, useMemo, useState } from "react";
 import {
   type InferenceResult,
@@ -9,7 +8,7 @@ import {
 import type { RDSInstance } from "../../../types.js";
 import { LoadingSpinner } from "../../../ui/components/LoadingSpinner.js";
 
-interface ECSSelectionProps {
+interface Props {
   region: string;
   rdsInstance: RDSInstance;
   presetCluster?: string;
@@ -34,7 +33,7 @@ const statusColors = {
   STOPPING: "#ff8800",
 } as const;
 
-export const ECSSelector: React.FC<ECSSelectionProps> = ({
+export const ECSSelector = ({
   region,
   rdsInstance,
   presetCluster,
@@ -42,7 +41,7 @@ export const ECSSelector: React.FC<ECSSelectionProps> = ({
   onSelect,
   onBack,
   onError,
-}) => {
+}: Props) => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [inferenceResults, setInferenceResults] = useState<InferenceResult[]>(
