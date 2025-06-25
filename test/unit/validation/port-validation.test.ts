@@ -105,10 +105,8 @@ describe("isPortAvailable", () => {
 
 describe("findAvailablePort", () => {
   let mockServer: MockServer;
-  let _portCheckCount = 0;
 
   beforeEach(() => {
-    _portCheckCount = 0;
     mockServer = {
       listen: vi.fn(),
       close: vi.fn(),
