@@ -1,5 +1,5 @@
 import { Box, Text, useApp, useInput } from "ink";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { generateReproducibleCommand } from "../../../core/command-generation.js";
 import { generateConnectDryRun } from "../../../core/dry-run.js";
 import type { InferenceResult } from "../../../inference/index.js";
@@ -75,7 +75,7 @@ export const ConnectionEstablisher = ({
   }, [region, inferenceResult, rdsInstance, rdsPort, localPort]);
 
   // Connection process
-  const handleConnect = async () => {
+  const handleConnect = useCallback(async () => {
     try {
       setConnectionState("connecting");
 
@@ -92,7 +92,10 @@ export const ConnectionEstablisher = ({
 
         setDryRunResult(result);
         setConnectionState("showingResults");
-        // Don't call onComplete() immediately - let user see the results
+        // Auto-exit after showing results for dry run
+        setTimeout(() => {
+          exit();
+        }, 100);
       } else {
         // Start actual connection with time tracking
         setConnectionStartTime(new Date());
@@ -120,22 +123,29 @@ export const ConnectionEstablisher = ({
         `Connection error: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     }
-  };
+  }, [
+    isDryRun,
+    region,
+    inferenceResult,
+    rdsInstance,
+    rdsPort,
+    localPort,
+    awsCommand,
+    reproducibleCommand,
+    exit,
+    onError,
+  ]);
+
+  // Auto-start connection when component mounts
+  useEffect(() => {
+    if (connectionState === "confirming") {
+      handleConnect();
+    }
+  }, [connectionState, handleConnect]);
 
   // Keyboard input handling
   useInput((input, key) => {
-    if (connectionState === "confirming") {
-      if (key.return || input === "y" || input === "Y") {
-        handleConnect();
-      } else if (
-        key.escape ||
-        key.leftArrow ||
-        input === "n" ||
-        input === "N"
-      ) {
-        onBack();
-      }
-    } else if (
+    if (
       connectionState === "connected" ||
       connectionState === "error" ||
       connectionState === "showingResults"
@@ -226,45 +236,6 @@ export const ConnectionEstablisher = ({
           </Text>
         </Box>
 
-        {/* セッション情報 */}
-        <Box
-          flexDirection="column"
-          marginBottom={1}
-          paddingLeft={2}
-          borderStyle="single"
-          borderColor="blue"
-        >
-          <Text color="cyan" bold>
-            Session Information:
-          </Text>
-          <Text>
-            Region:{" "}
-            <Text color="yellow">{dryRunResult.sessionInfo.region}</Text>
-          </Text>
-          <Text>
-            Cluster:{" "}
-            <Text color="yellow">{dryRunResult.sessionInfo.cluster}</Text>
-          </Text>
-          <Text>
-            Task: <Text color="yellow">{dryRunResult.sessionInfo.task}</Text>
-          </Text>
-          {dryRunResult.sessionInfo.rds && (
-            <Text>
-              RDS:{" "}
-              <Text color="yellow">
-                {dryRunResult.sessionInfo.rds}:
-                {dryRunResult.sessionInfo.rdsPort}
-              </Text>
-            </Text>
-          )}
-          {dryRunResult.sessionInfo.localPort && (
-            <Text>
-              Local Port:{" "}
-              <Text color="yellow">{dryRunResult.sessionInfo.localPort}</Text>
-            </Text>
-          )}
-        </Box>
-
         {/* 再実行用コマンド */}
         <Box
           flexDirection="column"
@@ -287,39 +258,6 @@ export const ConnectionEstablisher = ({
       </Box>
     );
   };
-
-  if (connectionState === "confirming") {
-    return (
-      <Box flexDirection="column">
-        {/* ヘッダー */}
-        <Box marginBottom={1}>
-          <Text color="cyan" bold>
-            🚀 Connection Confirmation {isDryRun && "(DRY RUN)"}
-          </Text>
-        </Box>
-
-        {renderConnectionSummary()}
-        {renderReproducibleCommand()}
-
-        {/* 確認メッセージ */}
-        <Box marginBottom={1}>
-          <Text color="yellow">
-            {isDryRun
-              ? "Do you want to run Dry run?"
-              : "Do you want to start connection with this setting?"}
-          </Text>
-        </Box>
-
-        {/* ヘルプ */}
-        <Box flexDirection="column">
-          <Text color="gray">
-            Y/Enter: {isDryRun ? "Run Dry run" : "Start connection"} N/←/Esc:
-            Back
-          </Text>
-        </Box>
-      </Box>
-    );
-  }
 
   if (connectionState === "connecting") {
     return (

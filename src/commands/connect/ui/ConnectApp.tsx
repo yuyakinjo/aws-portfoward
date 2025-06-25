@@ -44,8 +44,8 @@ export const ConnectApp = ({ options }: Props) => {
       const mockRDSInstance: RDSInstance = {
         dbInstanceIdentifier: state.rds,
         endpoint: `${state.rds}.cluster-xyz.region.rds.amazonaws.com`,
-        port: parseInt(state.rdsPort || "3306"),
-        engine: "mysql", // デフォルト値
+        port: parseInt(state.rdsPort || "5432"), // PostgreSQL default port
+        engine: "postgres", // Default to postgres for pcmprodstack
         dbInstanceClass: "db.t3.micro",
         dbInstanceStatus: "available",
         allocatedStorage: 20,

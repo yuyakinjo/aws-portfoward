@@ -37,7 +37,7 @@ export function useConnectWorkflow(initialOptions: ValidatedConnectOptions) {
     // Pre-populate from options
     region: initialOptions.region,
     rds: initialOptions.rds,
-    rdsPort: initialOptions.rdsPort?.toString(),
+    rdsPort: initialOptions.rdsPort?.toString() || "5432", // Default to PostgreSQL port
     ecsCluster: initialOptions.cluster,
     ecsTarget: initialOptions.task, // task should be mapped to ecsTarget
     localPort: initialOptions.localPort?.toString(),
