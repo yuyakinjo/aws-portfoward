@@ -1,4 +1,5 @@
 import type { DryRunResult, RDSInstance } from "../types.js";
+import { COMMAND_FORMATTING } from "../utils/index.js";
 import { messages } from "../utils/messages.js";
 import { VERSION } from "../version.js";
 import { generateReproducibleCommand } from "./command-generation.js";
@@ -24,6 +25,8 @@ export function generateConnectDryRun(
   rdsPort: string,
   localPort: string,
 ): DryRunResult {
+  const { LINE_CONTINUATION } = COMMAND_FORMATTING;
+
   // Generate SSM command
   const parameters = {
     host: [rdsInstance.endpoint],
@@ -31,7 +34,8 @@ export function generateConnectDryRun(
     localPortNumber: [localPort],
   };
   const parametersJson = JSON.stringify(parameters);
-  const awsCommand = `aws ssm start-session --target ${task} --parameters '${parametersJson}' --document-name AWS-StartPortForwardingSessionToRemoteHost`;
+  // Use line continuation for reliable copy-paste
+  const awsCommand = `aws ssm start-session${LINE_CONTINUATION}--target ${task}${LINE_CONTINUATION}--parameters '${parametersJson}'${LINE_CONTINUATION}--document-name AWS-StartPortForwardingSessionToRemoteHost`;
 
   // Generate reproducible command
   const reproducibleCommand = generateReproducibleCommand(
@@ -67,11 +71,13 @@ export function generateExecDryRun(
   container: string,
   command: string,
 ): DryRunResult {
+  const { LINE_CONTINUATION } = COMMAND_FORMATTING;
+
   // Generate ECS execute command
-  const awsCommand = `aws ecs execute-command --region ${region} --cluster ${cluster} --task ${task} --container ${container} --command "${command}" --interactive`;
+  const awsCommand = `aws ecs execute-command${LINE_CONTINUATION}--region ${region}${LINE_CONTINUATION}--cluster ${cluster}${LINE_CONTINUATION}--task ${task}${LINE_CONTINUATION}--container ${container}${LINE_CONTINUATION}--command "${command}"${LINE_CONTINUATION}--interactive`;
 
   // Generate reproducible command
-  const reproducibleCommand = `npx ecs-pf@${VERSION} exec-task --region ${region} --cluster ${cluster} --task ${task} --container ${container} --command "${command}"`;
+  const reproducibleCommand = `npx ecs-pf@${VERSION} exec-task${LINE_CONTINUATION}--region ${region}${LINE_CONTINUATION}--cluster ${cluster}${LINE_CONTINUATION}--task ${task}${LINE_CONTINUATION}--container ${container}${LINE_CONTINUATION}--command "${command}"`;
 
   return {
     awsCommand,

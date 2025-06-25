@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 import type { RDSInstance } from "./types.js";
-import { messages } from "./utils/index.js";
+import { COMMAND_FORMATTING, messages } from "./utils/index.js";
 
 export async function startSSMSessionSilent(
   taskArn: string,
@@ -14,9 +14,10 @@ export async function startSSMSessionSilent(
     localPortNumber: [localPort],
   };
 
-  // Build command string (properly escape JSON parameters)
+  // Build command string (use line continuation for reliable copy-paste)
   const parametersJson = JSON.stringify(parameters);
-  const commandString = `aws ssm start-session --target ${taskArn} --parameters '${parametersJson}' --document-name AWS-StartPortForwardingSessionToRemoteHost`;
+  const { LINE_CONTINUATION } = COMMAND_FORMATTING;
+  const commandString = `aws ssm start-session${LINE_CONTINUATION}--target ${taskArn}${LINE_CONTINUATION}--parameters '${parametersJson}'${LINE_CONTINUATION}--document-name AWS-StartPortForwardingSessionToRemoteHost`;
 
   return new Promise((resolve, reject) => {
     let isUserTermination = false;
@@ -104,6 +105,18 @@ export async function startSSMSessionSilent(
           case 2:
             errorMessage += "\nConfiguration file or parameter issue";
             break;
+          case 252:
+            errorMessage +=
+              "\nSSM Session Manager plugin error. This could be due to:\n" +
+              "  • Session Manager plugin not installed or outdated\n" +
+              "  • ECS task not running or not accessible\n" +
+              "  • SSM agent not properly configured on the ECS task\n" +
+              "  • Network connectivity issues\n" +
+              "  • IAM permissions missing for SSM operations";
+
+            // Display detailed diagnostics
+            messages.ssmTroubleshooting.displayFullDiagnostics(taskArn);
+            break;
           case 255:
             errorMessage +=
               "\nConnection error or timeout. Please check network connection and target status";
@@ -145,9 +158,10 @@ export async function startSSMSession(
     localPortNumber: [localPort],
   };
 
-  // Build command string (properly escape JSON parameters)
+  // Build command string (use line continuation for reliable copy-paste)
   const parametersJson = JSON.stringify(parameters);
-  const commandString = `aws ssm start-session --target ${taskArn} --parameters '${parametersJson}' --document-name AWS-StartPortForwardingSessionToRemoteHost`;
+  const { LINE_CONTINUATION } = COMMAND_FORMATTING;
+  const commandString = `aws ssm start-session${LINE_CONTINUATION}--target ${taskArn}${LINE_CONTINUATION}--parameters '${parametersJson}'${LINE_CONTINUATION}--document-name AWS-StartPortForwardingSessionToRemoteHost`;
 
   messages.empty();
   messages.success(
@@ -242,17 +256,13 @@ export async function startSSMSession(
         // Display commands after successful termination
         messages.empty();
         messages.info("Command to execute:");
-        messages.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         messages.info(commandString);
-        messages.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         messages.empty();
 
         // Display reproducible command if provided
         if (reproducibleCommand) {
           messages.info("To reproduce this connection, use:");
-          messages.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
           messages.info(reproducibleCommand);
-          messages.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
           messages.empty();
         }
 
@@ -266,17 +276,13 @@ export async function startSSMSession(
         // Display commands after successful termination
         messages.empty();
         messages.info("Command to execute:");
-        messages.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         messages.info(commandString);
-        messages.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         messages.empty();
 
         // Display reproducible command if provided
         if (reproducibleCommand) {
           messages.info("To reproduce this connection, use:");
-          messages.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
           messages.info(reproducibleCommand);
-          messages.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
           messages.empty();
         }
 
@@ -292,6 +298,18 @@ export async function startSSMSession(
             break;
           case 2:
             errorMessage += "\nConfiguration file or parameter issue";
+            break;
+          case 252:
+            errorMessage +=
+              "\nSSM Session Manager plugin error. This could be due to:\n" +
+              "  • Session Manager plugin not installed or outdated\n" +
+              "  • ECS task not running or not accessible\n" +
+              "  • SSM agent not properly configured on the ECS task\n" +
+              "  • Network connectivity issues\n" +
+              "  • IAM permissions missing for SSM operations";
+
+            // Display detailed diagnostics
+            messages.ssmTroubleshooting.displayFullDiagnostics(taskArn);
             break;
           case 255:
             errorMessage +=
@@ -375,9 +393,7 @@ export async function executeECSCommand(
         // Display command for reference
         messages.empty();
         messages.info("Command executed:");
-        messages.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         messages.info(commandString);
-        messages.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         messages.empty();
 
         resolve();
@@ -390,9 +406,7 @@ export async function executeECSCommand(
         // Display command for reference
         messages.empty();
         messages.info("Command executed:");
-        messages.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         messages.info(commandString);
-        messages.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         messages.empty();
 
         resolve();

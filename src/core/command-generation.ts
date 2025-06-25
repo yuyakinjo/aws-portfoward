@@ -1,3 +1,4 @@
+import { COMMAND_FORMATTING } from "../utils/index.js";
 import { VERSION } from "../version.js";
 
 /**
@@ -11,5 +12,6 @@ export function generateReproducibleCommand(
   rdsPort: string,
   localPort: string,
 ): string {
-  return `npx ecs-pf@${VERSION} connect --region ${region} --cluster ${cluster} --task ${task} --rds ${rds} --rds-port ${rdsPort} --local-port ${localPort}`;
+  const { LINE_CONTINUATION } = COMMAND_FORMATTING;
+  return `npx ecs-pf@${VERSION} connect${LINE_CONTINUATION}--region ${region}${LINE_CONTINUATION}--cluster ${cluster}${LINE_CONTINUATION}--task ${task}${LINE_CONTINUATION}--rds ${rds}${LINE_CONTINUATION}--rds-port ${rdsPort}${LINE_CONTINUATION}--local-port ${localPort}`;
 }

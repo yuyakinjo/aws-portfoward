@@ -152,7 +152,6 @@ export const ConnectApp = ({ options }: Props) => {
               setSelectedRDSInstance(rdsInstance);
               setRDS(rdsInstance, rdsPort);
             }}
-            preselectedRDS={state.rds}
             onCancel={handleCancel}
             onBack={() => goToStep("region")}
           />
@@ -176,7 +175,12 @@ export const ConnectApp = ({ options }: Props) => {
               setSelectedInferenceResult(result);
               setECSTarget(result.task.serviceName, result.cluster.clusterName);
             }}
-            onBack={() => goToStep("rds")}
+            onBack={() => {
+              // ECS選択からRDS選択に戻る際は、RDSインスタンス情報をクリア
+              setSelectedRDSInstance(null);
+              setSelectedInferenceResult(null);
+              goToStep("rds");
+            }}
             onError={(error: string) => setError(new Error(error))}
           />
         );

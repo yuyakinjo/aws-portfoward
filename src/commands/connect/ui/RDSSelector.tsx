@@ -11,18 +11,11 @@ import { getDefaultPortForEngine } from "../../../utils/index.js";
 interface Props {
   region: string;
   onSelect: (rds: RDSInstance, rdsPort: string) => void;
-  preselectedRDS?: string;
   onCancel?: () => void;
   onBack?: () => void;
 }
 
-export const RDSSelector = ({
-  region,
-  onSelect,
-  preselectedRDS,
-  onCancel,
-  onBack,
-}: Props) => {
+export const RDSSelector = ({ region, onSelect, onCancel, onBack }: Props) => {
   const [searchInput, setSearchInput] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [rdsInstances, setRdsInstances] = useState<RDSInstance[]>([]);
@@ -34,6 +27,12 @@ export const RDSSelector = ({
     }>
   >([]);
 
+  // コンポーネントがマウントされる際に検索状態をリセット
+  useEffect(() => {
+    setSearchInput("");
+    setSelectedIndex(0);
+  }, []); // マウント時のみ実行
+
   const [rdsState, loadRDS] = useAsyncState<RDSInstance[]>();
 
   // Load RDS instances on mount
@@ -41,25 +40,6 @@ export const RDSSelector = ({
     const rdsClient = new RDSClient({ region });
     loadRDS(() => getRDSInstances(rdsClient));
   }, [region, loadRDS]);
-
-  // Handle preselected RDS
-  useEffect(() => {
-    if (preselectedRDS && rdsInstances.length > 0) {
-      const foundRDS = rdsInstances.find(
-        (r) => r.dbInstanceIdentifier === preselectedRDS,
-      );
-      if (foundRDS) {
-        const actualPort = foundRDS.port;
-        const fallbackPort = getDefaultPortForEngine(foundRDS.engine);
-        const rdsPort = `${actualPort || fallbackPort}`;
-        onSelect(foundRDS, rdsPort);
-        return;
-      } else {
-        // Preselected RDS not found, show error but continue with selection
-        console.error(`RDS instance not found: ${preselectedRDS}`);
-      }
-    }
-  }, [preselectedRDS, rdsInstances, onSelect]);
 
   // Update RDS instances when loaded
   useEffect(() => {

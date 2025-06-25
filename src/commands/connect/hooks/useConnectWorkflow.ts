@@ -102,7 +102,32 @@ export function useConnectWorkflow(initialOptions: ValidatedConnectOptions) {
 
   const goToStep = useCallback(
     (step: ConnectStep) => {
-      updateState({ currentStep: step, error: undefined });
+      // 前のステップに戻る際は、後続のステップのデータをクリア
+      const updates: Partial<ConnectWorkflowState> = {
+        currentStep: step,
+        error: undefined,
+      };
+
+      // 各ステップに戻る際に、後続のデータをクリア
+      switch (step) {
+        case "region":
+          updates.rds = undefined;
+          updates.rdsPort = undefined;
+          updates.ecsTarget = undefined;
+          updates.ecsCluster = undefined;
+          updates.localPort = undefined;
+          break;
+        case "rds":
+          updates.ecsTarget = undefined;
+          updates.ecsCluster = undefined;
+          updates.localPort = undefined;
+          break;
+        case "ecs":
+          updates.localPort = undefined;
+          break;
+      }
+
+      updateState(updates);
     },
     [updateState],
   );

@@ -3,8 +3,9 @@ import { useCallback, useEffect, useState } from "react";
 import { generateReproducibleCommand } from "../../../core/command-generation.js";
 import { generateConnectDryRun } from "../../../core/dry-run.js";
 import type { InferenceResult } from "../../../inference/index.js";
-import { startSSMSession, startSSMSessionSilent } from "../../../session.js";
+import { startSSMSessionSilent } from "../../../session.js";
 import type { DryRunResult, RDSInstance } from "../../../types.js";
+import { COMMAND_FORMATTING } from "../../../utils/constants.js";
 
 interface Props {
   region: string;
@@ -32,8 +33,6 @@ export const ConnectionEstablisher = ({
   inferenceResult,
   localPort,
   isDryRun,
-  onBack,
-  onComplete,
   onError,
 }: Props) => {
   const { exit } = useApp();
@@ -59,14 +58,15 @@ export const ConnectionEstablisher = ({
     );
     setReproducibleCommand(command);
 
-    // Generate AWS command for display
+    // Generate AWS command for display (use echo + pipe for reliable copy-paste)
     const parameters = {
       host: [rdsInstance.endpoint],
       portNumber: [rdsPort],
       localPortNumber: [localPort],
     };
     const parametersJson = JSON.stringify(parameters);
-    const awsCmd = `aws ssm start-session --target ${inferenceResult.task.taskArn} --parameters '${parametersJson}' --document-name AWS-StartPortForwardingSessionToRemoteHost`;
+    const { LINE_CONTINUATION } = COMMAND_FORMATTING;
+    const awsCmd = `aws ssm start-session${LINE_CONTINUATION}--target ${inferenceResult.task.taskArn}${LINE_CONTINUATION}--parameters '${parametersJson}'${LINE_CONTINUATION}--document-name AWS-StartPortForwardingSessionToRemoteHost`;
     setAwsCommand(awsCmd);
   }, [region, inferenceResult, rdsInstance, rdsPort, localPort]);
 
@@ -208,35 +208,19 @@ export const ConnectionEstablisher = ({
         </Box>
 
         {/* AWS SSMコマンド */}
-        <Box
-          flexDirection="column"
-          marginBottom={1}
-          paddingLeft={2}
-          borderStyle="single"
-          borderColor="green"
-        >
+        <Box flexDirection="column" marginBottom={1}>
           <Text color="green" bold>
             AWS Command to Execute:
           </Text>
-          <Text color="white" wrap="wrap">
-            {dryRunResult.awsCommand}
-          </Text>
+          <Text wrap="wrap">{dryRunResult.awsCommand}</Text>
         </Box>
 
         {/* 再実行用コマンド */}
-        <Box
-          flexDirection="column"
-          marginBottom={1}
-          paddingLeft={2}
-          borderStyle="single"
-          borderColor="cyan"
-        >
+        <Box flexDirection="column" marginBottom={1}>
           <Text color="cyan" bold>
             Reproduction Command:
           </Text>
-          <Text color="white" wrap="wrap">
-            {dryRunResult.reproducibleCommand}
-          </Text>
+          <Text wrap="wrap">{dryRunResult.reproducibleCommand}</Text>
         </Box>
 
         <Text color="green">
@@ -261,35 +245,19 @@ export const ConnectionEstablisher = ({
         {!isDryRun && (
           <>
             {/* AWS Command to Execute */}
-            <Box
-              flexDirection="column"
-              marginBottom={1}
-              paddingLeft={2}
-              borderStyle="single"
-              borderColor="green"
-            >
+            <Box flexDirection="column" marginBottom={1}>
               <Text color="green" bold>
                 AWS Command to Execute:
               </Text>
-              <Text color="white" wrap="wrap">
-                {awsCommand}
-              </Text>
+              <Text>{awsCommand}</Text>
             </Box>
 
             {/* Reproduction Command */}
-            <Box
-              flexDirection="column"
-              marginBottom={1}
-              paddingLeft={2}
-              borderStyle="single"
-              borderColor="cyan"
-            >
+            <Box flexDirection="column" marginBottom={1}>
               <Text color="cyan" bold>
                 Reproduction Command:
               </Text>
-              <Text color="white" wrap="wrap">
-                {reproducibleCommand}
-              </Text>
+              <Text wrap="wrap">{reproducibleCommand}</Text>
             </Box>
           </>
         )}

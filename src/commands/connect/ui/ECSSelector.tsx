@@ -50,12 +50,10 @@ export const ECSSelector = ({
 
   // ECS推論の実行
   useEffect(() => {
-    // エラー状態の場合は再実行しない
-    if (hasError) return;
-
     const loadInferenceResults = async () => {
       try {
         setIsLoading(true);
+        setHasError(false); // エラー状態をリセット
         const ecsClient = new ECSClient({ region });
         const results = await inferECSTargets(ecsClient, rdsInstance, false); // デバッグモード無効
 
@@ -93,15 +91,7 @@ export const ECSSelector = ({
     };
 
     loadInferenceResults();
-  }, [
-    region,
-    rdsInstance,
-    presetCluster,
-    presetTask,
-    onSelect,
-    onError,
-    hasError,
-  ]);
+  }, [region, rdsInstance, presetCluster, presetTask, onSelect, onError]);
 
   // キーボード入力処理
   useInput((input, key) => {
@@ -159,6 +149,24 @@ export const ECSSelector = ({
           Searching for ECS targets that can connect to RDS "
           {rdsInstance.dbInstanceIdentifier}"
         </Text>
+      </Box>
+    );
+  }
+
+  // エラー状態の場合は戻る機能を提供
+  if (hasError) {
+    return (
+      <Box flexDirection="column">
+        <Text color="red">No ECS targets found with exec capability</Text>
+        <Box marginTop={1}>
+          <Text color="gray">
+            This RDS instance may not be accessible from any ECS tasks with exec
+            enabled.
+          </Text>
+        </Box>
+        <Box marginTop={1}>
+          <Text color="gray">←/Esc: Back to RDS selection</Text>
+        </Box>
       </Box>
     );
   }

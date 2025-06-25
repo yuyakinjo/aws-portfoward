@@ -246,17 +246,13 @@ export const messages = {
 
     awsCommand: (cmd: string) => {
       console.log(chalk.blue("AWS Command:"));
-      console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
       console.log(cmd);
-      console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
       console.log("");
     },
 
     reproducibleCommand: (cmd: string) => {
       console.log(chalk.green("Reproducible Command:"));
-      console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
       console.log(cmd);
-      console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
       console.log("");
     },
 
@@ -286,6 +282,61 @@ export const messages = {
         console.log(`Command: ${info.command}`);
       }
 
+      console.log("");
+    },
+  },
+
+  // SSM connection troubleshooting
+  ssmTroubleshooting: {
+    checkSessionManagerPlugin: () => {
+      console.log("");
+      console.log(chalk.yellow("🔍 Checking Session Manager Plugin:"));
+      console.log("Run this command to verify installation:");
+      console.log(chalk.cyan("session-manager-plugin --version"));
+      console.log("");
+      console.log("If not installed, download from:");
+      console.log(
+        "https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html",
+      );
+      console.log("");
+    },
+
+    checkECSTaskStatus: (taskArn: string) => {
+      console.log(chalk.yellow("🔍 Checking ECS Task Status:"));
+      console.log("Run this command to verify task is running:");
+      console.log(chalk.cyan(`aws ecs describe-tasks --tasks ${taskArn}`));
+      console.log("");
+    },
+
+    checkSSMPermissions: () => {
+      console.log(chalk.yellow("🔍 Required IAM Permissions:"));
+      console.log("Task execution role needs these permissions:");
+      console.log("• ssmmessages:CreateControlChannel");
+      console.log("• ssmmessages:CreateDataChannel");
+      console.log("• ssmmessages:OpenControlChannel");
+      console.log("• ssmmessages:OpenDataChannel");
+      console.log("");
+      console.log("Your AWS user/role needs:");
+      console.log("• ssm:StartSession");
+      console.log("• ecs:ExecuteCommand");
+      console.log("");
+    },
+
+    displayFullDiagnostics: (taskArn: string) => {
+      console.log("");
+      console.log(chalk.red("❌ SSM Connection Failed - Running Diagnostics"));
+      console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
+      messages.ssmTroubleshooting.checkSessionManagerPlugin();
+      messages.ssmTroubleshooting.checkECSTaskStatus(taskArn);
+      messages.ssmTroubleshooting.checkSSMPermissions();
+
+      console.log(chalk.yellow("💡 Additional Troubleshooting:"));
+      console.log("1. Verify ECS task has enableExecuteCommand: true");
+      console.log("2. Check if ECS service has enableExecuteCommand enabled");
+      console.log("3. Ensure task is in RUNNING state");
+      console.log("4. Verify network connectivity to AWS SSM endpoints");
+      console.log("5. Check CloudTrail logs for permission errors");
       console.log("");
     },
   },
