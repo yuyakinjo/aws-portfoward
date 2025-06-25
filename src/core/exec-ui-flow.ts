@@ -20,6 +20,9 @@ import type { ECSCluster, ECSTask, ValidatedExecOptions } from "../types.js";
 import { askRetry, displayFriendlyError, messages } from "../utils/index.js";
 import { displayDryRunResult, generateExecDryRun } from "./dry-run.js";
 
+// UI Configuration constants
+const DEFAULT_PAGE_SIZE = 50;
+
 /**
  * Execute command in ECS task container with Simple UI workflow
  */
@@ -105,7 +108,7 @@ async function execECSTaskWithSimpleUIFlow(
       source: async (input) => {
         return await searchRegions(regions, input || "");
       },
-      pageSize: 50,
+      pageSize: DEFAULT_PAGE_SIZE,
     })) as string;
   }
 
@@ -147,7 +150,7 @@ async function execECSTaskWithSimpleUIFlow(
         const results = await searchClusters(clusters, input || "");
         return results;
       },
-      pageSize: 50,
+      pageSize: DEFAULT_PAGE_SIZE,
     })) as ECSCluster;
 
     selections.cluster = selectedCluster.clusterName;
@@ -198,7 +201,7 @@ async function execECSTaskWithSimpleUIFlow(
         const results = await searchTasks(tasks, input || "");
         return results;
       },
-      pageSize: 50,
+      pageSize: DEFAULT_PAGE_SIZE,
     });
 
     selectedTask = tasks.find((t) => t.taskArn === selectedTaskArn);
@@ -244,7 +247,7 @@ async function execECSTaskWithSimpleUIFlow(
         const results = await searchContainers(containers, input || "");
         return results;
       },
-      pageSize: 50,
+      pageSize: DEFAULT_PAGE_SIZE,
     })) as string;
 
     selections.container = selectedContainer;
