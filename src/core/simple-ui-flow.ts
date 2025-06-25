@@ -66,6 +66,21 @@ async function connectToRDSWithSimpleUIInternal(
     messages.info(
       "Starting AWS ECS RDS connection tool with Simple UI (DRY RUN)...",
     );
+  } else {
+    messages.info("Starting AWS ECS RDS connection tool with Simple UI...");
+  }
+
+  // Show CLI arguments if provided
+  const cliArgs = [];
+  if (options.region) cliArgs.push(`--region ${options.region}`);
+  if (options.cluster) cliArgs.push(`--cluster ${options.cluster}`);
+  if (options.task) cliArgs.push(`--task ${options.task}`);
+  if (options.rds) cliArgs.push(`--rds ${options.rds}`);
+  if (options.rdsPort) cliArgs.push(`--rds-port ${options.rdsPort}`);
+  if (options.localPort) cliArgs.push(`--local-port ${options.localPort}`);
+  
+  if (cliArgs.length > 0) {
+    messages.info(`CLI arguments: ${cliArgs.join(' ')}`);
   }
 
   // Initialize state object for UI display
@@ -84,6 +99,7 @@ async function connectToRDSWithSimpleUIInternal(
   // Step 1: Select Region
   if (options.region) {
     selections.region = options.region;
+    messages.success(`✓ Region (from CLI): ${options.region}`);
   } else {
     // Show initial UI state
     messages.ui.displaySelectionState(selections);
@@ -120,7 +136,8 @@ async function connectToRDSWithSimpleUIInternal(
   let selectedRDS: RDSInstance;
   if (options.rds) {
     selections.rds = options.rds;
-    console.log(chalk.yellow("Getting RDS instances..."));
+    messages.success(`✓ RDS (from CLI): ${options.rds}`);
+    messages.info("Validating RDS instance...");
     const rdsInstances = await getRDSInstances(rdsClient);
     const rdsInstance = rdsInstances.find(
       (r) => r.dbInstanceIdentifier === options.rds,
@@ -153,11 +170,19 @@ async function connectToRDSWithSimpleUIInternal(
     selections.rds = selectedRDS.dbInstanceIdentifier;
   }
 
-  // Step 3: Auto-determine RDS Port
-  const actualRDSPort = selectedRDS.port;
-  const fallbackPort = getDefaultPortForEngine(selectedRDS.engine);
-  const rdsPort = `${actualRDSPort || fallbackPort}`;
-  selections.rdsPort = rdsPort;
+  // Step 3: Determine RDS Port
+  let rdsPort: string;
+  if (options.rdsPort) {
+    rdsPort = `${options.rdsPort}`;
+    selections.rdsPort = rdsPort;
+    messages.success(`✓ RDS port (from CLI): ${options.rdsPort}`);
+  } else {
+    const actualRDSPort = selectedRDS.port;
+    const fallbackPort = getDefaultPortForEngine(selectedRDS.engine);
+    rdsPort = `${actualRDSPort || fallbackPort}`;
+    selections.rdsPort = rdsPort;
+    messages.success(`✓ RDS port (auto-detected): ${rdsPort}`);
+  }
 
   // Update UI with RDS and port selection
   messages.ui.displaySelectionState(selections);
@@ -196,7 +221,10 @@ async function connectToRDSWithSimpleUIInternal(
         selectedTask = matchingResult.task.taskArn;
         selections.ecsTarget = matchingResult.task.serviceName;
         selections.ecsCluster = matchingResult.cluster.clusterName;
+        messages.success(`✓ ECS cluster (from CLI): ${options.cluster}`);
+        messages.success(`✓ ECS task (from CLI): ${options.task}`);
       } else {
+        messages.warning(`Specified cluster/task not found in inference results`);
         selectedInference = (await search({
           message: "Select ECS target:",
           source: async (input) => {
@@ -232,6 +260,7 @@ async function connectToRDSWithSimpleUIInternal(
   // Step 5: Local Port Selection
   if (isDefined(options.localPort)) {
     selections.localPort = `${options.localPort}`;
+    messages.success(`✓ Local port (from CLI): ${options.localPort}`);
   } else {
     try {
       console.log(chalk.yellow("Finding available local port..."));
