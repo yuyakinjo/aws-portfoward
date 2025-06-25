@@ -40,19 +40,8 @@ export const RDSSelector: React.FC<RDSSelectorProps> = ({
 
   // Load RDS instances on mount
   useEffect(() => {
-    console.log(`[RDSSelector] RDS取得開始: region=${region}`);
     const rdsClient = new RDSClient({ region });
-    loadRDS(async () => {
-      try {
-        console.log(`[RDSSelector] getRDSInstances呼び出し`);
-        const instances = await getRDSInstances(rdsClient);
-        console.log(`[RDSSelector] RDS取得完了: ${instances.length}件`);
-        return instances;
-      } catch (error) {
-        console.error(`[RDSSelector] RDS取得エラー:`, error);
-        throw error;
-      }
-    });
+    loadRDS(() => getRDSInstances(rdsClient));
   }, [region, loadRDS]);
 
   // Handle preselected RDS
@@ -191,28 +180,12 @@ export const RDSSelector: React.FC<RDSSelectorProps> = ({
           const prefix = isSelected ? "❯ " : "  ";
           const color = isSelected ? "cyan" : "white";
 
-          const rdsInstance = option.value;
-          const actualPort = rdsInstance.port;
-          const fallbackPort = getDefaultPortForEngine(rdsInstance.engine);
-          const portInfo = actualPort
-            ? `port: ${actualPort}`
-            : `default port: ${fallbackPort}`;
-
           return (
-            <Box key={rdsInstance.dbInstanceIdentifier} flexDirection="column">
-              <Box>
-                <Text color={color}>
-                  {prefix}
-                  {option.name}
-                </Text>
-              </Box>
-              {isSelected && (
-                <Box marginLeft={4}>
-                  <Text color="gray">
-                    Engine: {rdsInstance.engine} | {portInfo}
-                  </Text>
-                </Box>
-              )}
+            <Box key={option.value.dbInstanceIdentifier}>
+              <Text color={color}>
+                {prefix}
+                {option.name}
+              </Text>
             </Box>
           );
         })}

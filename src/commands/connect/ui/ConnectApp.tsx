@@ -3,11 +3,8 @@ import type React from "react";
 import { useEffect, useMemo, useState } from "react";
 import type { InferenceResult } from "../../../inference/index.js";
 import type { RDSInstance, ValidatedConnectOptions } from "../../../types.js";
-import {
-  ProgressSteps,
-  SelectionSummary,
-} from "../../../ui/components/index.js";
-import type { StepInfo } from "../../../ui/types.js";
+import { ProgressWithSelections } from "../../../ui/components/index.js";
+import type { ProgressStepInfo } from "../../../ui/components/ProgressWithSelections.js";
 import { useConnectWorkflow } from "../hooks/useConnectWorkflow.js";
 import { ConnectionEstablisher } from "./ConnectionEstablisher.js";
 import { ECSSelector } from "./ECSSelector.js";
@@ -106,13 +103,14 @@ export const ConnectApp: React.FC<ConnectAppProps> = ({ options }) => {
     selectedInferenceResult,
   ]);
 
-  const steps: StepInfo[] = useMemo(
+  const steps: ProgressStepInfo[] = useMemo(
     () => [
       {
         id: "region",
         title: "Select AWS Region",
         completed: !!state.region && state.currentStep !== "region",
         current: state.currentStep === "region",
+        value: state.region,
       },
       {
         id: "rds",
@@ -120,6 +118,7 @@ export const ConnectApp: React.FC<ConnectAppProps> = ({ options }) => {
         completed:
           !!state.rds && !["region", "rds"].includes(state.currentStep),
         current: state.currentStep === "rds",
+        value: state.rds,
       },
       {
         id: "ecs",
@@ -128,6 +127,7 @@ export const ConnectApp: React.FC<ConnectAppProps> = ({ options }) => {
           !!state.ecsTarget &&
           !["region", "rds", "ecs"].includes(state.currentStep),
         current: state.currentStep === "ecs",
+        value: state.ecsTarget,
       },
       {
         id: "localPort",
@@ -136,26 +136,16 @@ export const ConnectApp: React.FC<ConnectAppProps> = ({ options }) => {
           !!state.localPort &&
           !["region", "rds", "ecs", "localPort"].includes(state.currentStep),
         current: state.currentStep === "localPort",
+        value: state.localPort,
       },
       {
         id: "connect",
         title: "Establish Connection",
         completed: state.currentStep === "completed",
         current: state.currentStep === "connect",
+        value: state.currentStep === "completed" ? "completed" : undefined,
       },
     ],
-    [state],
-  );
-
-  const selections = useMemo(
-    () => ({
-      region: state.region,
-      rds: state.rds,
-      rdsPort: state.rdsPort,
-      ecsCluster: state.ecsCluster,
-      ecsTarget: state.ecsTarget,
-      localPort: state.localPort,
-    }),
     [state],
   );
 
@@ -263,9 +253,7 @@ export const ConnectApp: React.FC<ConnectAppProps> = ({ options }) => {
         </Text>
       </Box>
 
-      <ProgressSteps steps={steps} />
-
-      <SelectionSummary selections={selections} showEmpty />
+      <ProgressWithSelections steps={steps} />
 
       {state.error && (
         <Box marginTop={1} marginBottom={1}>

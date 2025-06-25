@@ -61,18 +61,10 @@ export const ECSSelector: React.FC<ECSSelectionProps> = ({
     const loadInferenceResults = async () => {
       try {
         setIsLoading(true);
-        console.log(
-          `[ECSSelector] ECS推論開始: region=${region}, rds=${rdsInstance.dbInstanceIdentifier}`,
-        );
-
         const ecsClient = new ECSClient({ region });
-        console.log(`[ECSSelector] ECSクライアント作成完了`);
-
-        const results = await inferECSTargets(ecsClient, rdsInstance, true); // デバッグモード有効
-        console.log(`[ECSSelector] ECS推論完了: ${results.length}件の結果`);
+        const results = await inferECSTargets(ecsClient, rdsInstance, false); // デバッグモード無効
 
         if (results.length === 0) {
-          console.log(`[ECSSelector] 結果が0件のためエラー表示`);
           setIsLoading(false); // ローディング状態を終了
           setHasError(true); // エラー状態を設定
           onError("ECS exec機能を持つターゲットが見つかりませんでした");
@@ -83,9 +75,6 @@ export const ECSSelector: React.FC<ECSSelectionProps> = ({
 
         // プリセット値がある場合は自動選択を試行
         if (presetCluster && presetTask) {
-          console.log(
-            `[ECSSelector] プリセット値で自動選択試行: cluster=${presetCluster}, task=${presetTask}`,
-          );
           const matchingResult = results.find(
             (result) =>
               result.cluster.clusterName === presetCluster &&
@@ -93,24 +82,18 @@ export const ECSSelector: React.FC<ECSSelectionProps> = ({
           );
 
           if (matchingResult) {
-            console.log(`[ECSSelector] プリセット値でマッチング成功、自動選択`);
             onSelect(matchingResult);
             return;
           }
         }
 
-        console.log(`[ECSSelector] UI表示開始`);
         setIsLoading(false);
       } catch (error) {
-        console.error(`[ECSSelector] ECS推論エラー:`, error);
         setIsLoading(false); // ローディング状態を終了
         setHasError(true); // エラー状態を設定
         const errorMessage =
           error instanceof Error ? error.message : "不明なエラー";
-        const stackTrace = error instanceof Error ? error.stack : "";
-        onError(
-          `ECS推論エラー: ${errorMessage}${stackTrace ? `\n\nスタックトレース:\n${stackTrace}` : ""}`,
-        );
+        onError(`ECS推論エラー: ${errorMessage}`);
       }
     };
 
