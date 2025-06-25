@@ -319,10 +319,8 @@ describe("CLI Commands Integration", () => {
       // 有効なパラメータの場合、バリデーションは通過するが
       // 実際のAWS呼び出しで失敗するかタイムアウトする
       expect(code === 1 || code === null).toBe(true);
-      expect(stdout).toContain("Executing command in ECS task container");
+      expect(stdout).toContain("ECS Execute Command Configuration");
     });
-  });
-
   });
 
   describe("Command validation consistency", () => {
@@ -358,7 +356,7 @@ describe("CLI Commands Integration", () => {
 
   describe("Integration robustness", () => {
     it("should handle process termination gracefully", async () => {
-      const { code, stdout } = await runCLI(["connect-ui"], 1000); // 短いタイムアウト
+      const { code, stdout } = await runCLI(["connect"], 1000); // 短いタイムアウト
 
       // プロセスは適切に終了するはず（ハングしない）
       // タイムアウトの場合はnullが返される
@@ -381,9 +379,7 @@ describe("CLI Commands Integration", () => {
       // バリデーションエラーは常に終了コード1を返すはず（タイムアウトの場合はnull）
       const results = await Promise.all([
         runCLI(["connect", "--region", ""], 2000),
-        runCLI(["connect-ui", "--region", ""], 2000),
         runCLI(["exec-task", "--region", ""], 2000),
-        runCLI(["exec-task-ui", "--region", ""], 2000),
       ]);
 
       for (const result of results) {

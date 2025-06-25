@@ -26,7 +26,7 @@
     "dev": "npm run build && node dist/cli.js connect",
     "build": "./scripts/build.sh",
     "build:tsc": "npx tsc --project tsconfig.build.json",
-    "generate-version": "tsx scripts/generate-version.ts",
+    "generate-version": "node scripts/generate-version.mjs",
     "start": "node dist/cli.js connect",
     "type-check": "tsc --noEmit",
     "test": "npm run type-check && npm run build && npm run test:unit && npm run test:integration",
