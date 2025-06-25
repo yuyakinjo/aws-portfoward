@@ -78,9 +78,9 @@ async function connectToRDSWithSimpleUIInternal(
   if (options.rds) cliArgs.push(`--rds ${options.rds}`);
   if (options.rdsPort) cliArgs.push(`--rds-port ${options.rdsPort}`);
   if (options.localPort) cliArgs.push(`--local-port ${options.localPort}`);
-  
+
   if (cliArgs.length > 0) {
-    messages.info(`CLI arguments: ${cliArgs.join(' ')}`);
+    messages.info(`CLI arguments: ${cliArgs.join(" ")}`);
   }
 
   // Initialize state object for UI display
@@ -224,7 +224,9 @@ async function connectToRDSWithSimpleUIInternal(
         messages.success(`✓ ECS cluster (from CLI): ${options.cluster}`);
         messages.success(`✓ ECS task (from CLI): ${options.task}`);
       } else {
-        messages.warning(`Specified cluster/task not found in inference results`);
+        messages.warning(
+          `Specified cluster/task not found in inference results`,
+        );
         selectedInference = (await search({
           message: "Select ECS target:",
           source: async (input) => {
