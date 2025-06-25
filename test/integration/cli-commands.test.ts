@@ -238,7 +238,9 @@ describe("CLI Commands Integration", () => {
       const { code, stdout } = await runCLI(["exec-task", "--help"]);
 
       expect(code).toBe(0);
-      expect(stdout).toContain("Execute command in ECS task container with interactive UI");
+      expect(stdout).toContain(
+        "Execute command in ECS task container with interactive UI",
+      );
       expect(stdout).toContain("--region");
       expect(stdout).toContain("--cluster");
       expect(stdout).toContain("--task");
