@@ -18,8 +18,6 @@ interface Props {
   onError: (error: string) => void;
 }
 
-type FilterMode = "all" | "high" | "medium" | "low" | "running";
-
 const confidenceColors = {
   high: "#00ff00",
   medium: "#ffff00",
@@ -48,8 +46,6 @@ export const ECSSelector = ({
     [],
   );
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filterMode, setFilterMode] = useState<FilterMode>("all");
   const [showDetails, setShowDetails] = useState(false);
 
   // ECS推論の実行
@@ -107,126 +103,52 @@ export const ECSSelector = ({
     hasError,
   ]);
 
-  // フィルタリング・検索ロジック
-  const filteredResults = useMemo(() => {
-    return inferenceResults
-      .filter((result) => {
-        // フィルタリング
-        switch (filterMode) {
-          case "high":
-            return result.confidence === "high";
-          case "medium":
-            return result.confidence === "medium";
-          case "low":
-            return result.confidence === "low";
-          case "running":
-            return result.task.taskStatus === "RUNNING";
-          default:
-            return true;
-        }
-      })
-      .filter((result) => {
-        // 検索クエリでフィルタリング
-        if (!searchQuery.trim()) return true;
-
-        const searchText = [
-          result.cluster.clusterName,
-          result.task.serviceName,
-          result.task.taskId,
-          result.reason,
-          result.method,
-        ]
-          .join(" ")
-          .toLowerCase();
-
-        return searchQuery
-          .toLowerCase()
-          .split(" ")
-          .every((term) => searchText.includes(term));
-      });
-  }, [inferenceResults, filterMode, searchQuery]);
-
   // キーボード入力処理
   useInput((input, key) => {
     if (isLoading) return;
 
-    // ナビゲーション（最優先）
+    // ナビゲーション
     if (key.upArrow) {
       setSelectedIndex((prev) =>
-        prev > 0 ? prev - 1 : Math.max(0, filteredResults.length - 1),
+        prev > 0 ? prev - 1 : Math.max(0, inferenceResults.length - 1),
       );
       return;
     }
 
     if (key.downArrow) {
       setSelectedIndex((prev) =>
-        prev < filteredResults.length - 1 ? prev + 1 : 0,
+        prev < inferenceResults.length - 1 ? prev + 1 : 0,
       );
       return;
     }
 
     // 選択実行
     if (key.return) {
-      if (filteredResults[selectedIndex]) {
-        onSelect(filteredResults[selectedIndex]);
+      if (inferenceResults[selectedIndex]) {
+        onSelect(inferenceResults[selectedIndex]);
       }
       return;
     }
 
     // 戻る・キャンセル
-    if (key.escape || (key.leftArrow && !searchQuery)) {
+    if (key.escape || key.leftArrow) {
       onBack();
       return;
     }
 
-    // 検索クエリ削除
-    if (key.backspace || key.delete) {
-      setSearchQuery((prev) => prev.slice(0, -1));
-      setSelectedIndex(0);
-      return;
-    }
-
-    // 特殊機能キー（Ctrl+キーのみ）
-    if (key.ctrl && input === "f") {
-      // 検索クリア（Ctrl+F）
-      setSearchQuery("");
-      setSelectedIndex(0);
-      return;
-    }
-
+    // 詳細表示切り替え（Ctrl+D）
     if (key.ctrl && input === "d") {
-      // 詳細表示切り替え（Ctrl+D）
       setShowDetails(!showDetails);
-      return;
-    }
-
-    if (key.ctrl && input === "r") {
-      // フィルタ切り替え（Ctrl+R）
-      const modes: FilterMode[] = ["all", "high", "medium", "low", "running"];
-      const currentIndex = modes.indexOf(filterMode);
-      const nextIndex = (currentIndex + 1) % modes.length;
-      const nextMode = modes[nextIndex];
-      if (nextMode) {
-        setFilterMode(nextMode);
-        setSelectedIndex(0);
-      }
-      return;
-    }
-
-    // 通常の文字入力（検索）
-    if (input && input.length === 1 && !key.ctrl && !key.meta && !key.shift) {
-      setSearchQuery((prev) => prev + input);
-      setSelectedIndex(0);
       return;
     }
   });
 
   // 選択インデックスの調整
   useEffect(() => {
-    if (selectedIndex >= filteredResults.length) {
-      setSelectedIndex(Math.max(0, filteredResults.length - 1));
+    if (selectedIndex >= inferenceResults.length) {
+      setSelectedIndex(Math.max(0, inferenceResults.length - 1));
     }
-  }, [filteredResults.length, selectedIndex]);
+  }, [inferenceResults.length, selectedIndex]);
 
   if (isLoading) {
     return (
@@ -241,78 +163,85 @@ export const ECSSelector = ({
     );
   }
 
-  const selectedResult = filteredResults[selectedIndex];
+  const selectedResult = inferenceResults[selectedIndex];
 
   return (
     <Box flexDirection="column">
       {/* Header */}
       <Box marginBottom={1}>
         <Text color="cyan" bold>
-          📋 Select ECS Target ({filteredResults.length}/
-          {inferenceResults.length} items)
-        </Text>
-      </Box>
-
-      {/* Filter and search status */}
-      <Box marginBottom={1}>
-        <Text color="gray">
-          Filter: <Text color="yellow">{filterMode}</Text>
-          {searchQuery && (
-            <>
-              {" "}
-              | Search: <Text color="yellow">"{searchQuery}"</Text>
-            </>
-          )}{" "}
-          | Details:{" "}
-          <Text color={showDetails ? "green" : "gray"}>
-            {showDetails ? "ON" : "OFF"}
-          </Text>
+          📋 Select ECS Target ({inferenceResults.length} items)
         </Text>
       </Box>
 
       {/* Results list */}
-      {filteredResults.length === 0 ? (
+      {inferenceResults.length === 0 ? (
         <Box marginBottom={1}>
-          <Text color="red">
-            {searchQuery
-              ? `No ECS targets found matching "${searchQuery}"`
-              : `No ECS targets found matching filter "${filterMode}"`}
-          </Text>
+          <Text color="red">No ECS targets found</Text>
         </Box>
       ) : (
         <Box flexDirection="column" marginBottom={1}>
-          {filteredResults.slice(0, 8).map((result, index) => {
-            const isSelected = index === selectedIndex;
-            const isRunning = result.task.taskStatus === "RUNNING";
+          {(() => {
+            const maxVisible = 8;
+            const startIndex = Math.max(
+              0,
+              Math.min(
+                selectedIndex - Math.floor(maxVisible / 2),
+                inferenceResults.length - maxVisible,
+              ),
+            );
+            const endIndex = Math.min(
+              startIndex + maxVisible,
+              inferenceResults.length,
+            );
+            const visibleResults = inferenceResults.slice(startIndex, endIndex);
 
             return (
-              <Box key={`${result.cluster.clusterName}-${result.task.taskId}`}>
-                <Text>
-                  {isSelected ? (
-                    <Text color="cyan" bold>
-                      ▶
-                    </Text>
-                  ) : (
-                    "  "
-                  )}
-                  <Text color={confidenceColors[result.confidence]}>●</Text>{" "}
-                  <Text
-                    bold={isSelected}
-                    color={isSelected ? "cyan" : isRunning ? "white" : "gray"}
-                  >
-                    {result.task.serviceName}
-                  </Text>{" "}
-                  <Text color="gray">[{result.cluster.clusterName}]</Text>
-                </Text>
-              </Box>
-            );
-          })}
+              <>
+                {startIndex > 0 && (
+                  <Text color="gray">... {startIndex} more above</Text>
+                )}
+                {visibleResults.map((result, index) => {
+                  const actualIndex = startIndex + index;
+                  const isSelected = actualIndex === selectedIndex;
+                  const isRunning = result.task.taskStatus === "RUNNING";
 
-          {filteredResults.length > 8 && (
-            <Text color="gray">
-              ... Other {filteredResults.length - 8} items
-            </Text>
-          )}
+                  return (
+                    <Box
+                      key={`${result.cluster.clusterName}-${result.task.taskId}`}
+                    >
+                      <Text>
+                        {isSelected ? (
+                          <Text color="cyan" bold>
+                            ▶
+                          </Text>
+                        ) : (
+                          "  "
+                        )}
+                        <Text color={confidenceColors[result.confidence]}>
+                          ●
+                        </Text>{" "}
+                        <Text
+                          bold={isSelected}
+                          color={
+                            isSelected ? "cyan" : isRunning ? "white" : "gray"
+                          }
+                        >
+                          {result.task.serviceName}
+                        </Text>{" "}
+                        <Text color="gray">[{result.cluster.clusterName}]</Text>
+                      </Text>
+                    </Box>
+                  );
+                })}
+                {endIndex < inferenceResults.length && (
+                  <Text color="gray">
+                    ... and {inferenceResults.length - endIndex} more
+                  </Text>
+                )}
+              </>
+            );
+          })()}
         </Box>
       )}
 
@@ -375,13 +304,7 @@ export const ECSSelector = ({
       {/* Help */}
       <Box flexDirection="column">
         <Text color="gray">
-          ↑↓: Navigate Enter: Select ←/Esc: Back Type: Search Backspace: Clear
-        </Text>
-        <Text color="gray">
-          Ctrl+R: Toggle Filter Ctrl+D: Toggle Details Ctrl+F: Clear Search
-        </Text>
-        <Text color="gray">
-          Filter: all → high → medium → low → running → all
+          ↑↓: Navigate Enter: Select ←/Esc: Back Ctrl+D: Toggle Details
         </Text>
         {selectedResult &&
           !selectedResult.task.taskStatus.match(/RUNNING|PENDING/) && (
