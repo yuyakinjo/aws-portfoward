@@ -67,6 +67,7 @@ function parsePort(input: string): Result<Port, ValidationError> {
 - 関数は小さく、単一責任の原則に従う
 - AWS リソース操作は `aws-services.ts` に集約
 - 型定義は `types.ts` に集約し、スキーマと型を一元管理
+- 150行以内の関数を推奨し、可読性を重視。もし長くなる場合は責務を分割
 
 ## テスト
 
