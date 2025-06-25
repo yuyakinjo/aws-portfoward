@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { InferenceResult } from "../../../inference/index.js";
 import type { RDSInstance, ValidatedConnectOptions } from "../../../types.js";
 import { ProgressWithSelections } from "../../../ui/components/index.js";
-import type { ProgressStepInfo } from "../../../ui/components/ProgressWithSelections.js";
+import type { StepInfo } from "../../../ui/types.js";
 import { useConnectWorkflow } from "../hooks/useConnectWorkflow.js";
 import { ConnectionEstablisher } from "./ConnectionEstablisher.js";
 import { ECSSelector } from "./ECSSelector.js";
@@ -90,7 +90,7 @@ export const ConnectApp = ({ options }: Props) => {
         confidence: "high" as const,
         method: "environment",
         score: 1.0,
-        reason: "プリセット値から復元",
+        reason: "Restored from preset values",
       };
       setSelectedInferenceResult(mockInferenceResult);
     }
@@ -102,7 +102,7 @@ export const ConnectApp = ({ options }: Props) => {
     selectedInferenceResult,
   ]);
 
-  const steps: ProgressStepInfo[] = useMemo(
+  const steps: StepInfo[] = useMemo(
     () => [
       {
         id: "region",

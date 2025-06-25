@@ -37,7 +37,7 @@ export const ConnectionEstablisher = ({
   const [reproducibleCommand, setReproducibleCommand] = useState<string>("");
   const [dryRunResult, setDryRunResult] = useState<DryRunResult | null>(null);
 
-  // コマンド生成
+  // Generate command
   useEffect(() => {
     const command = generateReproducibleCommand(
       region,
@@ -50,13 +50,13 @@ export const ConnectionEstablisher = ({
     setReproducibleCommand(command);
   }, [region, inferenceResult, rdsInstance, rdsPort, localPort]);
 
-  // 接続処理
+  // Connection process
   const handleConnect = async () => {
     try {
       setConnectionState("connecting");
 
       if (isDryRun) {
-        // Dry run実行
+        // Execute dry run
         const result = generateConnectDryRun(
           region,
           inferenceResult.cluster.clusterName,
@@ -70,7 +70,7 @@ export const ConnectionEstablisher = ({
         setConnectionState("connected");
         onComplete();
       } else {
-        // 実際の接続を開始
+        // Start actual connection
         await startSSMSession(
           inferenceResult.task.taskArn,
           rdsInstance,
@@ -84,12 +84,12 @@ export const ConnectionEstablisher = ({
     } catch (error) {
       setConnectionState("error");
       onError(
-        `接続エラー: ${error instanceof Error ? error.message : "不明なエラー"}`,
+        `Connection error: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     }
   };
 
-  // キーボード入力処理
+  // Keyboard input handling
   useInput((input, key) => {
     if (connectionState === "confirming") {
       if (key.return || input === "y" || input === "Y") {
@@ -118,24 +118,29 @@ export const ConnectionEstablisher = ({
       borderColor="cyan"
     >
       <Text color="cyan" bold>
-        接続サマリー:
+        Connection Summary:
       </Text>
       <Text>
-        リージョン: <Text color="yellow">{region}</Text>
+        Region: <Text color="yellow">{region}</Text>
       </Text>
       <Text>
-        RDS: <Text color="yellow">{rdsInstance.dbInstanceIdentifier}</Text> :
-        {rdsPort}
+        RDS: <Text color="yellow">{rdsInstance.dbInstanceIdentifier}</Text>
       </Text>
       <Text>
-        ECS: <Text color="yellow">{inferenceResult.task.serviceName}</Text> [
-        {inferenceResult.cluster.clusterName}]
+        RDS Port: <Text color="yellow">{rdsPort}</Text>
       </Text>
       <Text>
-        ローカルポート: <Text color="yellow">{localPort}</Text>
+        ECS: <Text color="yellow">{inferenceResult.task.serviceName}</Text>
       </Text>
       <Text>
-        接続URL: <Text color="green">localhost:{localPort}</Text>
+        Cluster:{" "}
+        <Text color="yellow">{inferenceResult.cluster.clusterName}</Text>
+      </Text>
+      <Text>
+        Local Port: <Text color="yellow">{localPort}</Text>
+      </Text>
+      <Text>
+        Connection URL: <Text color="green">localhost:{localPort}</Text>
       </Text>
     </Box>
   );
@@ -149,7 +154,7 @@ export const ConnectionEstablisher = ({
       borderColor="gray"
     >
       <Text color="gray" bold>
-        再実行用コマンド:
+        Reproduction Command:
       </Text>
       <Text color="gray" wrap="wrap">
         {reproducibleCommand}
@@ -164,7 +169,7 @@ export const ConnectionEstablisher = ({
       <Box flexDirection="column" marginBottom={1}>
         <Box marginBottom={1}>
           <Text color="green" bold>
-            🧪 Dry Run結果
+            🧪 Dry Run Results
           </Text>
         </Box>
 
@@ -177,7 +182,7 @@ export const ConnectionEstablisher = ({
           borderColor="green"
         >
           <Text color="green" bold>
-            実行されるAWSコマンド:
+            AWS Command to Execute:
           </Text>
           <Text color="white" wrap="wrap">
             {dryRunResult.awsCommand}
@@ -192,34 +197,32 @@ export const ConnectionEstablisher = ({
           borderStyle="single"
           borderColor="blue"
         >
-          <Text color="blue" bold>
-            セッション情報:
+          <Text color="cyan" bold>
+            Session Information:
           </Text>
           <Text>
-            リージョン:{" "}
+            Region:{" "}
             <Text color="yellow">{dryRunResult.sessionInfo.region}</Text>
           </Text>
           <Text>
-            クラスター:{" "}
+            Cluster:{" "}
             <Text color="yellow">{dryRunResult.sessionInfo.cluster}</Text>
           </Text>
           <Text>
-            タスク: <Text color="yellow">{dryRunResult.sessionInfo.task}</Text>
+            Task: <Text color="yellow">{dryRunResult.sessionInfo.task}</Text>
           </Text>
           {dryRunResult.sessionInfo.rds && (
             <Text>
-              RDS: <Text color="yellow">{dryRunResult.sessionInfo.rds}</Text>
-            </Text>
-          )}
-          {dryRunResult.sessionInfo.rdsPort && (
-            <Text>
-              RDSポート:{" "}
-              <Text color="yellow">{dryRunResult.sessionInfo.rdsPort}</Text>
+              RDS:{" "}
+              <Text color="yellow">
+                {dryRunResult.sessionInfo.rds}:
+                {dryRunResult.sessionInfo.rdsPort}
+              </Text>
             </Text>
           )}
           {dryRunResult.sessionInfo.localPort && (
             <Text>
-              ローカルポート:{" "}
+              Local Port:{" "}
               <Text color="yellow">{dryRunResult.sessionInfo.localPort}</Text>
             </Text>
           )}
@@ -234,7 +237,7 @@ export const ConnectionEstablisher = ({
           borderColor="cyan"
         >
           <Text color="cyan" bold>
-            再実行用コマンド:
+            Reproduction Command:
           </Text>
           <Text color="white" wrap="wrap">
             {dryRunResult.reproducibleCommand}
@@ -242,7 +245,7 @@ export const ConnectionEstablisher = ({
         </Box>
 
         <Text color="green">
-          ✅ Dry runが正常に完了しました。上記のコマンドが実行されます。
+          ✅ Dry run was successful. The above command will be executed.
         </Text>
       </Box>
     );
@@ -254,7 +257,7 @@ export const ConnectionEstablisher = ({
         {/* ヘッダー */}
         <Box marginBottom={1}>
           <Text color="cyan" bold>
-            🚀 接続確認 {isDryRun && "(DRY RUN)"}
+            🚀 Connection Confirmation {isDryRun && "(DRY RUN)"}
           </Text>
         </Box>
 
@@ -265,15 +268,16 @@ export const ConnectionEstablisher = ({
         <Box marginBottom={1}>
           <Text color="yellow">
             {isDryRun
-              ? "Dry runを実行しますか？"
-              : "この設定で接続を開始しますか？"}
+              ? "Do you want to run Dry run?"
+              : "Do you want to start connection with this setting?"}
           </Text>
         </Box>
 
         {/* ヘルプ */}
         <Box flexDirection="column">
           <Text color="gray">
-            Y/Enter: {isDryRun ? "Dry run実行" : "接続開始"} N/←/Esc: 戻る
+            Y/Enter: {isDryRun ? "Run Dry run" : "Start connection"} N/←/Esc:
+            Back
           </Text>
         </Box>
       </Box>
@@ -285,7 +289,7 @@ export const ConnectionEstablisher = ({
       <Box flexDirection="column">
         <Box marginBottom={1}>
           <Text color="yellow">
-            {isDryRun ? "Dry run実行中..." : "接続を確立中..."}
+            {isDryRun ? "Running Dry run..." : "Establishing connection..."}
           </Text>
         </Box>
 
@@ -293,8 +297,8 @@ export const ConnectionEstablisher = ({
 
         <Text color="gray">
           {isDryRun
-            ? "コマンドの検証とテストを実行しています"
-            : "SSMセッションを開始しています。しばらくお待ちください..."}
+            ? "Running command verification and test..."
+            : "Starting SSM session. Please wait..."}
         </Text>
       </Box>
     );
@@ -305,7 +309,10 @@ export const ConnectionEstablisher = ({
       <Box flexDirection="column">
         <Box marginBottom={1}>
           <Text color="green" bold>
-            ✅ {isDryRun ? "Dry run完了" : "接続確立完了"}
+            ✅{" "}
+            {isDryRun
+              ? "Dry run completed"
+              : "Connection establishment completed"}
           </Text>
         </Box>
 
@@ -316,14 +323,12 @@ export const ConnectionEstablisher = ({
             {renderConnectionSummary()}
 
             <Box flexDirection="column" marginBottom={1}>
-              <Text color="green">
-                ポートフォワーディングが開始されました！
+              <Text color="green">Port forwarding has started!</Text>
+              <Text color="gray">
+                You can access RDS via localhost:{localPort}
               </Text>
               <Text color="gray">
-                localhost:{localPort} への接続でRDSにアクセスできます。
-              </Text>
-              <Text color="gray">
-                例: mysql -h localhost -P {localPort} -u username -p
+                Example: mysql -h localhost -P {localPort} -u username -p
               </Text>
             </Box>
 
@@ -331,7 +336,7 @@ export const ConnectionEstablisher = ({
           </>
         )}
 
-        <Text color="gray">Enter/Esc: 終了</Text>
+        <Text color="gray">Enter/Esc: Exit</Text>
       </Box>
     );
   }
@@ -341,13 +346,13 @@ export const ConnectionEstablisher = ({
     <Box flexDirection="column">
       <Box marginBottom={1}>
         <Text color="red" bold>
-          ❌ 接続エラー
+          ❌ Connection error
         </Text>
       </Box>
 
       {renderConnectionSummary()}
 
-      <Text color="gray">Enter/Esc: 終了</Text>
+      <Text color="gray">Enter/Esc: Exit</Text>
     </Box>
   );
 };

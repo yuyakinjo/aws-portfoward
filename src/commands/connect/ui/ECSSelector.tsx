@@ -66,7 +66,7 @@ export const ECSSelector = ({
         if (results.length === 0) {
           setIsLoading(false); // ローディング状態を終了
           setHasError(true); // エラー状態を設定
-          onError("ECS exec機能を持つターゲットが見つかりませんでした");
+          onError("No ECS targets found with exec capability");
           return;
         }
 
@@ -231,11 +231,11 @@ export const ECSSelector = ({
   if (isLoading) {
     return (
       <Box flexDirection="column">
-        <Text color="yellow">ECS推論を実行中...</Text>
+        <Text color="yellow">Running ECS inference...</Text>
         <LoadingSpinner />
         <Text color="gray">
-          RDS "{rdsInstance.dbInstanceIdentifier}"
-          に接続可能なECSターゲットを検索しています
+          Searching for ECS targets that can connect to RDS "
+          {rdsInstance.dbInstanceIdentifier}"
         </Text>
       </Box>
     );
@@ -245,38 +245,38 @@ export const ECSSelector = ({
 
   return (
     <Box flexDirection="column">
-      {/* ヘッダー */}
+      {/* Header */}
       <Box marginBottom={1}>
         <Text color="cyan" bold>
-          📋 ECSターゲット選択 ({filteredResults.length}/
-          {inferenceResults.length}件)
+          📋 Select ECS Target ({filteredResults.length}/
+          {inferenceResults.length} items)
         </Text>
       </Box>
 
-      {/* フィルタ・検索状態 */}
+      {/* Filter and search status */}
       <Box marginBottom={1}>
         <Text color="gray">
-          フィルタ: <Text color="yellow">{filterMode}</Text>
+          Filter: <Text color="yellow">{filterMode}</Text>
           {searchQuery && (
             <>
               {" "}
-              | 検索: <Text color="yellow">"{searchQuery}"</Text>
+              | Search: <Text color="yellow">"{searchQuery}"</Text>
             </>
           )}{" "}
-          | 詳細:{" "}
+          | Details:{" "}
           <Text color={showDetails ? "green" : "gray"}>
             {showDetails ? "ON" : "OFF"}
           </Text>
         </Text>
       </Box>
 
-      {/* 結果リスト */}
+      {/* Results list */}
       {filteredResults.length === 0 ? (
         <Box marginBottom={1}>
           <Text color="red">
             {searchQuery
-              ? `"${searchQuery}" にマッチするECSターゲットが見つかりませんでした`
-              : `フィルタ "${filterMode}" にマッチするECSターゲットが見つかりませんでした`}
+              ? `No ECS targets found matching "${searchQuery}"`
+              : `No ECS targets found matching filter "${filterMode}"`}
           </Text>
         </Box>
       ) : (
@@ -287,38 +287,36 @@ export const ECSSelector = ({
 
             return (
               <Box key={`${result.cluster.clusterName}-${result.task.taskId}`}>
-                <Text
-                  color={isSelected ? "black" : "white"}
-                  backgroundColor={isSelected ? "cyan" : undefined}
-                >
-                  {isSelected ? "▶ " : "  "}
+                <Text>
+                  {isSelected ? (
+                    <Text color="cyan" bold>
+                      ▶
+                    </Text>
+                  ) : (
+                    "  "
+                  )}
                   <Text color={confidenceColors[result.confidence]}>●</Text>{" "}
-                  <Text bold={isRunning} color={isRunning ? undefined : "gray"}>
+                  <Text
+                    bold={isSelected}
+                    color={isSelected ? "cyan" : isRunning ? "white" : "gray"}
+                  >
                     {result.task.serviceName}
                   </Text>{" "}
-                  <Text color="gray">[{result.cluster.clusterName}]</Text>{" "}
-                  <Text
-                    color={
-                      statusColors[
-                        result.task.taskStatus as keyof typeof statusColors
-                      ] || "gray"
-                    }
-                  >
-                    {result.task.taskStatus}
-                  </Text>{" "}
-                  <Text color="yellow">{Math.round(result.score * 100)}%</Text>
+                  <Text color="gray">[{result.cluster.clusterName}]</Text>
                 </Text>
               </Box>
             );
           })}
 
           {filteredResults.length > 8 && (
-            <Text color="gray">... 他 {filteredResults.length - 8} 件</Text>
+            <Text color="gray">
+              ... Other {filteredResults.length - 8} items
+            </Text>
           )}
         </Box>
       )}
 
-      {/* 詳細情報 */}
+      {/* Detailed information */}
       {showDetails && selectedResult && (
         <Box
           flexDirection="column"
@@ -328,21 +326,21 @@ export const ECSSelector = ({
           borderColor="gray"
         >
           <Text color="cyan" bold>
-            詳細情報:
+            Detailed Information:
           </Text>
           <Text>
-            クラスター:{" "}
+            Cluster:{" "}
             <Text color="yellow">{selectedResult.cluster.clusterName}</Text>
           </Text>
           <Text>
-            サービス:{" "}
+            Service:{" "}
             <Text color="yellow">{selectedResult.task.serviceName}</Text>
           </Text>
           <Text>
-            タスクID: <Text color="yellow">{selectedResult.task.taskId}</Text>
+            Task ID: <Text color="yellow">{selectedResult.task.taskId}</Text>
           </Text>
           <Text>
-            ステータス:{" "}
+            Status:{" "}
             <Text
               color={
                 statusColors[
@@ -354,41 +352,41 @@ export const ECSSelector = ({
             </Text>
           </Text>
           <Text>
-            信頼度:{" "}
+            Confidence:{" "}
             <Text color={confidenceColors[selectedResult.confidence]}>
               {selectedResult.confidence.toUpperCase()}
             </Text>
           </Text>
           <Text>
-            スコア:{" "}
+            Score:{" "}
             <Text color="yellow">
               {Math.round(selectedResult.score * 100)}%
             </Text>
           </Text>
           <Text>
-            推論方法: <Text color="yellow">{selectedResult.method}</Text>
+            Method: <Text color="yellow">{selectedResult.method}</Text>
           </Text>
           <Text>
-            理由: <Text color="gray">{selectedResult.reason}</Text>
+            Reason: <Text color="gray">{selectedResult.reason}</Text>
           </Text>
         </Box>
       )}
 
-      {/* ヘルプ */}
+      {/* Help */}
       <Box flexDirection="column">
         <Text color="gray">
-          ↑↓: 選択 Enter: 決定 ←/Esc: 戻る 文字入力: 検索 Backspace: 削除
+          ↑↓: Navigate Enter: Select ←/Esc: Back Type: Search Backspace: Clear
         </Text>
         <Text color="gray">
-          Ctrl+R: フィルタ切替 Ctrl+D: 詳細表示 Ctrl+F: 検索クリア
+          Ctrl+R: Toggle Filter Ctrl+D: Toggle Details Ctrl+F: Clear Search
         </Text>
         <Text color="gray">
-          フィルタ: all → high → medium → low → running → all
+          Filter: all → high → medium → low → running → all
         </Text>
         {selectedResult &&
           !selectedResult.task.taskStatus.match(/RUNNING|PENDING/) && (
             <Text color="red">
-              ⚠️ 選択されたタスクは停止中です。接続できない可能性があります。
+              ⚠️ Selected task is not running. Connection may fail.
             </Text>
           )}
       </Box>

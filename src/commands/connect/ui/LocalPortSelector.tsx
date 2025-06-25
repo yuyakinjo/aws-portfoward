@@ -30,7 +30,14 @@ export const LocalPortSelector = ({ defaultPort, onSelect, onBack }: Props) => {
         }
 
         setIsLoading(false);
-      } catch (error) {
+
+        // 8888が空いていれば自動的に決定
+        if (!defaultPort && availablePort === 8888) {
+          setTimeout(() => {
+            onSelect(availablePort.toString());
+          }, 100); // 少し遅延させてUIの表示を確認できるように
+        }
+      } catch {
         // ポート検出に失敗した場合はデフォルト値を使用
         const fallbackPort = defaultPort || "8888";
         setSuggestedPort(fallbackPort);
@@ -40,25 +47,25 @@ export const LocalPortSelector = ({ defaultPort, onSelect, onBack }: Props) => {
     };
 
     findPort();
-  }, [defaultPort]);
+  }, [defaultPort, onSelect]);
 
   // ポートバリデーション
   const validatePort = (port: string): string | null => {
     if (!port.trim()) {
-      return "ポート番号を入力してください";
+      return "Please enter a port number";
     }
 
     if (!/^\d+$/.test(port)) {
-      return "ポート番号は数値で入力してください";
+      return "Port number must be numeric";
     }
 
     const portNum = parseInt(port);
     if (portNum < 1 || portNum > 65535) {
-      return "ポート番号は1-65535の範囲で入力してください";
+      return "Port number must be between 1-65535";
     }
 
     if (portNum < 1024) {
-      return "システムポート（1-1023）は使用できません";
+      return "System ports (1-1023) cannot be used";
     }
 
     return null;
@@ -118,71 +125,72 @@ export const LocalPortSelector = ({ defaultPort, onSelect, onBack }: Props) => {
   if (isLoading) {
     return (
       <Box flexDirection="column">
-        <Text color="yellow">利用可能なローカルポートを検索中...</Text>
+        <Text color="yellow">Searching for available local ports...</Text>
       </Box>
     );
   }
 
   return (
     <Box flexDirection="column">
-      {/* ヘッダー */}
+      {/* Header */}
       <Box marginBottom={1}>
         <Text color="cyan" bold>
-          🔌 ローカルポート選択
+          🔌 Select Local Port
         </Text>
       </Box>
 
-      {/* 現在の設定 */}
+      {/* Current settings */}
       <Box flexDirection="column" marginBottom={1}>
         <Text>
-          現在のポート:{" "}
+          Current port:{" "}
           <Text color={isEditing ? "yellow" : "green"} bold>
-            {inputPort || "(未設定)"}
+            {inputPort || "(not set)"}
           </Text>
-          {isEditing && <Text color="yellow"> (編集中)</Text>}
+          {isEditing && <Text color="yellow"> (editing)</Text>}
         </Text>
 
         {suggestedPort && suggestedPort !== inputPort && (
           <Text>
-            推奨ポート: <Text color="cyan">{suggestedPort}</Text>
-            <Text color="gray"> (利用可能確認済み)</Text>
+            Recommended port: <Text color="cyan">{suggestedPort}</Text>
+            <Text color="gray"> (confirmed available)</Text>
           </Text>
         )}
       </Box>
 
-      {/* バリデーションエラー */}
+      {/* Validation error */}
       {validationError && (
         <Box marginBottom={1}>
           <Text color="red">⚠️ {validationError}</Text>
         </Box>
       )}
 
-      {/* 説明 */}
+      {/* Description */}
       <Box flexDirection="column" marginBottom={1}>
         <Text color="gray">
-          このポートでローカルからRDSへの接続を受け付けます。
+          This port will accept local connections to RDS.
         </Text>
         <Text color="gray">
-          例: mysql -h localhost -P {inputPort || "8888"} -u username -p
+          Example: mysql -h localhost -P {inputPort || "8888"} -u username -p
         </Text>
       </Box>
 
-      {/* ヘルプ */}
+      {/* Help */}
       <Box flexDirection="column">
         {!isEditing ? (
           <>
             <Text color="gray">
-              Enter: 決定 E: 編集 S: 推奨ポート使用 ←/Esc: 戻る
+              Enter: Confirm E: Edit S: Use Recommended ←/Esc: Back
             </Text>
             {suggestedPort && suggestedPort !== inputPort && (
               <Text color="cyan">
-                💡 推奨ポート {suggestedPort} が利用可能です (Sキーで選択)
+                💡 Recommended port {suggestedPort} is available (Press S to
+                select)
               </Text>
             )}
           </>
         ) : (
           <Text color="yellow">
-            数字入力: ポート番号 Enter: 確定 Esc: キャンセル
+            Type numbers: Port number Enter: Confirm Esc: Cancel
           </Text>
         )}
       </Box>
