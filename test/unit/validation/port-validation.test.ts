@@ -5,6 +5,9 @@ import {
   isPortAvailable,
 } from "../../../src/utils/validation.js";
 
+// Type definition for mocked createServer function
+type MockCreateServer = ReturnType<typeof vi.fn>;
+
 // net.createServerをモック化
 vi.mock("node:net", () => {
   const actualNet = vi.importActual<typeof net>("node:net");
@@ -32,7 +35,7 @@ describe("isPortAvailable", () => {
       close: vi.fn(),
       on: vi.fn(),
     };
-    (net.createServer as ReturnType<typeof vi.fn>).mockReturnValue(mockServer);
+    (net.createServer as MockCreateServer).mockReturnValue(mockServer);
   });
 
   afterEach(() => {
@@ -112,7 +115,7 @@ describe("findAvailablePort", () => {
       close: vi.fn(),
       on: vi.fn(),
     };
-    (net.createServer as ReturnType<typeof vi.fn>).mockReturnValue(mockServer);
+    (net.createServer as MockCreateServer).mockReturnValue(mockServer);
   });
 
   afterEach(() => {
