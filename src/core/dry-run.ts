@@ -3,7 +3,6 @@ import {
   type ConnectDryRunParams,
   type DryRunResult,
   type ExecDryRunParams,
-  type TaskArn,
   TaskArnSchema,
 } from "../types.js";
 import { messages } from "../utils/messages.js";
@@ -40,10 +39,8 @@ export function generateConnectDryRun(
   const { region, cluster, task, rdsInstance, rdsPort, localPort } = params;
 
   // Generate SSM command - Convert TaskId to TaskArn format for SSM
-  const { output: taskArn, success } = safeParse(
-    TaskArnSchema,
-    `ecs:${cluster}_${task}_${task}`,
-  );
+  const taskArnStr = `ecs:${cluster}_${task}_${task}`;
+  const { output: taskArn, success } = safeParse(TaskArnSchema, taskArnStr);
   if (!success) {
     throw new Error(
       `Invalid TaskId format: ${task}. Expected format: ecs:<cluster>_<task>_<task>`,
@@ -85,7 +82,11 @@ export function generateExecDryRun(params: ExecDryRunParams): DryRunResult {
   const { region, cluster, task, container, command } = params;
 
   // Convert TaskId to TaskArn format for ECS execute command
-  const taskArnForECS = task as unknown as TaskArn;
+  const taskArnResult = safeParse(TaskArnSchema, task);
+  if (!taskArnResult.success) {
+    throw new Error(`Invalid TaskId format: ${task}`);
+  }
+  const taskArnForECS = taskArnResult.output;
 
   // Generate ECS execute command - convert to strings only at output boundary
   const awsCommand = `aws ecs execute-command --region ${region} --cluster ${cluster} --task ${task} --container ${container} --command "${command}" --interactive`;

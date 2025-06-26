@@ -1,25 +1,12 @@
 import chalk from "chalk";
 import Fuse from "fuse.js";
-import { isObjectType, isEmpty } from "remeda";
+import { isEmpty, isObjectType } from "remeda";
 import {
   formatInferenceResult,
   type InferenceResult,
 } from "./inference/index.js";
 import { splitByWhitespace } from "./regex.js";
-import type { 
-  AWSRegion, 
-  ECSCluster, 
-  ECSTask, 
-  RDSInstance,
-  UniversalSearchParams,
-  KeywordSearchParams,
-  SearchRegionsParams,
-  SearchClustersParams,
-  SearchTasksParams,
-  SearchRDSParams,
-  SearchContainersParams,
-  SearchInferenceResultsParams
-} from "./types.js";
+import type { AWSRegion, ECSCluster, ECSTask, RDSInstance } from "./types.js";
 
 // Helper functions for type-safe property access
 function hasRegionName(item: unknown): item is AWSRegion {
@@ -456,25 +443,21 @@ export async function searchInferenceResults(
   }
 
   // キーワード検索で絞り込み（優先）
-  const keywordFiltered = keywordSearch(
-    results,
-    input,
-    (result) => [
-      result.cluster.clusterName,
-      result.task.displayName,
-      result.task.serviceName,
-      result.task.taskStatus,
-      result.task.runtimeId,
-      result.confidence,
-      result.method,
-      result.reason,
-      formatInferenceResult(result),
-      // 信頼度レベルの日本語対応
-      result.confidence === "high" ? "high 高" : "",
-      result.confidence === "medium" ? "medium 中" : "",
-      result.confidence === "low" ? "low 低" : "",
-    ],
-  );
+  const keywordFiltered = keywordSearch(results, input, (result) => [
+    result.cluster.clusterName,
+    result.task.displayName,
+    result.task.serviceName,
+    result.task.taskStatus,
+    result.task.runtimeId,
+    result.confidence,
+    result.method,
+    result.reason,
+    formatInferenceResult(result),
+    // 信頼度レベルの日本語対応
+    result.confidence === "high" ? "high 高" : "",
+    result.confidence === "medium" ? "medium 中" : "",
+    result.confidence === "low" ? "low 低" : "",
+  ]);
 
   // キーワード検索で結果がある場合はそれを使用
   if (keywordFiltered.length > 0) {

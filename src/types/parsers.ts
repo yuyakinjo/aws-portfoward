@@ -1,11 +1,21 @@
-import { isNumber, isString } from "remeda";
-import { parse } from "valibot";
-import { isEmpty } from "../utils/index.js";
-import { isValidDbEndpoint, isValidRegionName } from "../regex.js";
+import { safeParse } from "valibot";
 import {
   failure,
   success,
+  ClusterArnSchema,
+  ClusterNameSchema,
+  ContainerNameSchema,
+  DatabaseEngineSchema,
+  DBEndpointSchema,
+  DBInstanceIdentifierSchema,
+  DBInstanceStatusSchema,
+  PortNumberSchema,
+  RegionNameSchema,
   RuntimeIdSchema,
+  ServiceNameSchema,
+  TaskArnSchema,
+  TaskIdSchema,
+  TaskStatusSchema,
   type ClusterArn,
   type ClusterName,
   type ContainerName,
@@ -31,76 +41,77 @@ import {
  * Safely parse a cluster name from AWS API response
  */
 export function parseClusterName(name: unknown): Result<ClusterName, string> {
-  if (typeof name !== "string" || isEmpty(name)) {
-    return failure("Invalid cluster name");
+  const result = safeParse(ClusterNameSchema, name);
+  if (result.success) {
+    return success(result.output);
   }
-  if (name.trim() !== name) {
-    return failure("Cluster name cannot have leading or trailing whitespace");
-  }
-  return success(name as ClusterName);
+  return failure("Invalid cluster name");
 }
 
 /**
  * Safely parse a cluster ARN from AWS API response
  */
 export function parseClusterArn(arn: unknown): Result<ClusterArn, string> {
-  if (!isString(arn) || isEmpty(arn)) {
-    return failure("Invalid cluster ARN");
+  const result = safeParse(ClusterArnSchema, arn);
+  if (result.success) {
+    return success(result.output);
   }
-  return success(arn as ClusterArn);
+  return failure("Invalid cluster ARN");
 }
 
 /**
  * Safely parse a task ARN from AWS API response
  */
 export function parseTaskArn(arn: unknown): Result<TaskArn, string> {
-  if (!isString(arn) || isEmpty(arn)) {
-    return failure("Invalid task ARN");
+  const result = safeParse(TaskArnSchema, arn);
+  if (result.success) {
+    return success(result.output);
   }
-  return success(arn as TaskArn);
+  return failure("Invalid task ARN");
 }
 
 /**
  * Safely parse a region name from AWS API response
  */
 export function parseRegionName(name: unknown): Result<RegionName, string> {
-  if (!isString(name) || isEmpty(name)) {
-    return failure("Invalid region name");
+  const result = safeParse(RegionNameSchema, name);
+  if (result.success) {
+    return success(result.output);
   }
-  if (!isValidRegionName(name)) {
-    return failure("Invalid region name format");
-  }
-  return success(name as RegionName);
+  return failure("Invalid region name");
 }
 
 /**
  * Safely parse a service name from AWS API response
  */
 export function parseServiceName(name: unknown): Result<ServiceName, string> {
-  if (!isString(name) || isEmpty(name)) {
-    return failure("Invalid service name");
+  const result = safeParse(ServiceNameSchema, name);
+  if (result.success) {
+    return success(result.output);
   }
-  return success(name as ServiceName);
+  return failure("Invalid service name");
 }
 
 /**
  * Safely parse a task ID from AWS API response
  */
 export function parseTaskId(id: unknown): Result<TaskId, string> {
-  if (!isString(id) || isEmpty(id)) {
-    return failure("Invalid task ID");
+  const result = safeParse(TaskIdSchema, id);
+  if (result.success) {
+    return success(result.output);
   }
-  return success(id as TaskId);
+  return failure("Invalid task ID");
 }
 
 /**
  * Safely parse a runtime ID from AWS API response
  */
 export function parseRuntimeId(id: unknown): Result<RuntimeId, string> {
-  if (!isString(id) || isEmpty(id)) {
-    return failure("Invalid runtime ID");
+  const result = safeParse(RuntimeIdSchema, id);
+  if (result.success) {
+    return success(result.output);
   }
-  return success(parse(RuntimeIdSchema, id));
+  return failure("Invalid runtime ID");
 }
 
 /**
@@ -109,10 +120,11 @@ export function parseRuntimeId(id: unknown): Result<RuntimeId, string> {
 export function parseDatabaseEngine(
   engine: unknown,
 ): Result<DatabaseEngine, string> {
-  if (!isString(engine) || isEmpty(engine)) {
-    return failure("Invalid database engine");
+  const result = safeParse(DatabaseEngineSchema, engine);
+  if (result.success) {
+    return success(result.output);
   }
-  return success(engine as DatabaseEngine);
+  return failure("Invalid database engine");
 }
 
 /**
@@ -121,10 +133,11 @@ export function parseDatabaseEngine(
 export function parseContainerName(
   name: unknown,
 ): Result<ContainerName, string> {
-  if (!isString(name) || isEmpty(name)) {
-    return failure("Invalid container name");
+  const result = safeParse(ContainerNameSchema, name);
+  if (result.success) {
+    return success(result.output);
   }
-  return success(name as ContainerName);
+  return failure("Invalid container name");
 }
 
 /**
@@ -133,87 +146,44 @@ export function parseContainerName(
 export function parseDBInstanceIdentifier(
   id: unknown,
 ): Result<DBInstanceIdentifier, string> {
-  if (!isString(id) || isEmpty(id)) {
-    return failure("Invalid DB instance identifier");
+  const result = safeParse(DBInstanceIdentifierSchema, id);
+  if (result.success) {
+    return success(result.output);
   }
-  return success(id as DBInstanceIdentifier);
+  return failure("Invalid DB instance identifier");
 }
 
 /**
  * Safely parse a DB endpoint from AWS API response
  */
 export function parseDBEndpoint(endpoint: unknown): Result<DBEndpoint, string> {
-  if (!isString(endpoint) || isEmpty(endpoint)) {
-    return failure("Invalid DB endpoint");
+  const result = safeParse(DBEndpointSchema, endpoint);
+  if (result.success) {
+    return success(result.output);
   }
-  if (!isValidDbEndpoint(endpoint)) {
-    return failure("Invalid DB endpoint format");
-  }
-  return success(endpoint as DBEndpoint);
+  return failure("Invalid DB endpoint");
 }
 
 /**
  * Safely parse a port number from AWS API response
  */
 export function parsePortNumber(port: unknown): Result<Port, string> {
-  if (!isNumber(port) || port < 1 || port > 65535 || !Number.isInteger(port)) {
-    return failure("Invalid port number");
+  const result = safeParse(PortNumberSchema, port);
+  if (result.success) {
+    return success(result.output);
   }
-  return success(port as Port);
-}
-
-// Define validTaskStatuses as a constant outside the function
-const validTaskStatuses: TaskStatus[] = [
-  "PROVISIONING",
-  "PENDING",
-  "ACTIVATING",
-  "RUNNING",
-  "DEACTIVATING",
-  "STOPPING",
-  "DEPROVISIONING",
-  "STOPPED",
-];
-
-/**
- * Type guard for TaskStatus
- */
-function isValidTaskStatus(status: string): status is TaskStatus {
-  return validTaskStatuses.includes(status as TaskStatus);
+  return failure("Invalid port number");
 }
 
 /**
  * Safely parse task status from AWS API response
  */
 export function parseTaskStatus(status: unknown): Result<TaskStatus, string> {
-  if (!isString(status)) {
-    return failure("Invalid task status");
+  const result = safeParse(TaskStatusSchema, status);
+  if (result.success) {
+    return success(result.output);
   }
-
-  if (isValidTaskStatus(status)) {
-    return success(status);
-  }
-
-  return failure(`Unknown task status: ${status}`);
-}
-
-const validStatuses: DBInstanceStatus[] = [
-  "available",
-  "backing-up",
-  "creating",
-  "deleting",
-  "maintenance",
-  "modifying",
-  "rebooting",
-  "starting",
-  "stopped",
-  "stopping",
-];
-
-/**
- * Type guard for DBInstanceStatus
- */
-function isValidDBInstanceStatus(status: string): status is DBInstanceStatus {
-  return validStatuses.includes(status as DBInstanceStatus);
+  return failure(`Invalid task status: ${status}`);
 }
 
 /**
@@ -222,13 +192,9 @@ function isValidDBInstanceStatus(status: string): status is DBInstanceStatus {
 export function parseDBInstanceStatus(
   status: unknown,
 ): Result<DBInstanceStatus, string> {
-  if (!isString(status) || isEmpty(status)) {
-    return failure("Invalid DB instance status");
+  const result = safeParse(DBInstanceStatusSchema, status);
+  if (result.success) {
+    return success(result.output);
   }
-
-  if (isValidDBInstanceStatus(status)) {
-    return success(status);
-  }
-
-  return failure(`Unknown DB instance status: ${status}`);
+  return failure(`Invalid DB instance status: ${status}`);
 }

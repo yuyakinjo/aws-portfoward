@@ -85,7 +85,7 @@ const rawMockData = [
 ];
 
 // Parse mock data with schemas for type safety
-export const mockECSTasks: ECSTask[] = rawMockData.map(task => ({
+export const mockECSTasks: ECSTask[] = rawMockData.map((task) => ({
   taskArn: parse(TaskArnSchema, task.taskArn),
   realTaskArn: parse(TaskArnSchema, task.realTaskArn),
   displayName: task.displayName,

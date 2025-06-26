@@ -2,6 +2,7 @@ import {
   array,
   boolean,
   custom,
+  literal,
   minLength,
   number,
   object,
@@ -150,6 +151,9 @@ export const TaskScoringParamsSchema = object({
   analysisResults: object({
     environment: array(
       object({
+        rds_identifier: string(),
+        task_family: optional(string()),
+        confidence: union([literal("high"), literal("medium"), literal("low")]),
         key: string(),
         value: string(),
         score: number(),
@@ -365,7 +369,10 @@ export const ConnectOptionsSchema = object({
     pipe(
       string(),
       minLength(1, "Task ID cannot be empty"),
-      transform((task): import("./branded.js").TaskId => task as import("./branded.js").TaskId),
+      transform(
+        (task): import("./branded.js").TaskId =>
+          task as import("./branded.js").TaskId,
+      ),
     ),
   ),
   rds: optional(
@@ -387,7 +394,10 @@ export const ExecOptionsSchema = object({
     pipe(
       string(),
       minLength(1, "Task ID cannot be empty"),
-      transform((task): import("./branded.js").TaskId => task as import("./branded.js").TaskId),
+      transform(
+        (task): import("./branded.js").TaskId =>
+          task as import("./branded.js").TaskId,
+      ),
     ),
   ),
   container: optional(

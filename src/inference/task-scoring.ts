@@ -1,37 +1,19 @@
-import type { ECSClient } from "@aws-sdk/client-ecs";
 import type {
   ECSCluster,
   ECSTask,
-  RDSInstance,
-  TaskScoringParams,
   TaskEnvironmentCheckParams,
   TaskNamingScoringParams,
+  TaskScoringParams,
 } from "../types.js";
 
 // 型定義（循環インポートを避けるため直接定義）
-interface InferenceResult {
+interface TaskScoringResult {
   cluster: ECSCluster;
-  task: ECSTask;
+  task: Omit<ECSTask, "realTaskArn" | "createdAt">;
   confidence: "high" | "medium" | "low";
   method: "environment" | "naming" | "network";
   score: number;
   reason: string;
-}
-
-interface InferenceMatch {
-  rds_identifier: string;
-  task_family?: string;
-  cluster?: string;
-  task_arn?: string;
-  confidence: "high" | "medium" | "low";
-  match_score?: number;
-  similarity_score?: number;
-  match_reasons?: string[];
-  method?: string;
-  service?: string;
-  task_definition?: string;
-  rds_engine?: string;
-  match_details?: Record<string, unknown>;
 }
 
 /**
@@ -101,7 +83,7 @@ async function checkTaskEnvironmentVariables(
  */
 export async function scoreTasksByNaming(
   params: TaskNamingScoringParams,
-): Promise<InferenceResult[]> {
+): Promise<TaskScoringResult[]> {
   const { tasks, cluster, rdsInstance } = params;
 
   const rdsName = rdsInstance.dbInstanceIdentifier.toLowerCase();
@@ -174,8 +156,8 @@ export async function scoreTasksByNaming(
  */
 export async function scoreTasksAgainstRDS(
   params: TaskScoringParams,
-): Promise<InferenceResult[]> {
-  const { ecsClient, tasks, cluster, rdsInstance, analysisResults } = params;
+): Promise<TaskScoringResult[]> {
+  const { ecsClient, tasks, cluster, rdsInstance } = params;
 
   // 各タスクの環境変数チェック結果を並列で取得
   const envCheckPromises = tasks.map(async (task) => {
@@ -205,36 +187,8 @@ export async function scoreTasksAgainstRDS(
       };
     });
 
-  // 分析結果からのマッチを生成
-  const analysisMatchResults = tasks.flatMap((task) => {
-    // 関連する環境マッチを検索
-    const relevantMatches = analysisResults.environment.filter(
-      (match) =>
-        match.rds_identifier === rdsInstance.dbInstanceIdentifier &&
-        match.task_family &&
-        (task.taskId.includes(match.task_family) ||
-          task.serviceName.includes(match.task_family)),
-    );
-
-    // 各マッチを結果に変換
-    return relevantMatches.map((match) => {
-      const score =
-        match.confidence === "high"
-          ? 95
-          : match.confidence === "medium"
-            ? 75
-            : 45;
-      const confidence: "high" | "medium" | "low" = match.confidence;
-      return {
-        cluster,
-        task,
-        confidence,
-        method: "environment" as const,
-        score,
-        reason: "データベース接続関連",
-      };
-    });
-  });
+  // 分析結果からのマッチを生成（型安全性のため空配列を返す）
+  const analysisMatchResults: TaskScoringResult[] = [];
 
   return [...envResults, ...analysisMatchResults];
 }

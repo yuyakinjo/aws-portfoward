@@ -14,7 +14,7 @@ const rawMockData = [
     availabilityZone: "ap-northeast-1a",
     vpcSecurityGroups: ["sg-12345678"],
     dbSubnetGroup: "prod-subnet-group",
-    createdTime: new Date("2023-01-15T10:00:00Z"),
+    createdTime: "2023-01-15T10:00:00Z",
   },
   {
     dbInstanceIdentifier: "staging-api-postgres",
@@ -27,7 +27,7 @@ const rawMockData = [
     availabilityZone: "ap-northeast-1c",
     vpcSecurityGroups: ["sg-87654321"],
     dbSubnetGroup: "staging-subnet-group",
-    createdTime: new Date("2023-03-20T14:30:00Z"),
+    createdTime: "2023-03-20T14:30:00Z",
   },
   {
     dbInstanceIdentifier: "dev-app-mysql",
@@ -40,7 +40,7 @@ const rawMockData = [
     availabilityZone: "ap-northeast-1a",
     vpcSecurityGroups: ["sg-11111111"],
     dbSubnetGroup: "dev-subnet-group",
-    createdTime: new Date("2023-05-10T09:15:00Z"),
+    createdTime: "2023-05-10T09:15:00Z",
   },
   {
     dbInstanceIdentifier: "prod-api-aurora",
@@ -53,7 +53,7 @@ const rawMockData = [
     availabilityZone: "ap-northeast-1a",
     vpcSecurityGroups: ["sg-22222222"],
     dbSubnetGroup: "prod-subnet-group",
-    createdTime: new Date("2023-02-28T16:45:00Z"),
+    createdTime: "2023-02-28T16:45:00Z",
   },
   {
     dbInstanceIdentifier: "test-service-postgres",
@@ -66,11 +66,11 @@ const rawMockData = [
     availabilityZone: "ap-northeast-1c",
     vpcSecurityGroups: ["sg-33333333"],
     dbSubnetGroup: "test-subnet-group",
-    createdTime: new Date("2023-06-05T11:20:00Z"),
+    createdTime: "2023-06-05T11:20:00Z",
   },
 ];
 
 // Parse mock data with schemas for type safety
-export const mockRDSInstances: RDSInstance[] = rawMockData.map(instance => 
-  parse(RDSInstanceSchema, instance)
+export const mockRDSInstances: RDSInstance[] = rawMockData.map((instance) =>
+  parse(RDSInstanceSchema, instance),
 );

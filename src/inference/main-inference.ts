@@ -3,14 +3,20 @@ import {
   getECSClustersWithExecCapability,
   getECSTasksWithExecCapability,
 } from "../aws-services.js";
-import type { ECSCluster, RDSInstance, InferECSTargetsParams } from "../types.js";
+import type { ECSCluster, RDSInstance } from "../types.js";
 import { parseClusterName } from "../types.js";
 import { messages } from "../utils/messages.js";
-import { loadAnalysisResults } from "./analysis-loader.js";
 import { inferClustersFromRDSName } from "./cluster-inference.js";
 import type { InferenceResult } from "./index.js";
 import { PerformanceTracker } from "./performance-tracker.js";
 import { scoreTasksAgainstRDS, scoreTasksByNaming } from "./task-scoring.js";
+
+interface InferECSTargetsParams {
+  ecsClient: ECSClient;
+  selectedRDS: RDSInstance;
+  enablePerformanceTracking?: boolean;
+  enableNetworkAnalysis?: boolean;
+}
 
 /**
  * Infer ECS cluster and task recommendations for a given RDS instance
@@ -18,13 +24,21 @@ import { scoreTasksAgainstRDS, scoreTasksByNaming } from "./task-scoring.js";
 export async function inferECSTargets(
   params: InferECSTargetsParams,
 ): Promise<InferenceResult[]> {
-  const { ecsClient, rdsInstance, enablePerformanceTracking = false } = params;
+  const {
+    ecsClient,
+    selectedRDS: rdsInstance,
+    enablePerformanceTracking = false,
+  } = params;
   const tracker = new PerformanceTracker();
   const results: InferenceResult[] = [];
 
   try {
     tracker.startStep("Load analysis results");
-    const analysisResults = loadAnalysisResults();
+    const analysisResults = {
+      environment: [],
+      naming: [],
+      network: [],
+    };
     tracker.endStep();
 
     tracker.startStep("Get ECS clusters with exec capability");
@@ -42,7 +56,7 @@ export async function inferECSTargets(
     });
     // likelyClusterNamesはstring[]の可能性があるのでparseしてbranded typesに
     const likelyClusters = likelyClusterNames
-      .map((name: string) => {
+      .map((name) => {
         const clusterNameResult = parseClusterName(name);
         if (!clusterNameResult.success) return undefined;
         return clusterMap.get(clusterNameResult.data);
@@ -72,7 +86,10 @@ export async function inferECSTargets(
               rdsInstance,
               analysisResults,
             });
-            return scored;
+            return scored.map((result) => ({
+              ...result,
+              reasons: [result.reason],
+            }));
           } else {
             return [];
           }
@@ -106,7 +123,10 @@ export async function inferECSTargets(
                 cluster,
                 rdsInstance,
               });
-              return scored;
+              return scored.map((result) => ({
+                ...result,
+                reasons: [result.reason],
+              }));
             } else {
               return [];
             }

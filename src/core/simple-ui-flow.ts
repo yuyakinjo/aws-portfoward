@@ -54,6 +54,12 @@ export async function connectToRDSWithSimpleUI(
 async function connectToRDSWithSimpleUIInternal(
   options: ValidatedConnectOptions,
 ): Promise<void> {
+  // Check if dry run mode with all parameters provided - skip interactive UI
+  if (options.dryRun && hasAllRequiredParameters(options)) {
+    await handleDirectDryRun(options);
+    return;
+  }
+
   // Check if dry run mode is enabled and show appropriate message
   if (options.dryRun) {
     messages.info(
@@ -107,7 +113,10 @@ async function connectToRDSWithSimpleUIInternal(
       cluster: options.cluster,
       task: options.task,
     },
-    selections,
+    selections: {
+      ...selections,
+      region: selectedRegion,
+    },
   });
 
   // Update UI with ECS target selection
@@ -133,4 +142,99 @@ async function connectToRDSWithSimpleUIInternal(
     rdsPort,
     options,
   );
+}
+
+/**
+ * Check if all required parameters are provided for dry run
+ */
+function hasAllRequiredParameters(options: ValidatedConnectOptions): boolean {
+  return !!(
+    options.region &&
+    options.cluster &&
+    options.task &&
+    options.rds &&
+    options.rdsPort &&
+    options.localPort
+  );
+}
+
+/**
+ * Handle direct dry run without interactive UI
+ */
+async function handleDirectDryRun(
+  options: ValidatedConnectOptions,
+): Promise<void> {
+  messages.info("Running dry run with provided parameters...");
+
+  // Import dry run functions
+  const { generateConnectDryRun, displayDryRunResult } = await import(
+    "./dry-run.js"
+  );
+  const { parseRegionName, parseClusterName, parseTaskId, parsePortNumber } =
+    await import("../types.js");
+
+  // Parse all parameters
+  const regionResult = parseRegionName(String(options.region));
+  if (!regionResult.success) throw new Error(regionResult.error);
+
+  const clusterResult = parseClusterName(String(options.cluster));
+  if (!clusterResult.success) throw new Error(clusterResult.error);
+
+  // Handle TaskArn or TaskId format
+  const taskStr = String(options.task);
+  // If taskStr contains '_', treat as TaskArn, else as TaskId
+  const [_, extractedTaskId] = taskStr.split("_");
+  const taskId = extractedTaskId ?? taskStr.replace(/^ecs:/, "");
+
+  const taskIdResult = parseTaskId(taskId);
+  if (!taskIdResult.success) throw new Error(taskIdResult.error);
+
+  const rdsPortResult = parsePortNumber(Number(options.rdsPort));
+  if (!rdsPortResult.success) throw new Error(rdsPortResult.error);
+
+  const localPortResult = parsePortNumber(Number(options.localPort));
+  if (!localPortResult.success) throw new Error(localPortResult.error);
+
+  // Parse RDS identifier for mock instance
+  const { parseDBInstanceIdentifier, parseDBEndpoint, parseDatabaseEngine } =
+    await import("../types.js");
+
+  const rdsIdResult = parseDBInstanceIdentifier(String(options.rds));
+  if (!rdsIdResult.success) throw new Error(rdsIdResult.error);
+
+  const endpointResult = parseDBEndpoint(
+    `${String(options.rds)}.region.rds.amazonaws.com`,
+  );
+  if (!endpointResult.success) throw new Error(endpointResult.error);
+
+  const engineResult = parseDatabaseEngine("postgres");
+  if (!engineResult.success) throw new Error(engineResult.error);
+
+  // Create mock RDS instance for dry run
+  const mockRDSInstance = {
+    dbInstanceIdentifier: rdsIdResult.data,
+    endpoint: endpointResult.data,
+    port: rdsPortResult.data,
+    engine: engineResult.data,
+    dbInstanceClass: "unknown",
+    dbInstanceStatus: "available" as const,
+    allocatedStorage: 0,
+    availabilityZone: "unknown",
+    vpcSecurityGroups: [],
+    dbSubnetGroup: undefined,
+    createdTime: undefined,
+  };
+
+  // Generate and display dry run result
+  const dryRunResult = generateConnectDryRun({
+    region: regionResult.data,
+    cluster: clusterResult.data,
+    task: taskIdResult.data,
+    rdsInstance: mockRDSInstance,
+    rdsPort: rdsPortResult.data,
+    localPort: localPortResult.data,
+  });
+
+  displayDryRunResult(dryRunResult);
+  messages.success("Dry run completed successfully.");
 }

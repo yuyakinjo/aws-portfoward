@@ -16,7 +16,7 @@ const rawMockData = [
 ];
 
 // Parse mock data with schemas for type safety
-export const mockAWSRegions: AWSRegion[] = rawMockData.map(region => ({
+export const mockAWSRegions: AWSRegion[] = rawMockData.map((region) => ({
   regionName: parse(RegionNameSchema, region.regionName),
   optInStatus: region.optInStatus,
 }));

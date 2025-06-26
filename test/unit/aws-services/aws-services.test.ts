@@ -12,7 +12,7 @@ import {
   getECSTasksWithExecCapability,
   getRDSInstances,
 } from "../../../src/aws-services.js";
-import type { ClusterName, ClusterArn, TaskArn } from "../../../src/types.js";
+import type { ClusterArn, ClusterName, TaskArn } from "../../../src/types.js";
 import { mockECSClusters } from "../../mock-data/index.js";
 import { EC2Client as MockEC2Client } from "../../mocks/ec2-client.mock.js";
 import { ECSClient as MockECSClient } from "../../mocks/ecs-client.mock.js";
@@ -98,7 +98,8 @@ describe("AWS Services", () => {
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.data).toHaveLength(1);
-        expect(result.data[0]).toMatchObject({
+        const [task] = result.data;
+        expect(task).toMatchObject({
           taskArn: expect.stringContaining("ecs:"),
           displayName: expect.any(String),
           taskStatus: "RUNNING",
@@ -119,7 +120,10 @@ describe("AWS Services", () => {
         send: vi.fn().mockRejectedValue(error),
       } satisfies MockClient;
 
-      const result = await getECSTasks(mockClient as unknown as ECSClient, cluster);
+      const result = await getECSTasks(
+        mockClient as unknown as ECSClient,
+        cluster,
+      );
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.error).toContain('ECS cluster "nonexistent" not found');
@@ -132,7 +136,10 @@ describe("AWS Services", () => {
       } satisfies MockClient;
       const cluster = mockECSClusters[0];
 
-      const result = await getECSTasks(mockClient as unknown as ECSClient, cluster);
+      const result = await getECSTasks(
+        mockClient as unknown as ECSClient,
+        cluster,
+      );
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.data).toHaveLength(0);
@@ -325,7 +332,9 @@ describe("AWS Services", () => {
           .mockRejectedValueOnce(new Error("No exec capability")), // Second exec check
       } satisfies MockClient;
 
-      const result = await getECSClustersWithExecCapability(mockClient as unknown as ECSClient);
+      const result = await getECSClustersWithExecCapability(
+        mockClient as unknown as ECSClient,
+      );
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.data).toHaveLength(1);
@@ -370,7 +379,8 @@ describe("AWS Services", () => {
       const result = await getECSTaskContainers({
         ecsClient,
         clusterName: "prod-web" as ClusterName,
-        taskArn: "arn:aws:ecs:us-east-1:123456789012:task/prod-web/1234567890123456789" as TaskArn,
+        taskArn:
+          "arn:aws:ecs:us-east-1:123456789012:task/prod-web/1234567890123456789" as TaskArn,
       });
 
       expect(result.success).toBe(true);

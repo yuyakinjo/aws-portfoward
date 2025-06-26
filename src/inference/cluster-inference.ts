@@ -1,5 +1,5 @@
 import { splitByHyphenUnderscore, splitByWordSeparators } from "../regex.js";
-import type { ECSCluster, ClusterInferenceParams } from "../types.js";
+import type { ClusterInferenceParams } from "../types.js";
 
 /**
  * RDS名からECSクラスター名を推論する関数
@@ -8,7 +8,7 @@ export function inferClustersFromRDSName(
   params: ClusterInferenceParams,
 ): string[] {
   const { rdsName, allClusters } = params;
-  
+
   const rdsSegments = splitByHyphenUnderscore(rdsName.toLowerCase());
   const rdsWords = splitByWordSeparators(rdsName.toLowerCase());
   const rdsLower = rdsName.toLowerCase();

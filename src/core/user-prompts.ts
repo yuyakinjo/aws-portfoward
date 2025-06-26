@@ -58,9 +58,10 @@ function isInferenceResult(value: unknown): value is InferenceResult {
   );
 }
 
-export async function promptForRegion(
-  params: { regions: AWSRegion[]; defaultRegion?: string },
-): Promise<RegionName> {
+export async function promptForRegion(params: {
+  regions: AWSRegion[];
+  defaultRegion?: string;
+}): Promise<RegionName> {
   const { regions, defaultRegion } = params;
   messages.info("filtered as you type (↑↓ to select, Enter to confirm)");
 
@@ -84,9 +85,9 @@ export async function promptForRegion(
   return parseResult.data;
 }
 
-export async function promptForCluster(
-  params: { clusters: ECSCluster[] },
-): Promise<ECSCluster> {
+export async function promptForCluster(params: {
+  clusters: ECSCluster[];
+}): Promise<ECSCluster> {
   const { clusters } = params;
   messages.info("filtered as you type (↑↓ to select, Enter to confirm)");
 
@@ -105,9 +106,9 @@ export async function promptForCluster(
   return selectedValue;
 }
 
-export async function promptForTask(
-  params: { tasks: ECSTask[] },
-): Promise<TaskArn> {
+export async function promptForTask(params: {
+  tasks: ECSTask[];
+}): Promise<TaskArn> {
   const { tasks } = params;
   const selectedValue = await search({
     message: "Search and select ECS task:",
@@ -129,9 +130,9 @@ export async function promptForTask(
   return parseResult.data;
 }
 
-export async function promptForRDS(
-  params: { rdsInstances: RDSInstance[] },
-): Promise<RDSInstance> {
+export async function promptForRDS(params: {
+  rdsInstances: RDSInstance[];
+}): Promise<RDSInstance> {
   const { rdsInstances } = params;
   const selectedValue = await search({
     message: "Search and select RDS instance:",
@@ -148,9 +149,9 @@ export async function promptForRDS(
   return selectedValue;
 }
 
-export async function promptForInferenceResult(
-  params: { inferenceResults: InferenceResult[] },
-): Promise<InferenceResult> {
+export async function promptForInferenceResult(params: {
+  inferenceResults: InferenceResult[];
+}): Promise<InferenceResult> {
   const { inferenceResults } = params;
   const selectedValue = await search({
     message:

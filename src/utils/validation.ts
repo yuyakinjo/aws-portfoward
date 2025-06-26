@@ -175,7 +175,7 @@ export async function findAvailablePort(startPort = 8888): Promise<number> {
   const result = await findAvailablePortSafe(startPort);
   if (result.success) {
     return Number(result.data);
-  } else {
-    throw new Error(result.error);
   }
+  // TypeScriptの型ガード: result.success === falseの場合、errorプロパティが存在
+  throw new Error((result as { success: false; error: string }).error);
 }

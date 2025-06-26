@@ -39,7 +39,7 @@ const rawMockData = [
 ];
 
 // Parse mock data with schemas for type safety
-export const mockECSClusters: ECSCluster[] = rawMockData.map(cluster => ({
+export const mockECSClusters: ECSCluster[] = rawMockData.map((cluster) => ({
   clusterName: parse(ClusterNameSchema, cluster.clusterName),
   clusterArn: parse(ClusterArnSchema, cluster.clusterArn),
 }));

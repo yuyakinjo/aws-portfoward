@@ -7,21 +7,18 @@ import {
   ListServicesCommand,
   ListTasksCommand,
 } from "@aws-sdk/client-ecs";
-import { isEmpty } from "./utils/index.js";
 import {
   DescribeDBInstancesCommand,
   type RDSClient,
 } from "@aws-sdk/client-rds";
 import type {
   AWSRegion,
-  ClusterName,
   ContainerName,
   ECSCluster,
   ECSTask,
+  ECSTaskContainersParams,
   RDSInstance,
   Result,
-  TaskArn,
-  ECSTaskContainersParams,
 } from "./types.js";
 import {
   failure,
@@ -40,6 +37,7 @@ import {
   parseTaskStatus,
   success,
 } from "./types.js";
+import { isEmpty } from "./utils/index.js";
 
 export async function getECSClustersWithExecCapability(
   ecsClient: ECSClient,
@@ -103,7 +101,7 @@ export async function getECSTaskContainers(
   params: ECSTaskContainersParams,
 ): Promise<Result<ContainerName[], string>> {
   const { ecsClient, clusterName, taskArn } = params;
-  
+
   try {
     const describeCommand = new DescribeTasksCommand({
       cluster: String(clusterName),
@@ -113,7 +111,7 @@ export async function getECSTaskContainers(
     if (!response.tasks || isEmpty(response.tasks)) {
       return failure("Task not found");
     }
-    const task = response.tasks[0];
+    const [task] = response.tasks;
     if (!task) {
       return failure("Task data not found");
     }

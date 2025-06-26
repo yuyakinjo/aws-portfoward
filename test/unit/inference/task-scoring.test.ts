@@ -12,11 +12,11 @@ describe("scoreTasksByNaming", () => {
   const stagingApiDB = mockRDSInstances[1]; // staging-api-postgres
 
   it("RDS名と完全一致するタスクに高スコアを付与する", async () => {
-    const results = await scoreTasksByNaming(
-      mockECSTasks.filter((t) => t.clusterName === "prod-web"),
-      prodWebCluster,
-      prodWebDB,
-    );
+    const results = await scoreTasksByNaming({
+      tasks: mockECSTasks.filter((t) => t.clusterName === "prod-web"),
+      cluster: prodWebCluster,
+      rdsInstance: prodWebDB,
+    });
 
     expect(results.length).toBeGreaterThan(0);
     results.forEach((result) => {
@@ -27,11 +27,11 @@ describe("scoreTasksByNaming", () => {
   });
 
   it("信頼度レベルを正しく設定する", async () => {
-    const results = await scoreTasksByNaming(
-      mockECSTasks,
-      prodWebCluster,
-      prodWebDB,
-    );
+    const results = await scoreTasksByNaming({
+      tasks: mockECSTasks,
+      cluster: prodWebCluster,
+      rdsInstance: prodWebDB,
+    });
 
     results.forEach((result) => {
       if (result.score >= 75) {
@@ -49,11 +49,11 @@ describe("scoreTasksByNaming", () => {
     const apiTasks = mockECSTasks.filter(
       (t) => t.serviceName === "api-service",
     );
-    const results = await scoreTasksByNaming(
-      apiTasks,
-      mockECSClusters[1],
-      stagingApiDB,
-    );
+    const results = await scoreTasksByNaming({
+      tasks: apiTasks,
+      cluster: mockECSClusters[1],
+      rdsInstance: stagingApiDB,
+    });
 
     expect(results.length).toBeGreaterThan(0);
     const apiServiceResult = results.find(
@@ -66,11 +66,11 @@ describe("scoreTasksByNaming", () => {
   it("セグメント一致でもスコアを付与する", async () => {
     const devAppDB = mockRDSInstances[2]; // dev-app-mysql
     const devTasks = mockECSTasks.filter((t) => t.clusterName === "dev-app");
-    const results = await scoreTasksByNaming(
-      devTasks,
-      mockECSClusters[2],
-      devAppDB,
-    );
+    const results = await scoreTasksByNaming({
+      tasks: devTasks,
+      cluster: mockECSClusters[2],
+      rdsInstance: devAppDB,
+    });
 
     expect(results.length).toBeGreaterThan(0);
     results.forEach((result) => {
@@ -80,7 +80,11 @@ describe("scoreTasksByNaming", () => {
   });
 
   it("空のタスクリストの場合は空配列を返す", async () => {
-    const results = await scoreTasksByNaming([], prodWebCluster, prodWebDB);
+    const results = await scoreTasksByNaming({
+      tasks: [],
+      cluster: prodWebCluster,
+      rdsInstance: prodWebDB,
+    });
     expect(results).toEqual([]);
   });
 
@@ -91,11 +95,11 @@ describe("scoreTasksByNaming", () => {
       dbInstanceIdentifier: "PROD-WEB-DB",
     };
 
-    const results = await scoreTasksByNaming(
-      mockECSTasks.filter((t) => t.clusterName === "prod-web"),
-      prodWebCluster,
-      testRDS,
-    );
+    const results = await scoreTasksByNaming({
+      tasks: mockECSTasks.filter((t) => t.clusterName === "prod-web"),
+      cluster: prodWebCluster,
+      rdsInstance: testRDS,
+    });
 
     expect(results.length).toBeGreaterThan(0);
     expect(results[0].score).toBeGreaterThan(25);
@@ -103,7 +107,11 @@ describe("scoreTasksByNaming", () => {
 
   it("全てのタスクに対して結果オブジェクトを生成する", async () => {
     const tasks = mockECSTasks.slice(0, 3);
-    const results = await scoreTasksByNaming(tasks, prodWebCluster, prodWebDB);
+    const results = await scoreTasksByNaming({
+      tasks,
+      cluster: prodWebCluster,
+      rdsInstance: prodWebDB,
+    });
 
     expect(results.length).toBe(tasks.length);
     results.forEach((result, index) => {

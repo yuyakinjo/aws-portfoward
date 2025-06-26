@@ -7,6 +7,9 @@ import { unwrapBrandedString } from "../../types.js";
 import { isEmpty, messages } from "../../utils/index.js";
 import { clearLoadingMessage } from "../ui/display-utils.js";
 
+// UI Configuration constants
+const DEFAULT_PAGE_SIZE = 50;
+
 /**
  * Handle ECS target selection with inference
  */
@@ -19,7 +22,11 @@ export async function selectECSTarget(
     "Finding ECS targets with exec capability that can connect to this RDS...",
   );
 
-  const inferenceResults = await inferECSTargets({ ecsClient, selectedRDS, enableNetworkAnalysis: false });
+  const inferenceResults = await inferECSTargets({
+    ecsClient,
+    selectedRDS,
+    enableNetworkAnalysis: false,
+  });
 
   if (isEmpty(inferenceResults)) {
     throw new Error(
@@ -44,9 +51,6 @@ export async function selectECSTarget(
     if (matchingResult) {
       const inference = matchingResult;
       const task = matchingResult.task.taskArn;
-      selections.ecsTarget = unwrapBrandedString(
-        matchingResult.task.serviceName,
-      );
       selections.ecsCluster = unwrapBrandedString(
         matchingResult.cluster.clusterName,
       );
@@ -64,7 +68,7 @@ export async function selectECSTarget(
     source: async (input) => {
       return await searchInferenceResults(inferenceResults, input || "");
     },
-    pageSize: 10,
+    pageSize: DEFAULT_PAGE_SIZE,
   });
 
   if (
@@ -77,7 +81,6 @@ export async function selectECSTarget(
 
   const inference = selectedInference as InferenceResult;
   const task = inference.task.taskArn;
-  selections.ecsTarget = unwrapBrandedString(inference.task.serviceName);
   selections.ecsCluster = unwrapBrandedString(inference.cluster.clusterName);
 
   return { selectedInference: inference, selectedTask: task };
