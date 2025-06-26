@@ -2,6 +2,7 @@ import {
   array,
   boolean,
   custom,
+  type InferOutput,
   literal,
   minLength,
   number,
@@ -11,11 +12,14 @@ import {
   string,
   transform,
   union,
-  type InferOutput,
 } from "valibot";
 import {
   ClusterArnSchema,
   ClusterNameSchema,
+  type ContainerName,
+  type DatabaseEngine,
+  type DBEndpoint,
+  type DBInstanceIdentifier,
   DBInstanceIdentifierSchema,
   DBInstanceStatusSchema,
   ECSClientSchema,
@@ -27,10 +31,6 @@ import {
   TaskArnSchema,
   TaskIdSchema,
   TaskStatusSchema,
-  type ContainerName,
-  type DatabaseEngine,
-  type DBEndpoint,
-  type DBInstanceIdentifier,
 } from "./branded.js";
 
 // =============================================================================
@@ -412,6 +412,18 @@ export const ExecOptionsSchema = object({
 });
 
 // =============================================================================
+// UI Selection State Schema
+// =============================================================================
+export const SelectionStateSchema = object({
+  region: optional(string()),
+  rds: optional(string()),
+  rdsPort: optional(string()),
+  ecsTarget: optional(string()),
+  ecsCluster: optional(string()),
+  localPort: optional(string()),
+});
+
+// =============================================================================
 // Type Exports
 // =============================================================================
 
@@ -463,3 +475,5 @@ export type SearchInferenceResultsParams = InferOutput<
 >;
 export type ValidatedConnectOptions = InferOutput<typeof ConnectOptionsSchema>;
 export type ValidatedExecOptions = InferOutput<typeof ExecOptionsSchema>;
+
+export type SelectionState = InferOutput<typeof SelectionStateSchema>;

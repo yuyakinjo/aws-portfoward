@@ -1,14 +1,14 @@
 import { input } from "@inquirer/prompts";
 import { isDefined } from "remeda";
+import type { Port, SelectionState } from "../../types.js";
 import { findAvailablePort, messages } from "../../utils/index.js";
 import { clearLoadingMessage } from "../ui/display-utils.js";
-import type { SelectionState } from "../ui/selection-ui.js";
 
 /**
  * Handle local port selection logic
  */
 export async function selectLocalPort(
-  options: { localPort?: string },
+  options: { localPort?: Port },
   selections: SelectionState,
 ): Promise<string> {
   if (isDefined(options.localPort)) {

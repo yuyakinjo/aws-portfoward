@@ -7,14 +7,14 @@ export async function startSSMSession(params: SSMSessionParams): Promise<void> {
     params;
 
   const parameters = {
-    host: [String(rdsInstance.endpoint)],
-    portNumber: [String(rdsPort)],
-    localPortNumber: [String(localPort)],
+    host: [rdsInstance.endpoint],
+    portNumber: [rdsPort],
+    localPortNumber: [localPort],
   };
 
   // Build command string (properly escape JSON parameters)
   const parametersJson = JSON.stringify(parameters);
-  const commandString = `aws ssm start-session --target ${String(taskArn)} --parameters '${parametersJson}' --document-name AWS-StartPortForwardingSessionToRemoteHost`;
+  const commandString = `aws ssm start-session --target ${taskArn} --parameters '${parametersJson}' --document-name AWS-StartPortForwardingSessionToRemoteHost`;
 
   messages.empty();
   messages.success(

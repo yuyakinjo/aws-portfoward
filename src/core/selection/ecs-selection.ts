@@ -14,7 +14,16 @@ const DEFAULT_PAGE_SIZE = 50;
  * Handle ECS target selection with inference
  */
 export async function selectECSTarget(
-  params: ECSTargetSelectionParams,
+  params: ECSTargetSelectionParams & {
+    selections: {
+      ecsTarget?: string;
+      ecsCluster?: string;
+      region?: string;
+      localPort?: string;
+      rds?: string;
+      rdsPort?: string;
+    };
+  },
 ): Promise<{ selectedInference: InferenceResult; selectedTask: string }> {
   const { ecsClient, selectedRDS, options, selections } = params;
 
@@ -54,6 +63,7 @@ export async function selectECSTarget(
       selections.ecsCluster = unwrapBrandedString(
         matchingResult.cluster.clusterName,
       );
+      selections.ecsTarget = matchingResult.task.taskArn;
       messages.success(`✓ ECS cluster (from CLI): ${options.cluster}`);
       messages.success(`✓ ECS task (from CLI): ${options.task}`);
       return { selectedInference: inference, selectedTask: task };
@@ -82,6 +92,7 @@ export async function selectECSTarget(
   const inference = selectedInference as InferenceResult;
   const task = inference.task.taskArn;
   selections.ecsCluster = unwrapBrandedString(inference.cluster.clusterName);
+  selections.ecsTarget = inference.task.taskArn;
 
   return { selectedInference: inference, selectedTask: task };
 }

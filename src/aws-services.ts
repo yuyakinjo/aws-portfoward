@@ -104,8 +104,8 @@ export async function getECSTaskContainers(
 
   try {
     const describeCommand = new DescribeTasksCommand({
-      cluster: String(clusterName),
-      tasks: [String(taskArn)],
+      cluster: clusterName,
+      tasks: [taskArn],
     });
     const response = await (ecsClient as ECSClient).send(describeCommand);
     if (!response.tasks || isEmpty(response.tasks)) {

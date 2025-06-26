@@ -3,9 +3,9 @@ import { search } from "@inquirer/prompts";
 import { isEmpty } from "remeda";
 import { getAWSRegions } from "../../aws-services.js";
 import { searchRegions } from "../../search.js";
+import type { SelectionState } from "../../types.js";
 import { messages } from "../../utils/index.js";
 import { clearLoadingMessage } from "../ui/display-utils.js";
-import type { SelectionState } from "../ui/selection-ui.js";
 
 const DEFAULT_PAGE_SIZE = 50;
 

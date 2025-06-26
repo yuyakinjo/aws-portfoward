@@ -1,5 +1,6 @@
 import { ECSClient } from "@aws-sdk/client-ecs";
 import { RDSClient } from "@aws-sdk/client-rds";
+import { isDefined } from "remeda";
 import type { ValidatedConnectOptions } from "../types.js";
 import { askRetry, displayFriendlyError, messages } from "../utils/index.js";
 import { handleConnection } from "./connection/rds-connection.js";
@@ -71,10 +72,10 @@ async function connectToRDSWithSimpleUIInternal(
 
   // Initialize selection state - convert branded types to strings only for UI
   const selections = initializeSelectionState({
-    region: options.region ? String(options.region) : undefined,
-    cluster: options.cluster ? String(options.cluster) : undefined,
-    task: options.task ? String(options.task) : undefined,
-    rds: options.rds ? String(options.rds) : undefined,
+    region: options.region ? options.region : undefined,
+    cluster: options.cluster ? options.cluster : undefined,
+    task: options.task ? options.task : undefined,
+    rds: options.rds ? options.rds : undefined,
     rdsPort: options.rdsPort ? String(options.rdsPort) : undefined,
     localPort: options.localPort ? String(options.localPort) : undefined,
     dryRun: options.dryRun,
@@ -116,8 +117,17 @@ async function connectToRDSWithSimpleUIInternal(
     selections: {
       ...selections,
       region: selectedRegion,
+      ecsTarget: selections.ecsTarget,
+      ecsCluster: selections.ecsCluster,
+      localPort: selections.localPort,
+      rds: selections.rds,
+      rdsPort: selections.rdsPort,
     },
   });
+
+  // selectionsに反映（UI表示用）
+  selections.ecsTarget = selectedTask;
+  selections.ecsCluster = selectedInference.cluster.clusterName;
 
   // Update UI with ECS target selection
   messages.ui.displaySelectionState(selections);
@@ -125,7 +135,7 @@ async function connectToRDSWithSimpleUIInternal(
   // Step 5: Local Port Selection
   await selectLocalPort(
     {
-      localPort: options.localPort ? String(options.localPort) : undefined,
+      localPort: options.localPort ? options.localPort : undefined,
     },
     selections,
   );

@@ -1,37 +1,38 @@
 import { safeParse } from "valibot";
 import {
-  failure,
-  success,
-  ClusterArnSchema,
-  ClusterNameSchema,
-  ContainerNameSchema,
-  DatabaseEngineSchema,
-  DBEndpointSchema,
-  DBInstanceIdentifierSchema,
-  DBInstanceStatusSchema,
-  PortNumberSchema,
-  RegionNameSchema,
-  RuntimeIdSchema,
-  ServiceNameSchema,
-  TaskArnSchema,
-  TaskIdSchema,
-  TaskStatusSchema,
   type ClusterArn,
+  ClusterArnSchema,
   type ClusterName,
+  ClusterNameSchema,
   type ContainerName,
+  ContainerNameSchema,
   type DatabaseEngine,
+  DatabaseEngineSchema,
   type DBEndpoint,
+  DBEndpointSchema,
   type DBInstanceIdentifier,
+  DBInstanceIdentifierSchema,
   type DBInstanceStatus,
+  DBInstanceStatusSchema,
+  failure,
   type Port,
+  PortNumberSchema,
   type RegionName,
+  RegionNameSchema,
   type Result,
   type RuntimeId,
+  RuntimeIdSchema,
   type ServiceName,
+  ServiceNameSchema,
+  success,
   type TaskArn,
+  TaskArnSchema,
   type TaskId,
+  TaskIdSchema,
   type TaskStatus,
+  TaskStatusSchema,
 } from "./branded.js";
+import { type SelectionState, SelectionStateSchema } from "./schemas.js";
 
 // =============================================================================
 // AWS Data Parsing Helper Functions
@@ -197,4 +198,17 @@ export function parseDBInstanceStatus(
     return success(result.output);
   }
   return failure(`Invalid DB instance status: ${status}`);
+}
+
+/**
+ * Safely parse a runtime ID from AWS API response
+ */
+export function parseSelectionState(
+  state: unknown,
+): Result<SelectionState, string> {
+  const result = safeParse(SelectionStateSchema, state);
+  if (result.success) {
+    return success(result.output);
+  }
+  return failure(`Invalid selection state: ${state}`);
 }

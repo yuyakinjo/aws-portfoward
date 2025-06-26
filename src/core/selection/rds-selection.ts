@@ -2,10 +2,9 @@ import type { RDSClient } from "@aws-sdk/client-rds";
 import { search } from "@inquirer/prompts";
 import { getRDSInstances } from "../../aws-services.js";
 import { searchRDS } from "../../search.js";
-import type { RDSInstance } from "../../types.js";
+import type { RDSInstance, SelectionState } from "../../types.js";
 import { getDefaultPortForEngine, messages } from "../../utils/index.js";
 import { clearLoadingMessage } from "../ui/display-utils.js";
-import type { SelectionState } from "../ui/selection-ui.js";
 
 const DEFAULT_PAGE_SIZE = 50;
 

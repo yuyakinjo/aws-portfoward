@@ -117,7 +117,7 @@ export async function universalSearch<T>(
             break;
           }
         }
-        return value?.toString() || "";
+        return value || "";
       })
       .filter(Boolean)
       .join(" ")

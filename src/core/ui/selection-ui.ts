@@ -1,17 +1,7 @@
+import { isEmpty } from "remeda";
+import { parseSelectionState, type SelectionState } from "../../types/index.js";
 import { messages } from "../../utils/index.js";
 import { displayCLIArguments } from "./display-utils.js";
-
-/**
- * Selection state for UI display
- */
-export interface SelectionState {
-  region?: string;
-  rds?: string;
-  rdsPort?: string;
-  ecsTarget?: string;
-  ecsCluster?: string;
-  localPort?: string;
-}
 
 /**
  * Initialize and display selection state
@@ -25,13 +15,20 @@ export function initializeSelectionState(options: {
   localPort?: string;
   dryRun?: boolean;
 }): SelectionState {
-  const selections: SelectionState = {};
-
+  const parsed = parseSelectionState({
+    region: options.region,
+    rds: options.rds,
+    rdsPort: options.rdsPort,
+    localPort: options.localPort,
+    ecsCluster: options.cluster,
+    ecsTarget: options.task,
+  });
+  if (!parsed.success) {
+    throw new Error("Invalid selection state provided");
+  }
   // Display CLI arguments if provided
   const cliArgs = displayCLIArguments(options);
-  if (cliArgs.length > 0) {
-    messages.info(`CLI arguments: ${cliArgs.join(" ")}`);
-  }
+  if (!isEmpty(cliArgs)) messages.info(`CLI arguments: ${cliArgs.join(" ")}`);
 
-  return selections;
+  return parsed.data;
 }

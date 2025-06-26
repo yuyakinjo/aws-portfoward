@@ -5,6 +5,7 @@ import type {
   Port,
   RDSInstance,
   RegionName,
+  SelectionState,
   TaskArn,
 } from "../../types.js";
 import {
@@ -17,7 +18,6 @@ import {
 import { messages } from "../../utils/index.js";
 import { generateReproducibleCommand } from "../command-generation.js";
 import { displayDryRunResult, generateConnectDryRun } from "../dry-run.js";
-import type { SelectionState } from "../ui/selection-ui.js";
 
 /**
  * Handle the final connection or dry run
