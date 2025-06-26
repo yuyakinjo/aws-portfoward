@@ -50,12 +50,18 @@ export async function selectECSTarget(
   messages.empty();
 
   if (options.cluster && options.task) {
-    // Try to find matching inference result
-    const matchingResult = inferenceResults.find(
-      (result) =>
-        result.cluster.clusterName === options.cluster &&
-        result.task.taskId === options.task,
-    );
+    // options.taskがTaskArn形式かTaskId形式かで比較
+    const isTaskArn = typeof options.task === "string" && options.task.startsWith("ecs:");
+    const matchingResult = inferenceResults.find((result) => {
+      const clusterMatch = result.cluster.clusterName === options.cluster;
+      if (isTaskArn) {
+        // TaskArnで比較（string化して比較）
+        return clusterMatch && result.task.taskArn === (options.task as unknown as string);
+      } else {
+        // TaskIdで比較
+        return clusterMatch && result.task.taskId === options.task;
+      }
+    });
 
     if (matchingResult) {
       const inference = matchingResult;

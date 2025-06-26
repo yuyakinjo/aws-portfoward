@@ -8,8 +8,8 @@ export async function startSSMSession(params: SSMSessionParams): Promise<void> {
 
   const parameters = {
     host: [rdsInstance.endpoint],
-    portNumber: [rdsPort],
-    localPortNumber: [localPort],
+    portNumber: [String(rdsPort)],
+    localPortNumber: [String(localPort)],
   };
 
   // Build command string (properly escape JSON parameters)
