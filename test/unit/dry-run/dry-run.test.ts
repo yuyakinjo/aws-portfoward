@@ -1,11 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
 import { parse } from "valibot";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   displayDryRunResult,
   generateConnectDryRun,
   generateExecDryRun,
 } from "../../../src/core/dry-run.js";
-import { RDSInstanceSchema, type RDSInstance } from "../../../src/types.js";
+import { RDSInstanceSchema } from "../../../src/types.js";
 
 // Mock console.log to capture output
 const mockConsoleLog = vi.fn();

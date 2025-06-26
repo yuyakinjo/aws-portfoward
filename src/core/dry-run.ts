@@ -1,14 +1,9 @@
 import { safeParse } from "valibot";
 import {
-  type ClusterName,
-  type ContainerName,
+  type ConnectDryRunParams,
   type DryRunResult,
-  type Port,
-  type RDSInstance,
-  type RegionName,
   type TaskArn,
   TaskArnSchema,
-  type TaskId,
 } from "../types.js";
 import { messages } from "../utils/messages.js";
 import { VERSION } from "../version.js";
@@ -42,7 +37,7 @@ export function generateConnectDryRun(
   params: ConnectDryRunParams,
 ): DryRunResult {
   const { region, cluster, task, rdsInstance, rdsPort, localPort } = params;
-  
+
   // Generate SSM command - Convert TaskId to TaskArn format for SSM
   const { output: taskArn, success } = safeParse(
     TaskArnSchema,
@@ -85,11 +80,9 @@ export function generateConnectDryRun(
   };
 }
 
-export function generateExecDryRun(
-  params: ExecDryRunParams,
-): DryRunResult {
+export function generateExecDryRun(params: ExecDryRunParams): DryRunResult {
   const { region, cluster, task, container, command } = params;
-  
+
   // Convert TaskId to TaskArn format for ECS execute command
   const taskArnForECS = task as unknown as TaskArn;
 

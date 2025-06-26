@@ -309,7 +309,7 @@ async function execECSTaskWithSimpleUIFlow(
             message: "Search and select container:",
             source: async (input) =>
               await searchContainers(
-                containers.map(c => String(c)),
+                containers.map((c) => String(c)),
                 input || "",
               ),
             pageSize: DEFAULT_PAGE_SIZE,

@@ -1,6 +1,4 @@
-import type {
-  ReproducibleCommandParams,
-} from "../types.js";
+import type { ReproducibleCommandParams } from "../types.js";
 import { VERSION } from "../version.js";
 
 /**

@@ -27,6 +27,6 @@ export function displayCLIArguments(options: {
   if (options.rdsPort) cliArgs.push(`--rds-port ${options.rdsPort}`);
   if (options.localPort) cliArgs.push(`--local-port ${options.localPort}`);
   if (options.dryRun) cliArgs.push(`--dry-run`);
-  
+
   return cliArgs;
 }

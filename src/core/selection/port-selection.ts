@@ -25,7 +25,7 @@ export async function selectLocalPort(
 
     // Clear the loading message
     clearLoadingMessage();
-    
+
     return `${availablePort}`;
   } catch {
     // If auto-detection fails, ask user for input
@@ -39,7 +39,7 @@ export async function selectLocalPort(
           : "Please enter a valid port number (1-65535)";
       },
     });
-    
+
     selections.localPort = port;
     return port;
   }

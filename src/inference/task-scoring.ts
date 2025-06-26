@@ -1,5 +1,12 @@
 import type { ECSClient } from "@aws-sdk/client-ecs";
-import type { ECSCluster, ECSTask, RDSInstance, TaskScoringParams } from "../types.js";
+import type {
+  ECSCluster,
+  ECSTask,
+  RDSInstance,
+  TaskScoringParams,
+  TaskEnvironmentCheckParams,
+  TaskNamingScoringParams,
+} from "../types.js";
 
 // 型定義（循環インポートを避けるため直接定義）
 interface InferenceResult {
@@ -32,10 +39,10 @@ interface InferenceMatch {
  * 実際のプロダクションでは、タスク定義のAPIから取得
  */
 async function checkTaskEnvironmentVariables(
-  _: ECSClient,
-  task: ECSTask,
-  rdsInstance: RDSInstance,
+  params: TaskEnvironmentCheckParams,
 ): Promise<{ hasMatch: boolean; score: number; matchDetails: string[] }> {
+  const { task, rdsInstance } = params;
+
   // 実際の実装では、ECS describe-task-definition API を使用して環境変数を取得
   // ここでは模擬的にタスク名とサービス名から推論
 
@@ -93,10 +100,10 @@ async function checkTaskEnvironmentVariables(
  * タスクを名前の類似性でスコアリングする関数
  */
 export async function scoreTasksByNaming(
-  tasks: ECSTask[],
-  cluster: ECSCluster,
-  rdsInstance: RDSInstance,
+  params: TaskNamingScoringParams,
 ): Promise<InferenceResult[]> {
+  const { tasks, cluster, rdsInstance } = params;
+
   const rdsName = rdsInstance.dbInstanceIdentifier.toLowerCase();
   const rdsSegments = rdsName.split("-").filter((s) => s.length > 2);
 
@@ -169,14 +176,14 @@ export async function scoreTasksAgainstRDS(
   params: TaskScoringParams,
 ): Promise<InferenceResult[]> {
   const { ecsClient, tasks, cluster, rdsInstance, analysisResults } = params;
-  
+
   // 各タスクの環境変数チェック結果を並列で取得
   const envCheckPromises = tasks.map(async (task) => {
-    const envCheck = await checkTaskEnvironmentVariables(
+    const envCheck = await checkTaskEnvironmentVariables({
       ecsClient,
       task,
       rdsInstance,
-    );
+    });
     return { task, envCheck };
   });
 

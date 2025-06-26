@@ -21,6 +21,7 @@ import type {
   RDSInstance,
   Result,
   TaskArn,
+  ECSTaskContainersParams,
 } from "./types.js";
 import {
   failure,
@@ -99,10 +100,10 @@ export async function getECSTasksWithExecCapability(
 }
 
 export async function getECSTaskContainers(
-  ecsClient: ECSClient,
-  clusterName: ClusterName,
-  taskArn: TaskArn,
+  params: ECSTaskContainersParams,
 ): Promise<Result<ContainerName[], string>> {
+  const { ecsClient, clusterName, taskArn } = params;
+  
   try {
     const describeCommand = new DescribeTasksCommand({
       cluster: clusterName,

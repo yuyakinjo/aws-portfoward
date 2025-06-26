@@ -14,7 +14,7 @@ export async function selectECSTarget(
   params: ECSTargetSelectionParams,
 ): Promise<{ selectedInference: InferenceResult; selectedTask: string }> {
   const { ecsClient, selectedRDS, options, selections } = params;
-  
+
   messages.warning(
     "Finding ECS targets with exec capability that can connect to this RDS...",
   );
@@ -44,8 +44,12 @@ export async function selectECSTarget(
     if (matchingResult) {
       const inference = matchingResult;
       const task = matchingResult.task.taskArn;
-      selections.ecsTarget = unwrapBrandedString(matchingResult.task.serviceName);
-      selections.ecsCluster = unwrapBrandedString(matchingResult.cluster.clusterName);
+      selections.ecsTarget = unwrapBrandedString(
+        matchingResult.task.serviceName,
+      );
+      selections.ecsCluster = unwrapBrandedString(
+        matchingResult.cluster.clusterName,
+      );
       messages.success(`✓ ECS cluster (from CLI): ${options.cluster}`);
       messages.success(`✓ ECS task (from CLI): ${options.task}`);
       return { selectedInference: inference, selectedTask: task };

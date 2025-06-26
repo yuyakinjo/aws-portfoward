@@ -269,7 +269,7 @@ export const ECSExecParamsSchema = object({
 export const TaskScoringParamsSchema = object({
   ecsClient: any(), // ECSClient cannot be validated with valibot
   tasks: array(any()), // ECSTask[] - complex object validation
-  cluster: any(), // ECSCluster - complex object validation  
+  cluster: any(), // ECSCluster - complex object validation
   rdsInstance: RDSInstanceSchema,
   analysisResults: object({
     environment: array(any()),
@@ -293,12 +293,60 @@ export const ECSTargetSelectionParamsSchema = object({
 
 export type ConnectDryRunParams = InferOutput<typeof ConnectDryRunParamsSchema>;
 export type ExecDryRunParams = InferOutput<typeof ExecDryRunParamsSchema>;
-export type ReproducibleCommandParams = InferOutput<typeof ReproducibleCommandParamsSchema>;
+export type ReproducibleCommandParams = InferOutput<
+  typeof ReproducibleCommandParamsSchema
+>;
 export type SSMSessionParams = InferOutput<typeof SSMSessionParamsSchema>;
 export type ECSExecParams = InferOutput<typeof ECSExecParamsSchema>;
 export type TaskScoringParams = InferOutput<typeof TaskScoringParamsSchema>;
-export type ECSTargetSelectionOptions = InferOutput<typeof ECSTargetSelectionOptionsSchema>;
-export type ECSTargetSelectionParams = InferOutput<typeof ECSTargetSelectionParamsSchema>;
+// Environment check parameter schemas
+export const TaskEnvironmentCheckParamsSchema = object({
+  ecsClient: any(), // ECSClient cannot be validated with valibot
+  task: any(), // ECSTask - complex object validation
+  rdsInstance: RDSInstanceSchema,
+});
+
+export const TaskNamingScoringParamsSchema = object({
+  tasks: array(any()), // ECSTask[] - complex object validation
+  cluster: any(), // ECSCluster - complex object validation
+  rdsInstance: RDSInstanceSchema,
+});
+
+export type ECSTargetSelectionOptions = InferOutput<
+  typeof ECSTargetSelectionOptionsSchema
+>;
+export type ECSTargetSelectionParams = InferOutput<
+  typeof ECSTargetSelectionParamsSchema
+>;
+export type TaskEnvironmentCheckParams = InferOutput<
+  typeof TaskEnvironmentCheckParamsSchema
+>;
+export type TaskNamingScoringParams = InferOutput<
+  typeof TaskNamingScoringParamsSchema
+>;
+
+export const ECSTaskContainersParamsSchema = object({
+  ecsClient: any(), // ECSClient cannot be validated with valibot
+  clusterName: ClusterNameSchema,
+  taskArn: TaskArnSchema,
+});
+
+export type ECSTaskContainersParams = InferOutput<typeof ECSTaskContainersParamsSchema>;
+
+// Search parameter schemas
+export const SearchParamsSchema = object({
+  items: array(any()),
+  input: pipe(string(), minLength(0)),
+  defaultValue: optional(union([string(), any()])),
+});
+
+export const ClusterInferenceParamsSchema = object({
+  rdsName: DBInstanceIdentifierSchema,
+  allClusters: array(any()), // ECSCluster[]
+});
+
+export type SearchParams = InferOutput<typeof SearchParamsSchema>;
+export type ClusterInferenceParams = InferOutput<typeof ClusterInferenceParamsSchema>;
 
 export interface DryRunResult {
   awsCommand: string;
@@ -516,13 +564,17 @@ export const RDSInstanceSchema = object({
   availabilityZone: string(),
   vpcSecurityGroups: pipe(
     union([string(), array(string())]),
-    transform((groups): string[] => Array.isArray(groups) ? groups : [groups]),
+    transform((groups): string[] =>
+      Array.isArray(groups) ? groups : [groups],
+    ),
   ),
   dbSubnetGroup: optional(string()),
-  createdTime: optional(pipe(
-    string(),
-    transform((dateStr): Date => new Date(dateStr)),
-  )),
+  createdTime: optional(
+    pipe(
+      string(),
+      transform((dateStr): Date => new Date(dateStr)),
+    ),
+  ),
 });
 
 // =============================================================================
