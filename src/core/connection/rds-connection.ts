@@ -1,19 +1,20 @@
+import { parse } from "valibot";
 import { startSSMSession } from "../../session.js";
-import type {
-  ClusterName,
-  InferenceResult,
-  Port,
-  RDSInstance,
-  RegionName,
-  SelectionState,
-  TaskArn,
-} from "../../types.js";
 import {
   parseClusterName,
   parsePortNumber,
   parseRegionName,
   parseTaskArn,
   parseTaskId,
+} from "../../types/parsers.js";
+import type { HandleConnectionParams } from "../../types/schemas.js";
+import { HandleConnectionParamsSchema } from "../../types/schemas.js";
+import type {
+  ClusterName,
+  Port,
+  RDSInstance,
+  RegionName,
+  TaskArn,
 } from "../../types.js";
 import { messages } from "../../utils/index.js";
 import { generateReproducibleCommand } from "../command-generation.js";
@@ -23,13 +24,17 @@ import { displayDryRunResult, generateConnectDryRun } from "../dry-run.js";
  * Handle the final connection or dry run
  */
 export async function handleConnection(
-  selections: SelectionState,
-  selectedRDS: RDSInstance,
-  selectedTask: string,
-  selectedInference: InferenceResult,
-  rdsPort: string,
-  options: { dryRun?: boolean },
+  params: HandleConnectionParams,
 ): Promise<void> {
+  const {
+    selections,
+    selectedInference,
+    selectedRDS,
+    rdsPort,
+    selectedTask,
+    options,
+  } = parse(HandleConnectionParamsSchema, params);
+
   // Parse external inputs only once at the boundary
   const regionResult = parseRegionName(selections.region);
   if (!regionResult.success) throw new Error(regionResult.error);
@@ -69,7 +74,6 @@ export async function handleConnection(
       rdsPortResult.data,
       localPortResult.data,
     );
-    return;
   } else {
     await handleLiveConnection(
       taskResult.data,

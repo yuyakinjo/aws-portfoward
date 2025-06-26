@@ -3,6 +3,7 @@ import { search } from "@inquirer/prompts";
 import { isEmpty } from "remeda";
 import { getAWSRegions } from "../../aws-services.js";
 import { searchRegions } from "../../search.js";
+import { parseRegionName } from "../../types/parsers.js";
 import type { SelectionState } from "../../types.js";
 import { messages } from "../../utils/index.js";
 import { clearLoadingMessage } from "../ui/display-utils.js";
@@ -17,13 +18,24 @@ export async function selectRegion(
   selections: SelectionState,
 ): Promise<string> {
   if (options.region) {
-    selections.region = options.region;
+    const regionResult = parseRegionName(options.region);
+    if (!regionResult.success) throw new Error(regionResult.error);
+
+    selections.region = regionResult.data;
     messages.success(`✓ Region (from CLI): ${options.region}`);
     return options.region;
   }
 
-  // Show initial UI state
-  messages.ui.displaySelectionState(selections);
+  // Show initial UI state - convert branded types to strings for display
+  const displaySelections = {
+    region: selections.region ? String(selections.region) : undefined,
+    rds: selections.rds ? String(selections.rds) : undefined,
+    rdsPort: selections.rdsPort ? String(selections.rdsPort) : undefined,
+    ecsTarget: selections.ecsTarget,
+    ecsCluster: selections.ecsCluster,
+    localPort: selections.localPort ? String(selections.localPort) : undefined,
+  };
+  messages.ui.displaySelectionState(displaySelections);
 
   // Initialize EC2 client with default region to get region list
   const defaultEc2Client = new EC2Client({ region: "us-east-1" });
@@ -53,6 +65,10 @@ export async function selectRegion(
   if (typeof selectedRegion !== "string") {
     throw new Error("Invalid region selection");
   }
-  selections.region = selectedRegion;
+
+  const regionResult = parseRegionName(selectedRegion);
+  if (!regionResult.success) throw new Error(regionResult.error);
+
+  selections.region = regionResult.data;
   return selectedRegion;
 }

@@ -25,9 +25,10 @@ export class ECSClient {
           clusters: mockECSClusters,
         });
       case "ListServicesCommand": {
+        const input = command.input as ListServicesCommandInput;
         // cluster名でフィルタ
         const clusterTasks = mockECSTasks.filter(
-          (t) => t.clusterName === command.input.cluster,
+          (t) => t.clusterName === input.cluster,
         );
         const uniqueServices = [
           ...new Set(clusterTasks.map((t) => t.serviceName)),
@@ -35,26 +36,28 @@ export class ECSClient {
         return Promise.resolve({
           serviceArns: uniqueServices.map(
             (serviceName) =>
-              `arn:aws:ecs:ap-northeast-1:123456789012:service/${command.input.cluster}/${serviceName}`,
+              `arn:aws:ecs:ap-northeast-1:123456789012:service/${input.cluster}/${serviceName}`,
           ),
         });
       }
-      case "ListTasksCommand":
+      case "ListTasksCommand": {
+        const input = command.input as ListTasksCommandInput;
         // cluster, serviceNameでフィルタ
+        const filteredTasks = mockECSTasks.filter(
+          (t) =>
+            t.clusterName === input.cluster &&
+            (!input.serviceName || t.serviceName === input.serviceName),
+        );
+        const taskArns = filteredTasks.map((t) => t.realTaskArn);
         return Promise.resolve({
-          taskArns: mockECSTasks
-            .filter(
-              (t) =>
-                t.clusterName === command.input.cluster &&
-                (!command.input.serviceName ||
-                  t.serviceName === command.input.serviceName),
-            )
-            .map((t) => t.realTaskArn),
+          taskArns,
         });
+      }
       case "DescribeTasksCommand": {
+        const input = command.input as DescribeTasksCommandInput;
         // getECSTaskContainers用の単独リクエスト
         if (
-          command.input.tasks.includes(
+          input.tasks?.includes(
             "arn:aws:ecs:us-east-1:123456789012:task/prod-web/1234567890123456789",
           )
         ) {
@@ -76,21 +79,22 @@ export class ECSClient {
 
         // cluster, tasksでフィルタ
         const filteredTasks = mockECSTasks.filter((t) =>
-          command.input.tasks.includes(t.realTaskArn),
+          input.tasks?.includes(t.realTaskArn),
         );
+        const result = filteredTasks.map((t) => ({
+          taskArn: t.realTaskArn,
+          lastStatus: t.taskStatus,
+          createdAt: t.createdAt,
+          containers: [
+            {
+              name: "web-container",
+              runtimeId: t.runtimeId,
+              lastStatus: "RUNNING",
+            },
+          ],
+        }));
         return Promise.resolve({
-          tasks: filteredTasks.map((t) => ({
-            taskArn: t.realTaskArn,
-            lastStatus: t.taskStatus,
-            createdAt: t.createdAt,
-            containers: [
-              {
-                name: "web-container",
-                runtimeId: t.runtimeId,
-                lastStatus: "RUNNING",
-              },
-            ],
-          })),
+          tasks: result,
         });
       }
       default:

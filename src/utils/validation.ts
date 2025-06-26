@@ -139,7 +139,7 @@ export async function findAvailablePortSafe(
     return failure(`Invalid starting port: ${startPort}`);
   }
 
-  const maxPort = 65535;
+  const [, maxPort] = getPortRange();
 
   const findPort = async (currentPort: Port): Promise<Result<Port, string>> => {
     if (Number(currentPort) > maxPort) {
@@ -178,4 +178,46 @@ export async function findAvailablePort(startPort = 8888): Promise<number> {
   }
   // TypeScriptの型ガード: result.success === falseの場合、errorプロパティが存在
   throw new Error((result as { success: false; error: string }).error);
+}
+
+// =============================================================================
+// Port Range Validation Functions
+// =============================================================================
+
+/**
+ * Check if a number is within valid port range (1-65535)
+ * This is a simple range check without type conversion
+ */
+export function isPortRange(port: number): boolean {
+  return Number.isInteger(port) && port >= 1 && port <= 65535;
+}
+
+/**
+ * Check if a string represents a valid port number
+ * This combines format and range validation
+ */
+export function isValidPortString(portString: string): boolean {
+  // Check if string contains only digits
+  if (!/^\d+$/.test(portString)) {
+    return false;
+  }
+
+  const port = Number(portString);
+  return isPortRange(port);
+}
+
+/**
+ * Check if multiple ports are all within valid range
+ * Useful for validating port arrays or multiple port parameters
+ */
+export function areAllPortsInRange(ports: number[]): boolean {
+  return ports.every(isPortRange);
+}
+
+/**
+ * Get the valid port range as a tuple
+ * Useful for displaying validation error messages
+ */
+export function getPortRange(): readonly [number, number] {
+  return [1, 65535] as const;
 }

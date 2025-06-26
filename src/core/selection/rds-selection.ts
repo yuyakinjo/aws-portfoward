@@ -2,6 +2,10 @@ import type { RDSClient } from "@aws-sdk/client-rds";
 import { search } from "@inquirer/prompts";
 import { getRDSInstances } from "../../aws-services.js";
 import { searchRDS } from "../../search.js";
+import {
+  parseDBInstanceIdentifier,
+  parsePortNumber,
+} from "../../types/parsers.js";
 import type { RDSInstance, SelectionState } from "../../types.js";
 import { getDefaultPortForEngine, messages } from "../../utils/index.js";
 import { clearLoadingMessage } from "../ui/display-utils.js";
@@ -17,7 +21,10 @@ export async function selectRDSInstance(
   selections: SelectionState,
 ): Promise<RDSInstance> {
   if (options.rds) {
-    selections.rds = options.rds;
+    const rdsIdResult = parseDBInstanceIdentifier(options.rds);
+    if (!rdsIdResult.success) throw new Error(rdsIdResult.error);
+
+    selections.rds = rdsIdResult.data;
     messages.success(`✓ RDS (from CLI): ${options.rds}`);
     messages.info("Validating RDS instance...");
 
@@ -70,7 +77,12 @@ export async function selectRDSInstance(
   }
 
   const rdsInstance = selectedRDS as RDSInstance;
-  selections.rds = String(rdsInstance.dbInstanceIdentifier);
+  const rdsIdResult = parseDBInstanceIdentifier(
+    String(rdsInstance.dbInstanceIdentifier),
+  );
+  if (!rdsIdResult.success) throw new Error(rdsIdResult.error);
+
+  selections.rds = rdsIdResult.data;
   return rdsInstance;
 }
 
@@ -83,17 +95,23 @@ export function determineRDSPort(
   selections: SelectionState,
 ): string {
   if (options.rdsPort) {
-    const port = `${Number(options.rdsPort)}`;
-    selections.rdsPort = port;
+    const portResult = parsePortNumber(Number(options.rdsPort));
+    if (!portResult.success) throw new Error(portResult.error);
+
+    selections.rdsPort = portResult.data;
     messages.success(`✓ RDS port (from CLI): ${options.rdsPort}`);
-    return port;
+    return options.rdsPort;
   }
 
   // Use the actual port from RDS instance (branded type), fallback to engine default
   const actualRDSPort = Number(selectedRDS.port);
   const fallbackPort = getDefaultPortForEngine(selectedRDS.engine);
-  const port = `${actualRDSPort || fallbackPort}`;
-  selections.rdsPort = port;
+  const port = actualRDSPort || fallbackPort;
+
+  const portResult = parsePortNumber(port);
+  if (!portResult.success) throw new Error(portResult.error);
+
+  selections.rdsPort = portResult.data;
   messages.success(`✓ RDS port (auto-detected): ${port}`);
-  return port;
+  return `${port}`;
 }

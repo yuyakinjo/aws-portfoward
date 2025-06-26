@@ -99,17 +99,21 @@ export function splitByWordSeparators(text: string): string[] {
 }
 
 /** * Check if a string is a valid ECS Task ARN
- * This function uses a regex pattern to validate the format of the ARN.
- * It checks for the following structure:
- * arn:aws:ecs:{region}:{account-id}:task/{cluster-name}/{task-id}
- * Where:
- * - {region} is a valid AWS region (e.g., us-east-1)
- * - {account-id} is a 12-digit AWS account ID
- * - {cluster-name} is the name of the ECS cluster
- * - {task-id} is the unique identifier for the ECS task
+ * This function validates both standard AWS ARN format and custom ecs: format.
+ * Standard format: arn:aws:ecs:{region}:{account-id}:task/{cluster-name}/{task-id}
+ * Custom format: ecs:{cluster-name}_{task-id}_{runtime-id}
  * * @param str The string to validate
  * @return true if the string is a valid ECS Task ARN, false otherwise
  * */
 export function isTaskArnShape(input: unknown): input is TaskArn {
-  return ECS_TASK_ARN.test(String(input));
+  const str = String(input);
+  // Check for standard AWS ARN format
+  if (ECS_TASK_ARN.test(str)) {
+    return true;
+  }
+  // Check for custom ecs: format (ecs:cluster_taskid_runtimeid)
+  if (str.startsWith("ecs:") && str.split("_").length >= 3) {
+    return true;
+  }
+  return false;
 }

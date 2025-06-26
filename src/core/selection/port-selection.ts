@@ -1,7 +1,13 @@
 import { input } from "@inquirer/prompts";
 import { isDefined } from "remeda";
+import { parsePortNumber } from "../../types/parsers.js";
 import type { Port, SelectionState } from "../../types.js";
-import { findAvailablePort, messages } from "../../utils/index.js";
+import {
+  findAvailablePort,
+  getPortRange,
+  isPortRange,
+  messages,
+} from "../../utils/index.js";
 import { clearLoadingMessage } from "../ui/display-utils.js";
 
 /**
@@ -12,16 +18,22 @@ export async function selectLocalPort(
   selections: SelectionState,
 ): Promise<string> {
   if (isDefined(options.localPort)) {
-    const port = `${Number(options.localPort)}`;
-    selections.localPort = port;
+    const portResult = parsePortNumber(Number(options.localPort));
+    if (!portResult.success) throw new Error(portResult.error);
+
+    selections.localPort = portResult.data;
     messages.success(`✓ Local port (from CLI): ${options.localPort}`);
-    return port;
+    return `${Number(options.localPort)}`;
   }
 
   try {
     messages.warning("Finding available local port...");
     const availablePort = await findAvailablePort(8888);
-    selections.localPort = `${availablePort}`;
+
+    const portResult = parsePortNumber(availablePort);
+    if (!portResult.success) throw new Error(portResult.error);
+
+    selections.localPort = portResult.data;
 
     // Clear the loading message
     clearLoadingMessage();
@@ -32,15 +44,19 @@ export async function selectLocalPort(
     const port = await input({
       message: "Enter local port number:",
       default: "8888",
-      validate: (inputValue: string) => {
+      validate: (inputValue) => {
         const port = parseInt(inputValue || "8888");
-        return port > 0 && port < 65536
+        const [minPort, maxPort] = getPortRange();
+        return isPortRange(port)
           ? true
-          : "Please enter a valid port number (1-65535)";
+          : `Please enter a valid port number (${minPort}-${maxPort})`;
       },
     });
 
-    selections.localPort = port;
+    const portResult = parsePortNumber(parseInt(port));
+    if (!portResult.success) throw new Error(portResult.error);
+
+    selections.localPort = portResult.data;
     return port;
   }
 }

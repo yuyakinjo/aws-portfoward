@@ -1,8 +1,12 @@
 import * as net from "node:net";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  areAllPortsInRange,
   findAvailablePort,
+  getPortRange,
   isPortAvailable,
+  isPortRange,
+  isValidPortString,
 } from "../../../src/utils/validation.js";
 
 // Type definition for mocked createServer function
@@ -230,5 +234,88 @@ describe("findAvailablePort", () => {
     const result = await findAvailablePort(9999);
     expect(result).toBe(9999);
     expect(checkedPort).toBe(9999);
+  });
+});
+
+describe("areAllPortsInRange", () => {
+  it("全てのポートが有効範囲内の場合trueを返す", () => {
+    expect(areAllPortsInRange([80, 443, 8080])).toBe(true);
+    expect(areAllPortsInRange([1, 65535])).toBe(true);
+    expect(areAllPortsInRange([])).toBe(true); // 空配列はtrue
+  });
+
+  it("一つでも無効なポートがある場合falseを返す", () => {
+    expect(areAllPortsInRange([80, 0, 443])).toBe(false);
+    expect(areAllPortsInRange([80, 65536])).toBe(false);
+    expect(areAllPortsInRange([-1, 80])).toBe(false);
+  });
+});
+
+describe("getPortRange", () => {
+  it("正しいポート範囲のタプルを返す", () => {
+    const range = getPortRange();
+    expect(range).toEqual([1, 65535]);
+    expect(range).toHaveLength(2);
+  });
+
+  it("読み取り専用のタプルを返す", () => {
+    const range = getPortRange();
+    // TypeScriptの型レベルでreadonlyが保証されていることを確認
+    // JavaScriptランタイムでは配列への代入は実際にはエラーをスローしないが、
+    // TypeScriptのコンパイル時に型チェックで防がれる
+    expect(range).toBeInstanceOf(Array);
+    expect(Object.isFrozen(range)).toBe(false); // 通常の配列なのでfrozenではない
+
+    // 型レベルでreadonlyであることをテスト（コンパイル時チェック）
+    // 以下のコメントアウトを外すとTypeScriptコンパイルエラーになる
+    // range[0] = 999;
+  });
+});
+
+describe("isPortRange", () => {
+  it("有効なポート番号の場合trueを返す", () => {
+    expect(isPortRange(1)).toBe(true);
+    expect(isPortRange(80)).toBe(true);
+    expect(isPortRange(443)).toBe(true);
+    expect(isPortRange(8080)).toBe(true);
+    expect(isPortRange(65535)).toBe(true);
+  });
+
+  it("無効なポート番号の場合falseを返す", () => {
+    expect(isPortRange(0)).toBe(false);
+    expect(isPortRange(-1)).toBe(false);
+    expect(isPortRange(65536)).toBe(false);
+    expect(isPortRange(100000)).toBe(false);
+  });
+
+  it("整数でない場合falseを返す", () => {
+    expect(isPortRange(80.5)).toBe(false);
+    expect(isPortRange(NaN)).toBe(false);
+    expect(isPortRange(Infinity)).toBe(false);
+  });
+});
+
+describe("isValidPortString", () => {
+  it("有効なポート文字列の場合trueを返す", () => {
+    expect(isValidPortString("1")).toBe(true);
+    expect(isValidPortString("80")).toBe(true);
+    expect(isValidPortString("443")).toBe(true);
+    expect(isValidPortString("8080")).toBe(true);
+    expect(isValidPortString("65535")).toBe(true);
+  });
+
+  it("無効なポート文字列の場合falseを返す", () => {
+    expect(isValidPortString("0")).toBe(false);
+    expect(isValidPortString("-1")).toBe(false);
+    expect(isValidPortString("65536")).toBe(false);
+    expect(isValidPortString("abc")).toBe(false);
+    expect(isValidPortString("80.5")).toBe(false);
+    expect(isValidPortString("")).toBe(false);
+    expect(isValidPortString(" 80 ")).toBe(false);
+  });
+
+  it("先頭ゼロを含む文字列も正しく処理する", () => {
+    expect(isValidPortString("0080")).toBe(true);
+    expect(isValidPortString("00001")).toBe(true);
   });
 });

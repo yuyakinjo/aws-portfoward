@@ -415,12 +415,48 @@ export const ExecOptionsSchema = object({
 // UI Selection State Schema
 // =============================================================================
 export const SelectionStateSchema = object({
-  region: optional(string()),
-  rds: optional(string()),
-  rdsPort: optional(string()),
+  region: optional(RegionNameSchema),
+  rds: optional(DBInstanceIdentifierSchema),
+  rdsPort: optional(PortNumberSchema),
   ecsTarget: optional(string()),
   ecsCluster: optional(string()),
-  localPort: optional(string()),
+  localPort: optional(PortNumberSchema),
+});
+
+// =============================================================================
+// InferenceResult Schema
+// =============================================================================
+export const ECSClusterSchema = object({
+  clusterName: ClusterNameSchema,
+  clusterArn: ClusterArnSchema,
+});
+
+export const InferenceResultSchema = object({
+  cluster: ECSClusterSchema,
+  score: number(),
+  reasons: array(string()),
+  task: object({
+    taskArn: TaskArnSchema,
+    displayName: string(),
+    runtimeId: RuntimeIdSchema,
+    taskId: TaskIdSchema,
+    clusterName: ClusterNameSchema,
+    serviceName: ServiceNameSchema,
+    taskStatus: TaskStatusSchema,
+    createdAt: optional(string()), // Date型はstringで受けて後で変換
+  }),
+});
+
+/**
+ * handleConnection用スキーマ
+ */
+export const HandleConnectionParamsSchema = object({
+  selections: SelectionStateSchema,
+  selectedRDS: RDSInstanceSchema,
+  selectedTask: string(),
+  selectedInference: InferenceResultSchema,
+  rdsPort: PortNumberSchema,
+  options: object({ dryRun: optional(boolean()) }),
 });
 
 // =============================================================================
@@ -477,3 +513,7 @@ export type ValidatedConnectOptions = InferOutput<typeof ConnectOptionsSchema>;
 export type ValidatedExecOptions = InferOutput<typeof ExecOptionsSchema>;
 
 export type SelectionState = InferOutput<typeof SelectionStateSchema>;
+
+export type HandleConnectionParams = InferOutput<
+  typeof HandleConnectionParamsSchema
+>;

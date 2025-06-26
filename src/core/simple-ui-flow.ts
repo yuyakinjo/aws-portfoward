@@ -1,6 +1,7 @@
 import { ECSClient } from "@aws-sdk/client-ecs";
 import { RDSClient } from "@aws-sdk/client-rds";
 import type { ValidatedConnectOptions } from "../types.js";
+import { parsePortNumber } from "../types.js";
 import { askRetry, displayFriendlyError, messages } from "../utils/index.js";
 import { handleConnection } from "./connection/rds-connection.js";
 import { selectECSTarget } from "./selection/ecs-selection.js";
@@ -83,8 +84,16 @@ async function connectToRDSWithSimpleUIInternal(
   // Step 1: Select Region
   const selectedRegion = await selectRegion(options, selections);
 
-  // Update UI with region selection
-  messages.ui.displaySelectionState(selections);
+  // Update UI with region selection - convert branded types to strings for display
+  const displaySelections1 = {
+    region: selections.region ? String(selections.region) : undefined,
+    rds: selections.rds ? String(selections.rds) : undefined,
+    rdsPort: selections.rdsPort ? String(selections.rdsPort) : undefined,
+    ecsTarget: selections.ecsTarget,
+    ecsCluster: selections.ecsCluster,
+    localPort: selections.localPort ? String(selections.localPort) : undefined,
+  };
+  messages.ui.displaySelectionState(displaySelections1);
 
   // Initialize AWS clients
   const ecsClient = new ECSClient({ region: selectedRegion });
@@ -103,7 +112,15 @@ async function connectToRDSWithSimpleUIInternal(
   );
 
   // Update UI with RDS and port selection
-  messages.ui.displaySelectionState(selections);
+  const displaySelections2 = {
+    region: selections.region ? String(selections.region) : undefined,
+    rds: selections.rds ? String(selections.rds) : undefined,
+    rdsPort: selections.rdsPort ? String(selections.rdsPort) : undefined,
+    ecsTarget: selections.ecsTarget,
+    ecsCluster: selections.ecsCluster,
+    localPort: selections.localPort ? String(selections.localPort) : undefined,
+  };
+  messages.ui.displaySelectionState(displaySelections2);
 
   // Step 4: ECS Target Selection with Inference
   const { selectedInference, selectedTask } = await selectECSTarget({
@@ -114,13 +131,14 @@ async function connectToRDSWithSimpleUIInternal(
       task: options.task,
     },
     selections: {
-      ...selections,
       region: selectedRegion,
       ecsTarget: selections.ecsTarget,
       ecsCluster: selections.ecsCluster,
-      localPort: selections.localPort,
-      rds: selections.rds,
-      rdsPort: selections.rdsPort,
+      localPort: selections.localPort
+        ? String(selections.localPort)
+        : undefined,
+      rds: selections.rds ? String(selections.rds) : undefined,
+      rdsPort: selections.rdsPort ? String(selections.rdsPort) : undefined,
     },
   });
 
@@ -129,7 +147,15 @@ async function connectToRDSWithSimpleUIInternal(
   selections.ecsCluster = selectedInference.cluster.clusterName;
 
   // Update UI with ECS target selection
-  messages.ui.displaySelectionState(selections);
+  const displaySelections3 = {
+    region: selections.region ? String(selections.region) : undefined,
+    rds: selections.rds ? String(selections.rds) : undefined,
+    rdsPort: selections.rdsPort ? String(selections.rdsPort) : undefined,
+    ecsTarget: selections.ecsTarget,
+    ecsCluster: selections.ecsCluster,
+    localPort: selections.localPort ? String(selections.localPort) : undefined,
+  };
+  messages.ui.displaySelectionState(displaySelections3);
 
   // Step 5: Local Port Selection
   await selectLocalPort(
@@ -140,17 +166,28 @@ async function connectToRDSWithSimpleUIInternal(
   );
 
   // Final display with all selections complete
-  messages.ui.displaySelectionState(selections);
+  const displaySelections4 = {
+    region: selections.region ? String(selections.region) : undefined,
+    rds: selections.rds ? String(selections.rds) : undefined,
+    rdsPort: selections.rdsPort ? String(selections.rdsPort) : undefined,
+    ecsTarget: selections.ecsTarget,
+    ecsCluster: selections.ecsCluster,
+    localPort: selections.localPort ? String(selections.localPort) : undefined,
+  };
+  messages.ui.displaySelectionState(displaySelections4);
 
-  // Step 6: Handle Connection or Dry Run
-  await handleConnection(
+  // Step 6: Handle Connection or Dry Run - use correct parameter order
+  const rdsPortResult = parsePortNumber(Number(rdsPort));
+  if (!rdsPortResult.success) throw new Error(rdsPortResult.error);
+
+  await handleConnection({
     selections,
-    selectedRDS,
-    selectedTask,
     selectedInference,
-    rdsPort,
+    selectedRDS,
+    rdsPort: rdsPortResult.data,
+    selectedTask,
     options,
-  );
+  });
 }
 
 /**

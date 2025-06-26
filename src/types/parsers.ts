@@ -33,7 +33,12 @@ import {
   type TaskStatus,
   TaskStatusSchema,
 } from "./branded.js";
-import { type SelectionState, SelectionStateSchema } from "./schemas.js";
+import {
+  type HandleConnectionParams,
+  HandleConnectionParamsSchema,
+  type SelectionState,
+  SelectionStateSchema,
+} from "./schemas.js";
 
 // =============================================================================
 // AWS Data Parsing Helper Functions
@@ -212,4 +217,14 @@ export function parseSelectionState(
     return success(result.output);
   }
   return failure(`Invalid selection state: ${state}`);
+}
+
+export function parseHandleConnectionParams(
+  params: unknown,
+): Result<HandleConnectionParams, string> {
+  const result = safeParse(HandleConnectionParamsSchema, params);
+  if (result.success) {
+    return success(result.output);
+  }
+  return failure(`Invalid handle connection params: ${params}`);
 }
