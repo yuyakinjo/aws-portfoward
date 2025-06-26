@@ -26,12 +26,12 @@ export function initializeSelectionState(options: {
   dryRun?: boolean;
 }): SelectionState {
   const selections: SelectionState = {};
-  
+
   // Display CLI arguments if provided
   const cliArgs = displayCLIArguments(options);
   if (cliArgs.length > 0) {
     messages.info(`CLI arguments: ${cliArgs.join(" ")}`);
   }
-  
+
   return selections;
 }

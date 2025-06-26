@@ -18,13 +18,13 @@ export function displayDryRunResult(result: DryRunResult): void {
   messages.dryRun.header();
   messages.dryRun.awsCommand(result.awsCommand);
   messages.dryRun.reproducibleCommand(result.reproducibleCommand);
-  // Convert branded types to strings
+  // Convert branded types to strings only for display
   messages.dryRun.sessionInfo({
     ...result.sessionInfo,
-    region: result.sessionInfo.region,
-    cluster: result.sessionInfo.cluster,
-    task: result.sessionInfo.task,
-    rds: result.sessionInfo.rds ? result.sessionInfo.rds : undefined,
+    region: String(result.sessionInfo.region),
+    cluster: String(result.sessionInfo.cluster),
+    task: String(result.sessionInfo.task),
+    rds: result.sessionInfo.rds ? String(result.sessionInfo.rds) : undefined,
     rdsPort: result.sessionInfo.rdsPort
       ? String(result.sessionInfo.rdsPort)
       : undefined,
@@ -34,6 +34,7 @@ export function displayDryRunResult(result: DryRunResult): void {
     container: result.sessionInfo.container
       ? String(result.sessionInfo.container)
       : undefined,
+    command: result.sessionInfo.command,
   });
 }
 
@@ -56,9 +57,9 @@ export function generateConnectDryRun(
     );
   }
   const parameters = {
-    host: [rdsInstance.endpoint],
-    portNumber: [rdsPort],
-    localPortNumber: [localPort],
+    host: [String(rdsInstance.endpoint)],
+    portNumber: [String(rdsPort)],
+    localPortNumber: [String(localPort)],
   };
   const parametersJson = JSON.stringify(parameters);
   const awsCommand = `aws ssm start-session --target ${taskArn} --parameters '${parametersJson}' --document-name AWS-StartPortForwardingSessionToRemoteHost`;
@@ -97,7 +98,7 @@ export function generateExecDryRun(
   // Convert TaskId to TaskArn format for ECS execute command
   const taskArnForECS = task as unknown as TaskArn;
 
-  // Generate ECS execute command
+  // Generate ECS execute command - convert to strings only at output boundary
   const awsCommand = `aws ecs execute-command --region ${String(region)} --cluster ${String(cluster)} --task ${String(task)} --container ${String(container)} --command "${command}" --interactive`;
 
   // Generate reproducible command

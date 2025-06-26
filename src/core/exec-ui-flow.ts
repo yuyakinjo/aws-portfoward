@@ -1,7 +1,7 @@
 import { EC2Client } from "@aws-sdk/client-ec2";
 import { ECSClient } from "@aws-sdk/client-ecs";
 import { input, search } from "@inquirer/prompts";
-import { isEmpty, isString } from "remeda";
+import { isString } from "remeda";
 import {
   getAWSRegions,
   getECSClustersWithExecCapability,
@@ -22,8 +22,14 @@ import {
   parseRegionName,
   parseTaskArn,
   parseTaskId,
+  unwrapBrandedString,
 } from "../types.js";
-import { askRetry, displayFriendlyError, isEmpty, messages } from "../utils/index.js";
+import {
+  askRetry,
+  displayFriendlyError,
+  isEmpty,
+  messages,
+} from "../utils/index.js";
 import { displayDryRunResult, generateExecDryRun } from "./dry-run.js";
 
 // UI Configuration constants
@@ -125,9 +131,11 @@ async function execECSTaskWithSimpleUIFlow(
   selections.region = region;
   messages.ui.displayExecSelectionState({
     ...selections,
-    region: selections.region ? String(selections.region) : undefined,
+    region: selections.region
+      ? unwrapBrandedString(selections.region)
+      : undefined,
   });
-  const ecsClient = new ECSClient({ region: String(region) });
+  const ecsClient = new ECSClient({ region: unwrapBrandedString(region) });
 
   // Step 2: Select ECS Cluster
   const selectedCluster: ECSCluster = options.cluster
@@ -186,8 +194,12 @@ async function execECSTaskWithSimpleUIFlow(
 
   messages.ui.displayExecSelectionState({
     ...selections,
-    region: selections.region ? String(selections.region) : undefined,
-    cluster: selections.cluster ? String(selections.cluster) : undefined,
+    region: selections.region
+      ? unwrapBrandedString(selections.region)
+      : undefined,
+    cluster: selections.cluster
+      ? unwrapBrandedString(selections.cluster)
+      : undefined,
   });
 
   // Step 3: Select ECS Task
@@ -259,9 +271,13 @@ async function execECSTaskWithSimpleUIFlow(
 
   messages.ui.displayExecSelectionState({
     ...selections,
-    region: selections.region ? String(selections.region) : undefined,
-    cluster: selections.cluster ? String(selections.cluster) : undefined,
-    task: selections.task ? String(selections.task) : undefined,
+    region: selections.region
+      ? unwrapBrandedString(selections.region)
+      : undefined,
+    cluster: selections.cluster
+      ? unwrapBrandedString(selections.cluster)
+      : undefined,
+    task: selections.task ? unwrapBrandedString(selections.task) : undefined,
   });
 
   // Step 4: Select Container
@@ -292,7 +308,10 @@ async function execECSTaskWithSimpleUIFlow(
           const selectedContainerName = await search({
             message: "Search and select container:",
             source: async (input) =>
-              await searchContainers(containers.map(String), input || ""),
+              await searchContainers(
+                containers.map(c => String(c)),
+                input || "",
+              ),
             pageSize: DEFAULT_PAGE_SIZE,
           });
           if (typeof selectedContainerName !== "string") {
@@ -330,10 +349,16 @@ async function execECSTaskWithSimpleUIFlow(
   // Final display with all selections complete
   messages.ui.displayExecSelectionState({
     ...selections,
-    region: selections.region ? String(selections.region) : undefined,
-    cluster: selections.cluster ? String(selections.cluster) : undefined,
-    task: selections.task ? String(selections.task) : undefined,
-    container: selections.container ? String(selections.container) : undefined,
+    region: selections.region
+      ? unwrapBrandedString(selections.region)
+      : undefined,
+    cluster: selections.cluster
+      ? unwrapBrandedString(selections.cluster)
+      : undefined,
+    task: selections.task ? unwrapBrandedString(selections.task) : undefined,
+    container: selections.container
+      ? unwrapBrandedString(selections.container)
+      : undefined,
     command: selections.command,
   });
 
@@ -350,10 +375,10 @@ async function execECSTaskWithSimpleUIFlow(
     messages.success("Dry run completed successfully.");
   } else {
     await executeECSCommand(
-      String(region),
-      String(selectedCluster.clusterName),
+      region,
+      selectedCluster.clusterName,
       selectedTask.realTaskArn,
-      String(selectedContainer),
+      selectedContainer,
       command,
     );
   }

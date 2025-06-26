@@ -73,6 +73,7 @@ function parsePort(input: string): Result<Port, ValidationError> {
 - 型定義は `types.ts` に集約し、スキーマと型を一元管理
 - **変数宣言**: `let`の代わりに`const`を使用する
 - 150行以内の関数を推奨し、可読性を重視。もし長くなる場合は責務を分割
+- 型キャストは使わずに、valibotを使用したパース優先アプローチ
 
 ## テスト
 

@@ -1,4 +1,4 @@
-import { RDSClient } from "@aws-sdk/client-rds";
+import type { RDSClient } from "@aws-sdk/client-rds";
 import { search } from "@inquirer/prompts";
 import { getRDSInstances } from "../../aws-services.js";
 import { searchRDS } from "../../search.js";
@@ -21,35 +21,33 @@ export async function selectRDSInstance(
     selections.rds = options.rds;
     messages.success(`✓ RDS (from CLI): ${options.rds}`);
     messages.info("Validating RDS instance...");
-    
+
     const rdsInstancesResult = await getRDSInstances(rdsClient);
     if (!rdsInstancesResult.success) {
       throw new Error(
         `Failed to get RDS instances: ${rdsInstancesResult.error}`,
       );
     }
-    
+
     const rdsInstance = rdsInstancesResult.data.find(
-      (r) => r.dbInstanceIdentifier === options.rds,
+      (r) => String(r.dbInstanceIdentifier) === options.rds,
     );
-    
+
     if (!rdsInstance) {
       throw new Error(`RDS instance not found: ${options.rds}`);
     }
-    
+
     return rdsInstance;
   }
 
   messages.warning("Getting RDS instances...");
   const rdsInstancesResult = await getRDSInstances(rdsClient);
   if (!rdsInstancesResult.success) {
-    throw new Error(
-      `Failed to get RDS instances: ${rdsInstancesResult.error}`,
-    );
+    throw new Error(`Failed to get RDS instances: ${rdsInstancesResult.error}`);
   }
-  
+
   const rdsInstances = rdsInstancesResult.data;
-  if (isEmpty(rdsInstances)) {
+  if (rdsInstances.length === 0) {
     throw new Error("No RDS instances found");
   }
 
@@ -91,10 +89,11 @@ export function determineRDSPort(
     messages.success(`✓ RDS port (from CLI): ${options.rdsPort}`);
     return port;
   }
-  
-  const actualRDSPort = selectedRDS.port;
+
+  // Use the actual port from RDS instance (branded type), fallback to engine default
+  const actualRDSPort = Number(selectedRDS.port);
   const fallbackPort = getDefaultPortForEngine(selectedRDS.engine);
-  const port = `${actualRDSPort ? Number(actualRDSPort) : fallbackPort}`;
+  const port = `${actualRDSPort || fallbackPort}`;
   selections.rdsPort = port;
   messages.success(`✓ RDS port (auto-detected): ${port}`);
   return port;

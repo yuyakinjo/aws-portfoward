@@ -1,10 +1,11 @@
-import { ECSClient } from "@aws-sdk/client-ecs";
+import type { ECSClient } from "@aws-sdk/client-ecs";
 import { search } from "@inquirer/prompts";
 import type { InferenceResult } from "../../inference/index.js";
 import { inferECSTargets } from "../../inference/index.js";
 import { searchInferenceResults } from "../../search.js";
 import type { RDSInstance } from "../../types.js";
-import { messages } from "../../utils/index.js";
+import { unwrapBrandedString } from "../../types.js";
+import { isEmpty, messages } from "../../utils/index.js";
 import { clearLoadingMessage } from "../ui/display-utils.js";
 import type { SelectionState } from "../ui/selection-ui.js";
 
@@ -20,9 +21,9 @@ export async function selectECSTarget(
   messages.warning(
     "Finding ECS targets with exec capability that can connect to this RDS...",
   );
-  
+
   const inferenceResults = await inferECSTargets(ecsClient, selectedRDS, false);
-  
+
   if (isEmpty(inferenceResults)) {
     throw new Error(
       "No ECS targets found with exec capability that can connect to this RDS instance",
@@ -32,9 +33,7 @@ export async function selectECSTarget(
   // Clear the loading message
   clearLoadingMessage();
 
-  messages.success(
-    `Found ${inferenceResults.length} potential ECS targets`,
-  );
+  messages.success(`Found ${inferenceResults.length} potential ECS targets`);
   messages.empty();
 
   if (options.cluster && options.task) {
@@ -47,19 +46,17 @@ export async function selectECSTarget(
 
     if (matchingResult) {
       const inference = matchingResult;
-      const task = String(matchingResult.task.taskArn);
-      selections.ecsTarget = String(matchingResult.task.serviceName);
-      selections.ecsCluster = String(matchingResult.cluster.clusterName);
+      const task = matchingResult.task.taskArn;
+      selections.ecsTarget = unwrapBrandedString(matchingResult.task.serviceName);
+      selections.ecsCluster = unwrapBrandedString(matchingResult.cluster.clusterName);
       messages.success(`✓ ECS cluster (from CLI): ${options.cluster}`);
       messages.success(`✓ ECS task (from CLI): ${options.task}`);
       return { selectedInference: inference, selectedTask: task };
-    } 
-    
-    messages.warning(
-      `Specified cluster/task not found in inference results`,
-    );
+    }
+
+    messages.warning(`Specified cluster/task not found in inference results`);
   }
-  
+
   // If no matching result or no CLI options provided, show search prompt
   const selectedInference = await search({
     message: "Select ECS target:",
@@ -76,11 +73,11 @@ export async function selectECSTarget(
   ) {
     throw new Error("Invalid inference selection");
   }
-  
+
   const inference = selectedInference as InferenceResult;
-  const task = String(inference.task.taskArn);
-  selections.ecsTarget = String(inference.task.serviceName);
-  selections.ecsCluster = String(inference.cluster.clusterName);
-  
+  const task = inference.task.taskArn;
+  selections.ecsTarget = unwrapBrandedString(inference.task.serviceName);
+  selections.ecsCluster = unwrapBrandedString(inference.cluster.clusterName);
+
   return { selectedInference: inference, selectedTask: task };
 }

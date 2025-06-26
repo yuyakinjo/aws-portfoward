@@ -1,6 +1,6 @@
 import chalk from "chalk";
 import Fuse from "fuse.js";
-import { isObjectType } from "remeda";
+import { isObjectType, isEmpty } from "remeda";
 import {
   formatInferenceResult,
   type InferenceResult,

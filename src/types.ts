@@ -1,4 +1,4 @@
-import { isEmpty, isNumber, isString } from "remeda";
+import { isNumber, isString } from "remeda";
 import {
   type BaseSchema,
   boolean,
@@ -11,6 +11,7 @@ import {
   number,
   object,
   optional,
+  parse,
   pipe,
   regex,
   string,
@@ -25,6 +26,7 @@ import {
   isValidDbEndpoint,
   isValidRegionName,
 } from "./regex.js";
+import { isEmpty } from "./utils/index.js";
 
 // =============================================================================
 // Branded Types - 不正な状態を表現できない型システム
@@ -80,7 +82,7 @@ export const PortSchema = pipe(
   transform((port): Port => {
     // Additional validation for port range
     if (port < 1 || port > 65535) {
-      throw new Error('Port must be between 1 and 65535');
+      throw new Error("Port must be between 1 and 65535");
     }
     return port as Port;
   }),
@@ -93,7 +95,7 @@ export const RegionNameSchema = pipe(
   regex(AWS_REGION_NAME, "Invalid region name format"),
   transform((region): RegionName => {
     if (!isValidRegionName(region)) {
-      throw new Error('Invalid AWS region name format');
+      throw new Error("Invalid AWS region name format");
     }
     return region as RegionName;
   }),
@@ -105,7 +107,9 @@ export const ClusterNameSchema = pipe(
   minLength(1, "Cluster name cannot be empty"),
   transform((cluster): ClusterName => {
     if (cluster.trim() !== cluster) {
-      throw new Error('Cluster name cannot have leading or trailing whitespace');
+      throw new Error(
+        "Cluster name cannot have leading or trailing whitespace",
+      );
     }
     return cluster as ClusterName;
   }),
@@ -311,6 +315,26 @@ export function isFailure<T, E>(
   return !result.success;
 }
 
+/**
+ * Safely unwrap a branded type to its underlying string value
+ * This preserves type safety better than using String()
+ */
+export function unwrapBrandedString<T extends string>(
+  value: T | undefined,
+): string | undefined {
+  return value;
+}
+
+/**
+ * Safely unwrap a branded type to its underlying number value
+ * This preserves type safety better than using String()
+ */
+export function unwrapBrandedNumber<T extends number>(
+  value: T | undefined,
+): number | undefined {
+  return value;
+}
+
 // =============================================================================
 // AWS Resource Parsing Schemas
 // =============================================================================
@@ -451,7 +475,7 @@ export function parseRuntimeId(id: unknown): Result<RuntimeId, string> {
   if (!isString(id) || isEmpty(id)) {
     return failure("Invalid runtime ID");
   }
-  return success(id as RuntimeId);
+  return success(parse(RuntimeIdSchema, id));
 }
 
 /**

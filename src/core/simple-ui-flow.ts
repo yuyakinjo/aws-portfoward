@@ -63,7 +63,7 @@ async function connectToRDSWithSimpleUIInternal(
     messages.info("Starting AWS ECS RDS connection tool with Simple UI...");
   }
 
-  // Initialize selection state
+  // Initialize selection state - convert branded types to strings only for UI
   const selections = initializeSelectionState({
     region: options.region ? String(options.region) : undefined,
     cluster: options.cluster ? String(options.cluster) : undefined,
@@ -90,7 +90,9 @@ async function connectToRDSWithSimpleUIInternal(
   // Step 3: Determine RDS Port
   const rdsPort = determineRDSPort(
     selectedRDS,
-    { rdsPort: options.rdsPort ? String(options.rdsPort) : undefined },
+    {
+      rdsPort: options.rdsPort ? String(options.rdsPort) : undefined,
+    },
     selections,
   );
 
@@ -110,7 +112,9 @@ async function connectToRDSWithSimpleUIInternal(
 
   // Step 5: Local Port Selection
   await selectLocalPort(
-    { localPort: options.localPort ? String(options.localPort) : undefined },
+    {
+      localPort: options.localPort ? String(options.localPort) : undefined,
+    },
     selections,
   );
 

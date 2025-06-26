@@ -3,7 +3,13 @@ import { RDSClient } from "@aws-sdk/client-rds";
 import { isDefined } from "remeda";
 import { startSSMSession } from "../session.js";
 import type { Port, ValidatedConnectOptions } from "../types.js";
-import { isFailure, parsePortNumber, parseTaskId } from "../types.js";
+import {
+  isFailure,
+  parsePortNumber,
+  parseTaskId,
+  unwrapBrandedNumber,
+  unwrapBrandedString,
+} from "../types.js";
 import {
   askRetry,
   displayFriendlyError,
@@ -82,16 +88,20 @@ export async function connectToRDSDryRun(
 
   // Get ECS cluster
   const selectedCluster = await selectCluster(ecsClient, options);
-  messages.success(`Cluster: ${selectedCluster.clusterName}`);
+  messages.success(
+    `Cluster: ${unwrapBrandedString(selectedCluster.clusterName)}`,
+  );
 
   // Get ECS task
   const selectedTaskArn = await selectTask(ecsClient, selectedCluster, options);
-  messages.success(`Task: ${String(selectedTaskArn)}`);
+  messages.success(`Task: ${unwrapBrandedString(selectedTaskArn)}`);
 
   // Get RDS instance
   messages.warning("Getting RDS instances...");
   const selectedRDS = await selectRDSInstance(rdsClient, options);
-  messages.success(`RDS: ${selectedRDS.dbInstanceIdentifier}`);
+  messages.success(
+    `RDS: ${unwrapBrandedString(selectedRDS.dbInstanceIdentifier)}`,
+  );
 
   // Extract TaskId from TaskArn for dry run
   const taskIdStr =
@@ -105,7 +115,9 @@ export async function connectToRDSDryRun(
   // Use RDS port automatically with type safety
   const rdsPort: Port = isDefined(options.rdsPort)
     ? (() => {
-        messages.success(`RDS Port (from CLI): ${Number(options.rdsPort)}`);
+        messages.success(
+          `RDS Port (from CLI): ${unwrapBrandedNumber(options.rdsPort)}`,
+        );
         return options.rdsPort;
       })()
     : (() => {
@@ -113,14 +125,14 @@ export async function connectToRDSDryRun(
         const actualRDSPort = selectedRDS.port;
         const fallbackPortNumber = getDefaultPortForEngine(selectedRDS.engine);
         const portToUse = actualRDSPort
-          ? Number(actualRDSPort)
+          ? unwrapBrandedNumber(actualRDSPort)
           : fallbackPortNumber;
         const portResult = parsePortNumber(portToUse);
         if (isFailure(portResult)) {
           throw new Error(`Invalid RDS port: ${portResult.error}`);
         }
         messages.success(
-          `RDS Port (auto-detected): ${Number(portResult.data)}`,
+          `RDS Port (auto-detected): ${unwrapBrandedNumber(portResult.data)}`,
         );
         return portResult.data;
       })();
@@ -128,7 +140,9 @@ export async function connectToRDSDryRun(
   // Specify local port with type safety
   const localPort: Port = isDefined(options.localPort)
     ? (() => {
-        messages.success(`Local Port (from CLI): ${Number(options.localPort)}`);
+        messages.success(
+          `Local Port (from CLI): ${unwrapBrandedNumber(options.localPort)}`,
+        );
         return options.localPort;
       })()
     : await promptForLocalPort();
@@ -162,16 +176,20 @@ async function connectToRDSInternal(
 
   // Get ECS cluster
   const selectedCluster = await selectCluster(ecsClient, options);
-  messages.success(`Cluster: ${selectedCluster.clusterName}`);
+  messages.success(
+    `Cluster: ${unwrapBrandedString(selectedCluster.clusterName)}`,
+  );
 
   // Get ECS task
   const selectedTaskArn = await selectTask(ecsClient, selectedCluster, options);
-  messages.success(`Task: ${String(selectedTaskArn)}`);
+  messages.success(`Task: ${unwrapBrandedString(selectedTaskArn)}`);
 
   // Get RDS instance
   messages.warning("Getting RDS instances...");
   const selectedRDS = await selectRDSInstance(rdsClient, options);
-  messages.success(`RDS: ${selectedRDS.dbInstanceIdentifier}`);
+  messages.success(
+    `RDS: ${unwrapBrandedString(selectedRDS.dbInstanceIdentifier)}`,
+  );
 
   // selectedTaskArn is already a strongly-typed TaskArn
   const taskArn = selectedTaskArn;
@@ -179,7 +197,9 @@ async function connectToRDSInternal(
   // Use RDS port automatically with type safety
   const rdsPort: Port = isDefined(options.rdsPort)
     ? (() => {
-        messages.success(`RDS Port (from CLI): ${Number(options.rdsPort)}`);
+        messages.success(
+          `RDS Port (from CLI): ${unwrapBrandedNumber(options.rdsPort)}`,
+        );
         return options.rdsPort;
       })()
     : (() => {
@@ -187,14 +207,14 @@ async function connectToRDSInternal(
         const actualRDSPort = selectedRDS.port;
         const fallbackPortNumber = getDefaultPortForEngine(selectedRDS.engine);
         const portToUse = actualRDSPort
-          ? Number(actualRDSPort)
+          ? unwrapBrandedNumber(actualRDSPort)
           : fallbackPortNumber;
         const portResult = parsePortNumber(portToUse);
         if (isFailure(portResult)) {
           throw new Error(`Invalid RDS port: ${portResult.error}`);
         }
         messages.success(
-          `RDS Port (auto-detected): ${Number(portResult.data)}`,
+          `RDS Port (auto-detected): ${unwrapBrandedNumber(portResult.data)}`,
         );
         return portResult.data;
       })();
@@ -202,7 +222,9 @@ async function connectToRDSInternal(
   // Specify local port with type safety
   const localPort: Port = isDefined(options.localPort)
     ? (() => {
-        messages.success(`Local Port (from CLI): ${Number(options.localPort)}`);
+        messages.success(
+          `Local Port (from CLI): ${unwrapBrandedNumber(options.localPort)}`,
+        );
         return options.localPort;
       })()
     : await promptForLocalPort();

@@ -1,5 +1,13 @@
 import { spawn } from "node:child_process";
-import type { Port, RDSInstance, TaskArn } from "./types.js";
+import type {
+  ClusterName,
+  ContainerName,
+  Port,
+  RDSInstance,
+  RegionName,
+  TaskArn,
+  TaskId,
+} from "./types.js";
 import { messages } from "./utils/index.js";
 
 export async function startSSMSession(
@@ -10,9 +18,9 @@ export async function startSSMSession(
   reproducibleCommand?: string,
 ): Promise<void> {
   const parameters = {
-    host: [rdsInstance.endpoint],
-    portNumber: [rdsPort],
-    localPortNumber: [localPort],
+    host: [String(rdsInstance.endpoint)],
+    portNumber: [String(rdsPort)],
+    localPortNumber: [String(localPort)],
   };
 
   // Build command string (properly escape JSON parameters)
@@ -203,14 +211,14 @@ export async function startSSMSession(
  * Execute command in ECS task container using AWS ECS execute-command
  */
 export async function executeECSCommand(
-  region: string,
-  clusterName: string,
-  taskArn: TaskArn | string,
-  containerName: string,
+  region: RegionName,
+  clusterName: ClusterName,
+  taskArn: TaskArn | TaskId,
+  containerName: ContainerName,
   command: string,
 ): Promise<void> {
   // Build command string
-  const commandString = `aws ecs execute-command --region ${region} --cluster ${clusterName} --task ${String(taskArn)} --container ${containerName} --command "${command}" --interactive`;
+  const commandString = `aws ecs execute-command --region ${String(region)} --cluster ${String(clusterName)} --task ${String(taskArn)} --container ${String(containerName)} --command "${command}" --interactive`;
 
   messages.empty();
   messages.success(`🚀 Executing command in ECS container: ${containerName}`);

@@ -1,5 +1,11 @@
 import { startSSMSession } from "../../session.js";
-import type { RDSInstance, RegionName, ClusterName } from "../../types.js";
+import type {
+  ClusterName,
+  Port,
+  RDSInstance,
+  RegionName,
+  TaskArn,
+} from "../../types.js";
 import {
   parseClusterName,
   parsePortNumber,
@@ -23,7 +29,7 @@ export async function handleConnection(
   rdsPort: string,
   options: { dryRun?: boolean },
 ): Promise<void> {
-  // Parse and validate selections for reproducible command
+  // Parse external inputs only once at the boundary
   const regionResult = parseRegionName(selections.region);
   if (!regionResult.success) throw new Error(regionResult.error);
 
@@ -35,75 +41,68 @@ export async function handleConnection(
   const taskResult = parseTaskArn(selectedTask);
   if (!taskResult.success) throw new Error(taskResult.error);
 
-  // Generate reproducible command
-  const rdsPortNumber = parsePortNumber(Number(rdsPort));
-  if (!rdsPortNumber.success) throw new Error(rdsPortNumber.error);
-  
-  const localPortStr = selections.localPort || "";
-  const localPortNumber = parsePortNumber(Number(localPortStr || "8888"));
-  if (!localPortNumber.success) throw new Error(localPortNumber.error);
-  
+  const rdsPortResult = parsePortNumber(Number(rdsPort));
+  if (!rdsPortResult.success) throw new Error(rdsPortResult.error);
+
+  const localPortStr = selections.localPort || "8888";
+  const localPortResult = parsePortNumber(Number(localPortStr));
+  if (!localPortResult.success) throw new Error(localPortResult.error);
+
+  // Generate reproducible command with parsed branded types
   const reproducibleCommand = generateReproducibleCommand(
     regionResult.data,
     clusterResult.data,
     taskResult.data,
     selectedRDS.dbInstanceIdentifier,
-    rdsPortNumber.data,
-    localPortNumber.data,
+    rdsPortResult.data,
+    localPortResult.data,
   );
 
-  // Check if dry run mode is enabled
+  // Pass branded types to internal functions
   if (options.dryRun) {
     await handleDryRun(
       regionResult.data,
       clusterResult.data,
       taskResult.data,
       selectedRDS,
-      rdsPort,
-      selections.localPort || "8888",
+      rdsPortResult.data,
+      localPortResult.data,
     );
   } else {
     await handleLiveConnection(
       taskResult.data,
       selectedRDS,
-      rdsPort,
-      selections.localPort || "8888",
+      rdsPortResult.data,
+      localPortResult.data,
       reproducibleCommand,
     );
   }
 }
 
 /**
- * Handle dry run mode
+ * Handle dry run mode - accepts branded types directly
  */
 async function handleDryRun(
   region: RegionName,
   cluster: ClusterName,
-  taskArn: string,
+  taskArn: TaskArn,
   selectedRDS: RDSInstance,
-  rdsPort: string,
-  localPort: string,
+  rdsPort: Port,
+  localPort: Port,
 ): Promise<void> {
-  // Parse port numbers safely
-  const rdsPortResult = parsePortNumber(Number(rdsPort));
-  if (!rdsPortResult.success) throw new Error(rdsPortResult.error);
-
-  const localPortResult = parsePortNumber(Number(localPort));
-  if (!localPortResult.success) throw new Error(localPortResult.error);
-
   // Extract TaskId from TaskArn for dry run
   const taskIdStr = String(taskArn).split("_")[1] || String(taskArn);
   const taskIdResult = parseTaskId(taskIdStr);
   if (!taskIdResult.success) throw new Error(taskIdResult.error);
 
-  // Generate and display dry run result
+  // Generate and display dry run result with branded types
   const dryRunResult = generateConnectDryRun(
     region,
     cluster,
     taskIdResult.data,
     selectedRDS,
-    rdsPortResult.data,
-    localPortResult.data,
+    rdsPort,
+    localPort,
   );
 
   displayDryRunResult(dryRunResult);
@@ -111,27 +110,21 @@ async function handleDryRun(
 }
 
 /**
- * Handle live connection
+ * Handle live connection - accepts branded types directly
  */
 async function handleLiveConnection(
-  taskArn: string,
+  taskArn: TaskArn,
   selectedRDS: RDSInstance,
-  rdsPort: string,
-  localPort: string,
+  rdsPort: Port,
+  localPort: Port,
   reproducibleCommand: string,
 ): Promise<void> {
-  // Parse port numbers for SSM session
-  const rdsPortResult = parsePortNumber(Number(rdsPort));
-  if (!rdsPortResult.success) throw new Error(rdsPortResult.error);
-
-  const localPortResult = parsePortNumber(Number(localPort));
-  if (!localPortResult.success) throw new Error(localPortResult.error);
-
+  // Pass branded types directly to startSSMSession
   await startSSMSession(
     taskArn,
     selectedRDS,
-    String(Number(rdsPortResult.data)),
-    String(Number(localPortResult.data)),
+    rdsPort,
+    localPort,
     reproducibleCommand,
   );
 }
