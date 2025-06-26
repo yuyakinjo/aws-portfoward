@@ -1,6 +1,5 @@
 import { ECSClient } from "@aws-sdk/client-ecs";
 import { RDSClient } from "@aws-sdk/client-rds";
-import { isDefined } from "remeda";
 import type { ValidatedConnectOptions } from "../types.js";
 import { askRetry, displayFriendlyError, messages } from "../utils/index.js";
 import { handleConnection } from "./connection/rds-connection.js";
