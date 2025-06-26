@@ -1,23 +1,20 @@
-import type { ECSClient } from "@aws-sdk/client-ecs";
 import { search } from "@inquirer/prompts";
 import type { InferenceResult } from "../../inference/index.js";
 import { inferECSTargets } from "../../inference/index.js";
 import { searchInferenceResults } from "../../search.js";
-import type { RDSInstance } from "../../types.js";
+import type { ECSTargetSelectionParams } from "../../types.js";
 import { unwrapBrandedString } from "../../types.js";
 import { isEmpty, messages } from "../../utils/index.js";
 import { clearLoadingMessage } from "../ui/display-utils.js";
-import type { SelectionState } from "../ui/selection-ui.js";
 
 /**
  * Handle ECS target selection with inference
  */
 export async function selectECSTarget(
-  ecsClient: ECSClient,
-  selectedRDS: RDSInstance,
-  options: { cluster?: string; task?: string },
-  selections: SelectionState,
+  params: ECSTargetSelectionParams,
 ): Promise<{ selectedInference: InferenceResult; selectedTask: string }> {
+  const { ecsClient, selectedRDS, options, selections } = params;
+  
   messages.warning(
     "Finding ECS targets with exec capability that can connect to this RDS...",
   );

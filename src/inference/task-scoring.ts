@@ -1,5 +1,5 @@
 import type { ECSClient } from "@aws-sdk/client-ecs";
-import type { ECSCluster, ECSTask, RDSInstance } from "../types.js";
+import type { ECSCluster, ECSTask, RDSInstance, TaskScoringParams } from "../types.js";
 
 // 型定義（循環インポートを避けるため直接定義）
 interface InferenceResult {
@@ -166,16 +166,10 @@ export async function scoreTasksByNaming(
  * タスクをRDSとの関連性でスコアリングする関数
  */
 export async function scoreTasksAgainstRDS(
-  ecsClient: ECSClient,
-  tasks: ECSTask[],
-  cluster: ECSCluster,
-  rdsInstance: RDSInstance,
-  analysisResults: {
-    environment: InferenceMatch[];
-    naming: InferenceMatch[];
-    network: InferenceMatch[];
-  },
+  params: TaskScoringParams,
 ): Promise<InferenceResult[]> {
+  const { ecsClient, tasks, cluster, rdsInstance, analysisResults } = params;
+  
   // 各タスクの環境変数チェック結果を並列で取得
   const envCheckPromises = tasks.map(async (task) => {
     const envCheck = await checkTaskEnvironmentVariables(

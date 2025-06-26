@@ -1,22 +1,15 @@
 import { spawn } from "node:child_process";
 import type {
-  ClusterName,
-  ContainerName,
-  Port,
-  RDSInstance,
-  RegionName,
-  TaskArn,
-  TaskId,
+  ECSExecParams,
+  SSMSessionParams,
 } from "./types.js";
 import { messages } from "./utils/index.js";
 
 export async function startSSMSession(
-  taskArn: TaskArn,
-  rdsInstance: RDSInstance,
-  rdsPort: Port,
-  localPort: Port,
-  reproducibleCommand?: string,
+  params: SSMSessionParams,
 ): Promise<void> {
+  const { taskArn, rdsInstance, rdsPort, localPort, reproducibleCommand } = params;
+  
   const parameters = {
     host: [String(rdsInstance.endpoint)],
     portNumber: [String(rdsPort)],
@@ -211,12 +204,10 @@ export async function startSSMSession(
  * Execute command in ECS task container using AWS ECS execute-command
  */
 export async function executeECSCommand(
-  region: RegionName,
-  clusterName: ClusterName,
-  taskArn: TaskArn | TaskId,
-  containerName: ContainerName,
-  command: string,
+  params: ECSExecParams,
 ): Promise<void> {
+  const { region, clusterName, taskArn, containerName, command } = params;
+  
   // Build command string
   const commandString = `aws ecs execute-command --region ${String(region)} --cluster ${String(clusterName)} --task ${String(taskArn)} --container ${String(containerName)} --command "${command}" --interactive`;
 

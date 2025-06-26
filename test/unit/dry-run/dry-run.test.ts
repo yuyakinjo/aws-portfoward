@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { parse } from "valibot";
 import {
   displayDryRunResult,
   generateConnectDryRun,
   generateExecDryRun,
 } from "../../../src/core/dry-run.js";
-import type { RDSInstance } from "../../../src/types.js";
+import { RDSInstanceSchema, type RDSInstance } from "../../../src/types.js";
 
 // Mock console.log to capture output
 const mockConsoleLog = vi.fn();
@@ -17,7 +18,7 @@ describe("Dry Run Functions", () => {
 
   describe("generateConnectDryRun", () => {
     it("should generate correct connect dry run result", () => {
-      const mockRDS: RDSInstance = {
+      const mockRDS = parse(RDSInstanceSchema, {
         dbInstanceIdentifier: "test-rds",
         endpoint: "test-rds.abc123.us-east-1.rds.amazonaws.com",
         port: 5432,
@@ -27,16 +28,16 @@ describe("Dry Run Functions", () => {
         allocatedStorage: 20,
         availabilityZone: "us-east-1a",
         vpcSecurityGroups: ["sg-123456"],
-      };
+      });
 
-      const result = generateConnectDryRun(
-        "us-east-1",
-        "test-cluster",
-        "ecs:test-cluster_test-task_abc123",
-        mockRDS,
-        "5432",
-        "8888",
-      );
+      const result = generateConnectDryRun({
+        region: "us-east-1" as any,
+        cluster: "test-cluster" as any,
+        task: "test-task_abc123" as any,
+        rdsInstance: mockRDS,
+        rdsPort: 5432 as any,
+        localPort: 8888 as any,
+      });
 
       expect(result.awsCommand).toContain("aws ssm start-session");
       expect(result.awsCommand).toContain(
@@ -54,23 +55,23 @@ describe("Dry Run Functions", () => {
       expect(result.reproducibleCommand).toContain("--cluster test-cluster");
       expect(result.reproducibleCommand).toContain("--rds test-rds");
 
-      expect(result.sessionInfo.region).toBe("us-east-1");
-      expect(result.sessionInfo.cluster).toBe("test-cluster");
-      expect(result.sessionInfo.rds).toBe("test-rds");
-      expect(result.sessionInfo.rdsPort).toBe("5432");
-      expect(result.sessionInfo.localPort).toBe("8888");
+      expect(String(result.sessionInfo.region)).toBe("us-east-1");
+      expect(String(result.sessionInfo.cluster)).toBe("test-cluster");
+      expect(String(result.sessionInfo.rds)).toBe("test-rds");
+      expect(result.sessionInfo.rdsPort).toBe(5432);
+      expect(result.sessionInfo.localPort).toBe(8888);
     });
   });
 
   describe("generateExecDryRun", () => {
     it("should generate correct exec dry run result", () => {
-      const result = generateExecDryRun(
-        "us-east-1",
-        "test-cluster",
-        "arn:aws:ecs:us-east-1:123456789012:task/test-cluster/abc123",
-        "web",
-        "/bin/bash",
-      );
+      const result = generateExecDryRun({
+        region: "us-east-1" as any,
+        cluster: "test-cluster" as any,
+        task: "arn:aws:ecs:us-east-1:123456789012:task/test-cluster/abc123" as any,
+        container: "web" as any,
+        command: "/bin/bash",
+      });
 
       expect(result.awsCommand).toContain("aws ecs execute-command");
       expect(result.awsCommand).toContain("--region us-east-1");

@@ -148,14 +148,14 @@ export async function connectToRDSDryRun(
     : await promptForLocalPort();
 
   // Generate and display dry run result
-  const dryRunResult = generateConnectDryRun(
+  const dryRunResult = generateConnectDryRun({
     region,
-    selectedCluster.clusterName,
-    taskId,
-    selectedRDS,
+    cluster: selectedCluster.clusterName,
+    task: taskId,
+    rdsInstance: selectedRDS,
     rdsPort,
     localPort,
-  );
+  });
 
   displayDryRunResult(dryRunResult);
   messages.success("Dry run completed successfully.");
@@ -230,23 +230,23 @@ async function connectToRDSInternal(
     : await promptForLocalPort();
 
   // Generate reproducible command
-  const reproducibleCommand = generateReproducibleCommand(
+  const reproducibleCommand = generateReproducibleCommand({
     region,
-    selectedCluster.clusterName,
-    taskArn,
-    selectedRDS.dbInstanceIdentifier,
+    cluster: selectedCluster.clusterName,
+    task: taskArn,
+    rds: selectedRDS.dbInstanceIdentifier,
     rdsPort,
     localPort,
-  );
+  });
 
   // Start SSM session
   messages.info("Selected task:");
   messages.info(String(selectedTaskArn));
-  await startSSMSession(
+  await startSSMSession({
     taskArn,
-    selectedRDS,
+    rdsInstance: selectedRDS,
     rdsPort,
     localPort,
     reproducibleCommand,
-  );
+  });
 }

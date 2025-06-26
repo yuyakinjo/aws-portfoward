@@ -1,5 +1,6 @@
 import { isNumber, isString } from "remeda";
 import {
+  array,
   type BaseSchema,
   boolean,
   type InferOutput,
@@ -210,6 +211,95 @@ export interface ExecOptions {
 // Parsed/Validated Types (After Successful Parsing)
 // =============================================================================
 
+// =============================================================================
+// Dry Run Parameter Schemas
+// =============================================================================
+
+export const ConnectDryRunParamsSchema = object({
+  region: RegionNameSchema,
+  cluster: ClusterNameSchema,
+  task: TaskIdSchema,
+  rdsInstance: RDSInstanceSchema,
+  rdsPort: PortNumberSchema,
+  localPort: PortNumberSchema,
+});
+
+export const ExecDryRunParamsSchema = object({
+  region: RegionNameSchema,
+  cluster: ClusterNameSchema,
+  task: TaskIdSchema,
+  container: pipe(
+    string(),
+    minLength(1, "Container name cannot be empty"),
+    transform((container): ContainerName => container as ContainerName),
+  ),
+  command: pipe(string(), minLength(1, "Command cannot be empty")),
+});
+
+export const ReproducibleCommandParamsSchema = object({
+  region: RegionNameSchema,
+  cluster: ClusterNameSchema,
+  task: TaskArnSchema,
+  rds: DBInstanceIdentifierSchema,
+  rdsPort: PortNumberSchema,
+  localPort: PortNumberSchema,
+});
+
+export const SSMSessionParamsSchema = object({
+  taskArn: TaskArnSchema,
+  rdsInstance: RDSInstanceSchema,
+  rdsPort: PortNumberSchema,
+  localPort: PortNumberSchema,
+  reproducibleCommand: optional(pipe(string(), minLength(1))),
+});
+
+export const ECSExecParamsSchema = object({
+  region: RegionNameSchema,
+  clusterName: ClusterNameSchema,
+  taskArn: union([TaskArnSchema, TaskIdSchema]),
+  containerName: pipe(
+    string(),
+    minLength(1, "Container name cannot be empty"),
+    transform((container): ContainerName => container as ContainerName),
+  ),
+  command: pipe(string(), minLength(1, "Command cannot be empty")),
+});
+
+// Task scoring parameter schemas
+export const TaskScoringParamsSchema = object({
+  ecsClient: any(), // ECSClient cannot be validated with valibot
+  tasks: array(any()), // ECSTask[] - complex object validation
+  cluster: any(), // ECSCluster - complex object validation  
+  rdsInstance: RDSInstanceSchema,
+  analysisResults: object({
+    environment: array(any()),
+    naming: array(any()),
+    network: array(any()),
+  }),
+});
+
+// ECS target selection parameter schemas
+export const ECSTargetSelectionOptionsSchema = object({
+  cluster: optional(ClusterNameSchema),
+  task: optional(TaskIdSchema),
+});
+
+export const ECSTargetSelectionParamsSchema = object({
+  ecsClient: any(), // ECSClient cannot be validated with valibot
+  selectedRDS: RDSInstanceSchema,
+  options: ECSTargetSelectionOptionsSchema,
+  selections: any(), // SelectionState - complex object
+});
+
+export type ConnectDryRunParams = InferOutput<typeof ConnectDryRunParamsSchema>;
+export type ExecDryRunParams = InferOutput<typeof ExecDryRunParamsSchema>;
+export type ReproducibleCommandParams = InferOutput<typeof ReproducibleCommandParamsSchema>;
+export type SSMSessionParams = InferOutput<typeof SSMSessionParamsSchema>;
+export type ECSExecParams = InferOutput<typeof ECSExecParamsSchema>;
+export type TaskScoringParams = InferOutput<typeof TaskScoringParamsSchema>;
+export type ECSTargetSelectionOptions = InferOutput<typeof ECSTargetSelectionOptionsSchema>;
+export type ECSTargetSelectionParams = InferOutput<typeof ECSTargetSelectionParamsSchema>;
+
 export interface DryRunResult {
   awsCommand: string;
   reproducibleCommand: string;
@@ -397,6 +487,43 @@ export const PortNumberSchema = pipe(
   maxValue(65535, "Port must be less than 65536"),
   transform((port): Port => port as Port),
 );
+
+// =============================================================================
+// AWS Entity Schemas for Parsing
+// =============================================================================
+
+// RDS Instance schema for parsing AWS API responses
+export const RDSInstanceSchema = object({
+  dbInstanceIdentifier: pipe(
+    string(),
+    minLength(1, "DB Instance identifier cannot be empty"),
+    transform((id): DBInstanceIdentifier => id as DBInstanceIdentifier),
+  ),
+  endpoint: pipe(
+    string(),
+    minLength(1, "DB endpoint cannot be empty"),
+    transform((endpoint): DBEndpoint => endpoint as DBEndpoint),
+  ),
+  port: PortNumberSchema,
+  engine: pipe(
+    string(),
+    minLength(1, "Database engine cannot be empty"),
+    transform((engine): DatabaseEngine => engine as DatabaseEngine),
+  ),
+  dbInstanceClass: string(),
+  dbInstanceStatus: DBInstanceStatusSchema,
+  allocatedStorage: number(),
+  availabilityZone: string(),
+  vpcSecurityGroups: pipe(
+    union([string(), array(string())]),
+    transform((groups): string[] => Array.isArray(groups) ? groups : [groups]),
+  ),
+  dbSubnetGroup: optional(string()),
+  createdTime: optional(pipe(
+    string(),
+    transform((dateStr): Date => new Date(dateStr)),
+  )),
+});
 
 // =============================================================================
 // AWS Data Parsing Helper Functions
