@@ -2,6 +2,8 @@
 // 正規表現パターン定義 - 一元管理
 // =============================================================================
 
+import type { TaskArn } from "./types";
+
 /**
  * 数字のみを許可する正規表現
  * ポート番号の検証に使用
@@ -37,6 +39,14 @@ export const HYPHEN_UNDERSCORE_SPLIT = /[-_]/;
  * RDS名からクラスター名を推論する際の単語分割に使用
  */
 export const WORD_SEPARATOR_SPLIT = /[-_\s]/;
+
+/**
+ * ECS タスク ARN の形式を検証する正規表現
+ * タスク ARN は "arn:aws:ecs:{region}:{account-id}:task/{cluster-name}/{task-id}" の形式
+ */
+export const ECS_TASK_ARN = new RegExp(
+  /^arn:aws:ecs:[a-z0-9-]+:\d{12}:task\/[A-Za-z0-9-_]+\/[A-Za-z0-9]+$/,
+);
 
 // =============================================================================
 // 正規表現パターンのテスト関数
@@ -86,4 +96,20 @@ export function splitByHyphenUnderscore(text: string): string[] {
  */
 export function splitByWordSeparators(text: string): string[] {
   return text.split(WORD_SEPARATOR_SPLIT);
+}
+
+/** * Check if a string is a valid ECS Task ARN
+ * This function uses a regex pattern to validate the format of the ARN.
+ * It checks for the following structure:
+ * arn:aws:ecs:{region}:{account-id}:task/{cluster-name}/{task-id}
+ * Where:
+ * - {region} is a valid AWS region (e.g., us-east-1)
+ * - {account-id} is a 12-digit AWS account ID
+ * - {cluster-name} is the name of the ECS cluster
+ * - {task-id} is the unique identifier for the ECS task
+ * * @param str The string to validate
+ * @return true if the string is a valid ECS Task ARN, false otherwise
+ * */
+export function isTaskArnShape(input: unknown): input is TaskArn {
+  return ECS_TASK_ARN.test(String(input));
 }

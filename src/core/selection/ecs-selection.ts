@@ -1,6 +1,7 @@
 import { search } from "@inquirer/prompts";
 import type { InferenceResult } from "../../inference/index.js";
 import { inferECSTargets } from "../../inference/index.js";
+import { isTaskArnShape } from "../../regex.js";
 import { searchInferenceResults } from "../../search.js";
 import type { ECSTargetSelectionParams } from "../../types.js";
 import { unwrapBrandedString } from "../../types.js";
@@ -51,12 +52,14 @@ export async function selectECSTarget(
 
   if (options.cluster && options.task) {
     // options.taskがTaskArn形式かTaskId形式かで比較
-    const isTaskArn = typeof options.task === "string" && options.task.startsWith("ecs:");
     const matchingResult = inferenceResults.find((result) => {
       const clusterMatch = result.cluster.clusterName === options.cluster;
-      if (isTaskArn) {
+      if (isTaskArnShape(options.task)) {
         // TaskArnで比較（string化して比較）
-        return clusterMatch && result.task.taskArn === (options.task as unknown as string);
+        return (
+          clusterMatch &&
+          result.task.taskArn === (options.task as unknown as string)
+        );
       } else {
         // TaskIdで比較
         return clusterMatch && result.task.taskId === options.task;

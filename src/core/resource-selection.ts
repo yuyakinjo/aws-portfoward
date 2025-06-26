@@ -3,7 +3,6 @@ import { ECSClient } from "@aws-sdk/client-ecs";
 import { RDSClient } from "@aws-sdk/client-rds";
 import { input, search } from "@inquirer/prompts";
 import { isDefined } from "remeda";
-import { isEmpty } from "../utils/index.js";
 import {
   getAWSRegions,
   getECSClusters,
@@ -11,6 +10,7 @@ import {
   getECSTasks,
   getRDSInstances,
 } from "../aws-services.js";
+import { isTaskArnShape } from "../regex.js";
 import {
   searchClusters,
   searchRDS,
@@ -28,6 +28,7 @@ import { isFailure, parseRegionName, parseTaskArn } from "../types.js";
 import {
   findAvailablePortSafe,
   getDefaultPortForEngine,
+  isEmpty,
   messages,
   parsePort,
 } from "../utils/index.js";
@@ -51,10 +52,6 @@ function isRDSInstance(value: unknown): value is RDSInstance {
     "dbInstanceIdentifier" in value &&
     "endpoint" in value
   );
-}
-
-function isTaskArn(value: unknown): value is string {
-  return typeof value === "string";
 }
 
 export interface ResourceSelectionResult {
@@ -224,7 +221,7 @@ export async function selectTask(
     pageSize: DEFAULT_PAGE_SIZE,
   });
 
-  if (!isTaskArn(selectedValue)) {
+  if (!isTaskArnShape(selectedValue)) {
     throw new Error("Invalid task selection");
   }
 

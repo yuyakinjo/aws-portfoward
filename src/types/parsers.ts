@@ -1,4 +1,5 @@
 import { safeParse } from "valibot";
+import { isTaskArnShape } from "../regex.js";
 import {
   type ClusterArn,
   ClusterArnSchema,
@@ -65,7 +66,7 @@ export function parseClusterArn(arn: unknown): Result<ClusterArn, string> {
  */
 export function parseTaskArn(arn: unknown): Result<TaskArn, string> {
   const result = safeParse(TaskArnSchema, arn);
-  if (result.success) {
+  if (isTaskArnShape(arn) && result.success) {
     return success(result.output);
   }
   return failure("Invalid task ARN");

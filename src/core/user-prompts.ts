@@ -1,5 +1,6 @@
 import { input, search } from "@inquirer/prompts";
 import type { InferenceResult } from "../inference/index.js";
+import { isTaskArnShape } from "../regex.js";
 import {
   searchClusters,
   searchInferenceResults,
@@ -33,10 +34,6 @@ function isECSCluster(value: unknown): value is ECSCluster {
     "clusterName" in value &&
     "clusterArn" in value
   );
-}
-
-function isTaskArn(value: unknown): value is TaskArn {
-  return typeof value === "string";
 }
 
 function isRDSInstance(value: unknown): value is RDSInstance {
@@ -118,7 +115,7 @@ export async function promptForTask(params: {
     pageSize: DEFAULT_PAGE_SIZE,
   });
 
-  if (!isTaskArn(selectedValue)) {
+  if (!isTaskArnShape(selectedValue)) {
     throw new Error("Invalid task selection");
   }
 
