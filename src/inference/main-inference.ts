@@ -3,7 +3,7 @@ import {
   getECSClustersWithExecCapability,
   getECSTasksWithExecCapability,
 } from "../aws-services.js";
-import type { ECSCluster, RDSInstance } from "../types.js";
+import type { ECSCluster, RDSInstance, InferECSTargetsParams } from "../types.js";
 import { parseClusterName } from "../types.js";
 import { messages } from "../utils/messages.js";
 import { loadAnalysisResults } from "./analysis-loader.js";
@@ -16,10 +16,9 @@ import { scoreTasksAgainstRDS, scoreTasksByNaming } from "./task-scoring.js";
  * Infer ECS cluster and task recommendations for a given RDS instance
  */
 export async function inferECSTargets(
-  ecsClient: ECSClient,
-  rdsInstance: RDSInstance,
-  enablePerformanceTracking = false,
+  params: InferECSTargetsParams,
 ): Promise<InferenceResult[]> {
+  const { ecsClient, rdsInstance, enablePerformanceTracking = false } = params;
   const tracker = new PerformanceTracker();
   const results: InferenceResult[] = [];
 

@@ -2,6 +2,7 @@ import { safeParse } from "valibot";
 import {
   type ConnectDryRunParams,
   type DryRunResult,
+  type ExecDryRunParams,
   type TaskArn,
   TaskArnSchema,
 } from "../types.js";

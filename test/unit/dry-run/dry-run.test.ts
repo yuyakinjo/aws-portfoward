@@ -5,7 +5,7 @@ import {
   generateConnectDryRun,
   generateExecDryRun,
 } from "../../../src/core/dry-run.js";
-import { RDSInstanceSchema } from "../../../src/types.js";
+import { RDSInstanceSchema, type RegionName, type ClusterName, type TaskId, type Port, type ContainerName, type TaskArn } from "../../../src/types.js";
 
 // Mock console.log to capture output
 const mockConsoleLog = vi.fn();
@@ -31,12 +31,12 @@ describe("Dry Run Functions", () => {
       });
 
       const result = generateConnectDryRun({
-        region: "us-east-1" as any,
-        cluster: "test-cluster" as any,
-        task: "test-task_abc123" as any,
+        region: "us-east-1" as RegionName,
+        cluster: "test-cluster" as ClusterName,
+        task: "test-task_abc123" as TaskId,
         rdsInstance: mockRDS,
-        rdsPort: 5432 as any,
-        localPort: 8888 as any,
+        rdsPort: 5432 as Port,
+        localPort: 8888 as Port,
       });
 
       expect(result.awsCommand).toContain("aws ssm start-session");
@@ -66,10 +66,10 @@ describe("Dry Run Functions", () => {
   describe("generateExecDryRun", () => {
     it("should generate correct exec dry run result", () => {
       const result = generateExecDryRun({
-        region: "us-east-1" as any,
-        cluster: "test-cluster" as any,
-        task: "arn:aws:ecs:us-east-1:123456789012:task/test-cluster/abc123" as any,
-        container: "web" as any,
+        region: "us-east-1" as RegionName,
+        cluster: "test-cluster" as ClusterName,
+        task: "arn:aws:ecs:us-east-1:123456789012:task/test-cluster/abc123" as TaskArn,
+        container: "web" as ContainerName,
         command: "/bin/bash",
       });
 

@@ -59,15 +59,15 @@ function isInferenceResult(value: unknown): value is InferenceResult {
 }
 
 export async function promptForRegion(
-  regions: AWSRegion[],
-  defaultRegion?: string,
+  params: { regions: AWSRegion[]; defaultRegion?: string },
 ): Promise<RegionName> {
+  const { regions, defaultRegion } = params;
   messages.info("filtered as you type (↑↓ to select, Enter to confirm)");
 
   const selectedValue = await search({
     message: "Search and select AWS region:",
     source: async (input) => {
-      return await searchRegions(regions, input || "", defaultRegion);
+      return await searchRegions({ regions, input: input || "", defaultRegion });
     },
     pageSize: DEFAULT_PAGE_SIZE,
   });
@@ -85,14 +85,15 @@ export async function promptForRegion(
 }
 
 export async function promptForCluster(
-  clusters: ECSCluster[],
+  params: { clusters: ECSCluster[] },
 ): Promise<ECSCluster> {
+  const { clusters } = params;
   messages.info("filtered as you type (↑↓ to select, Enter to confirm)");
 
   const selectedValue = await search({
     message: "Search and select ECS cluster:",
     source: async (input) => {
-      return await searchClusters(clusters, input || "");
+      return await searchClusters({ clusters, input: input || "" });
     },
     pageSize: DEFAULT_PAGE_SIZE,
   });
@@ -104,11 +105,14 @@ export async function promptForCluster(
   return selectedValue;
 }
 
-export async function promptForTask(tasks: ECSTask[]): Promise<TaskArn> {
+export async function promptForTask(
+  params: { tasks: ECSTask[] },
+): Promise<TaskArn> {
+  const { tasks } = params;
   const selectedValue = await search({
     message: "Search and select ECS task:",
     source: async (input) => {
-      return await searchTasks(tasks, input || "");
+      return await searchTasks({ tasks, input: input || "" });
     },
     pageSize: DEFAULT_PAGE_SIZE,
   });
@@ -126,12 +130,13 @@ export async function promptForTask(tasks: ECSTask[]): Promise<TaskArn> {
 }
 
 export async function promptForRDS(
-  rdsInstances: RDSInstance[],
+  params: { rdsInstances: RDSInstance[] },
 ): Promise<RDSInstance> {
+  const { rdsInstances } = params;
   const selectedValue = await search({
     message: "Search and select RDS instance:",
     source: async (input) => {
-      return await searchRDS(rdsInstances, input || "");
+      return await searchRDS({ rdsInstances, input: input || "" });
     },
     pageSize: DEFAULT_PAGE_SIZE,
   });
@@ -144,13 +149,14 @@ export async function promptForRDS(
 }
 
 export async function promptForInferenceResult(
-  inferenceResults: InferenceResult[],
+  params: { inferenceResults: InferenceResult[] },
 ): Promise<InferenceResult> {
+  const { inferenceResults } = params;
   const selectedValue = await search({
     message:
       "Select ECS target (filter with keywords like 'prod web' or 'staging api'):",
     source: async (input) => {
-      return await searchInferenceResults(inferenceResults, input || "");
+      return await searchInferenceResults({ results: inferenceResults, input: input || "" });
     },
     pageSize: DEFAULT_PAGE_SIZE,
   });

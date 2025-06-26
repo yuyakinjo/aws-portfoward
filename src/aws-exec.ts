@@ -43,13 +43,13 @@ export async function execECSTask(
   const { executeECSCommand } = await import("./session.js");
 
   // Execute the command directly
-  await executeECSCommand(
-    options.region,
-    options.cluster,
-    options.task,
-    options.container,
+  await executeECSCommand({
+    region: options.region,
+    clusterName: options.cluster,
+    taskArn: options.task,
+    containerName: options.container,
     command,
-  );
+  });
 }
 
 /**

@@ -1,6 +1,7 @@
 import { startSSMSession } from "../../session.js";
 import type {
   ClusterName,
+  InferenceResult,
   Port,
   RDSInstance,
   RegionName,
@@ -25,7 +26,7 @@ export async function handleConnection(
   selections: SelectionState,
   selectedRDS: RDSInstance,
   selectedTask: string,
-  selectedInference: any,
+  selectedInference: InferenceResult,
   rdsPort: string,
   options: { dryRun?: boolean },
 ): Promise<void> {
@@ -49,14 +50,14 @@ export async function handleConnection(
   if (!localPortResult.success) throw new Error(localPortResult.error);
 
   // Generate reproducible command with parsed branded types
-  const reproducibleCommand = generateReproducibleCommand(
-    regionResult.data,
-    clusterResult.data,
-    taskResult.data,
-    selectedRDS.dbInstanceIdentifier,
-    rdsPortResult.data,
-    localPortResult.data,
-  );
+  const reproducibleCommand = generateReproducibleCommand({
+    region: regionResult.data,
+    cluster: clusterResult.data,
+    task: taskResult.data,
+    rds: selectedRDS.dbInstanceIdentifier,
+    rdsPort: rdsPortResult.data,
+    localPort: localPortResult.data,
+  });
 
   // Pass branded types to internal functions
   if (options.dryRun) {
@@ -96,14 +97,14 @@ async function handleDryRun(
   if (!taskIdResult.success) throw new Error(taskIdResult.error);
 
   // Generate and display dry run result with branded types
-  const dryRunResult = generateConnectDryRun(
+  const dryRunResult = generateConnectDryRun({
     region,
     cluster,
-    taskIdResult.data,
-    selectedRDS,
+    task: taskIdResult.data,
+    rdsInstance: selectedRDS,
     rdsPort,
     localPort,
-  );
+  });
 
   displayDryRunResult(dryRunResult);
   messages.success("Dry run completed successfully.");
@@ -120,11 +121,11 @@ async function handleLiveConnection(
   reproducibleCommand: string,
 ): Promise<void> {
   // Pass branded types directly to startSSMSession
-  await startSSMSession(
-    taskArn,
-    selectedRDS,
-    rdsPort,
+  await startSSMSession({
     localPort,
+    rdsInstance: selectedRDS,
+    rdsPort,
+    taskArn,
     reproducibleCommand,
-  );
+  });
 }

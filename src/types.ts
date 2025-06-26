@@ -1,8 +1,10 @@
 import { isNumber, isString } from "remeda";
 import {
+  any,
   array,
   type BaseSchema,
   boolean,
+  custom,
   type InferOutput,
   integer,
   literal,
@@ -20,6 +22,7 @@ import {
   union,
   type ValiError,
 } from "valibot";
+import type { ECSClient } from "@aws-sdk/client-ecs";
 import {
   AWS_REGION_NAME,
   DB_ENDPOINT_FORMAT,
@@ -212,6 +215,20 @@ export interface ExecOptions {
 // =============================================================================
 
 // =============================================================================
+// AWS SDK Custom Schemas
+// =============================================================================
+
+export const ECSClientSchema = pipe(
+  any(),
+  transform((input): ECSClient => {
+    if (!input || typeof input.send !== 'function') {
+      throw new Error('Invalid ECS Client');
+    }
+    return input as ECSClient;
+  })
+);
+
+// =============================================================================
 // Dry Run Parameter Schemas
 // =============================================================================
 
@@ -267,14 +284,37 @@ export const ECSExecParamsSchema = object({
 
 // Task scoring parameter schemas
 export const TaskScoringParamsSchema = object({
-  ecsClient: any(), // ECSClient cannot be validated with valibot
-  tasks: array(any()), // ECSTask[] - complex object validation
-  cluster: any(), // ECSCluster - complex object validation
+  ecsClient: ECSClientSchema,
+  tasks: array(object({
+    taskArn: TaskArnSchema,
+    displayName: string(),
+    runtimeId: RuntimeIdSchema,
+    taskId: TaskIdSchema,
+    clusterName: ClusterNameSchema,
+    serviceName: ServiceNameSchema,
+    taskStatus: TaskStatusSchema,
+  })),
+  cluster: object({
+    clusterName: ClusterNameSchema,
+    clusterArn: ClusterArnSchema,
+  }),
   rdsInstance: RDSInstanceSchema,
   analysisResults: object({
-    environment: array(any()),
-    naming: array(any()),
-    network: array(any()),
+    environment: array(object({
+      key: string(),
+      value: string(),
+      score: number(),
+    })),
+    naming: array(object({
+      pattern: string(),
+      score: number(),
+      reason: string(),
+    })),
+    network: array(object({
+      subnet: string(),
+      score: number(),
+      accessible: boolean(),
+    })),
   }),
 });
 
@@ -285,10 +325,14 @@ export const ECSTargetSelectionOptionsSchema = object({
 });
 
 export const ECSTargetSelectionParamsSchema = object({
-  ecsClient: any(), // ECSClient cannot be validated with valibot
+  ecsClient: ECSClientSchema,
   selectedRDS: RDSInstanceSchema,
   options: ECSTargetSelectionOptionsSchema,
-  selections: any(), // SelectionState - complex object
+  selections: object({
+    region: string(),
+    ecsCluster: optional(string()),
+    localPort: optional(string()),
+  }),
 });
 
 export type ConnectDryRunParams = InferOutput<typeof ConnectDryRunParamsSchema>;
@@ -301,14 +345,33 @@ export type ECSExecParams = InferOutput<typeof ECSExecParamsSchema>;
 export type TaskScoringParams = InferOutput<typeof TaskScoringParamsSchema>;
 // Environment check parameter schemas
 export const TaskEnvironmentCheckParamsSchema = object({
-  ecsClient: any(), // ECSClient cannot be validated with valibot
-  task: any(), // ECSTask - complex object validation
+  ecsClient: ECSClientSchema,
+  task: object({
+    taskArn: TaskArnSchema,
+    displayName: string(),
+    runtimeId: RuntimeIdSchema,
+    taskId: TaskIdSchema,
+    clusterName: ClusterNameSchema,
+    serviceName: ServiceNameSchema,
+    taskStatus: TaskStatusSchema,
+  }),
   rdsInstance: RDSInstanceSchema,
 });
 
 export const TaskNamingScoringParamsSchema = object({
-  tasks: array(any()), // ECSTask[] - complex object validation
-  cluster: any(), // ECSCluster - complex object validation
+  tasks: array(object({
+    taskArn: TaskArnSchema,
+    displayName: string(),
+    runtimeId: RuntimeIdSchema,
+    taskId: TaskIdSchema,
+    clusterName: ClusterNameSchema,
+    serviceName: ServiceNameSchema,
+    taskStatus: TaskStatusSchema,
+  })),
+  cluster: object({
+    clusterName: ClusterNameSchema,
+    clusterArn: ClusterArnSchema,
+  }),
   rdsInstance: RDSInstanceSchema,
 });
 
@@ -326,27 +389,155 @@ export type TaskNamingScoringParams = InferOutput<
 >;
 
 export const ECSTaskContainersParamsSchema = object({
-  ecsClient: any(), // ECSClient cannot be validated with valibot
+  ecsClient: ECSClientSchema,
   clusterName: ClusterNameSchema,
   taskArn: TaskArnSchema,
 });
 
-export type ECSTaskContainersParams = InferOutput<typeof ECSTaskContainersParamsSchema>;
+export type ECSTaskContainersParams = InferOutput<
+  typeof ECSTaskContainersParamsSchema
+>;
 
 // Search parameter schemas
 export const SearchParamsSchema = object({
-  items: array(any()),
+  items: array(union([
+    object({ clusterName: ClusterNameSchema }),
+    object({ dbInstanceIdentifier: DBInstanceIdentifierSchema }),
+    object({ taskArn: TaskArnSchema }),
+    object({ regionName: RegionNameSchema }),
+  ])),
   input: pipe(string(), minLength(0)),
-  defaultValue: optional(union([string(), any()])),
+  defaultValue: optional(union([string(), object({})])),
 });
 
 export const ClusterInferenceParamsSchema = object({
   rdsName: DBInstanceIdentifierSchema,
-  allClusters: array(any()), // ECSCluster[]
+  allClusters: array(object({
+    clusterName: ClusterNameSchema,
+    clusterArn: ClusterArnSchema,
+  })),
 });
 
 export type SearchParams = InferOutput<typeof SearchParamsSchema>;
-export type ClusterInferenceParams = InferOutput<typeof ClusterInferenceParamsSchema>;
+export type ClusterInferenceParams = InferOutput<
+  typeof ClusterInferenceParamsSchema
+>;
+
+// Search parameter schemas
+export const UniversalSearchConfigSchema = object({
+  items: array(union([
+    object({ clusterName: ClusterNameSchema }),
+    object({ dbInstanceIdentifier: DBInstanceIdentifierSchema }),
+    object({ taskArn: TaskArnSchema }),
+    object({ regionName: RegionNameSchema }),
+  ])),
+  searchKeys: array(string()),
+  displayFormatter: custom<(item: unknown) => string>((input) => {
+    return typeof input === 'function';
+  }, "Invalid display formatter function"),
+  emptyInputFormatter: optional(custom<(item: unknown) => string>((input) => {
+    return typeof input === 'function';
+  }, "Invalid empty input formatter function")),
+  threshold: optional(number()),
+  distance: optional(number()),
+  pageSize: optional(number()),
+});
+
+export const UniversalSearchParamsSchema = object({
+  config: UniversalSearchConfigSchema,
+  input: string(),
+  defaultValue: optional(union([string(), object({})])),
+});
+
+export const KeywordSearchParamsSchema = object({
+  items: array(union([
+    object({ clusterName: ClusterNameSchema }),
+    object({ dbInstanceIdentifier: DBInstanceIdentifierSchema }),
+    object({ taskArn: TaskArnSchema }),
+  ])),
+  input: string(),
+  searchFields: custom<(item: unknown) => string[]>((input) => {
+    return typeof input === 'function';
+  }, "Invalid search fields function"),
+});
+
+export const SearchRegionsParamsSchema = object({
+  regions: array(object({
+    regionName: RegionNameSchema,
+    optInStatus: string(),
+  })),
+  input: string(),
+  defaultRegion: optional(string()),
+});
+
+export const SearchClustersParamsSchema = object({
+  clusters: array(object({
+    clusterName: ClusterNameSchema,
+    clusterArn: ClusterArnSchema,
+  })),
+  input: string(),
+});
+
+export const SearchTasksParamsSchema = object({
+  tasks: array(object({
+    taskArn: TaskArnSchema,
+    displayName: string(),
+    runtimeId: RuntimeIdSchema,
+    taskId: TaskIdSchema,
+    clusterName: ClusterNameSchema,
+    serviceName: ServiceNameSchema,
+    taskStatus: TaskStatusSchema,
+  })),
+  input: string(),
+});
+
+export const SearchRDSParamsSchema = object({
+  rdsInstances: array(RDSInstanceSchema),
+  input: string(),
+});
+
+export const SearchContainersParamsSchema = object({
+  containers: array(string()),
+  input: string(),
+});
+
+export const SearchInferenceResultsParamsSchema = object({
+  results: array(object({
+    cluster: object({
+      clusterName: ClusterNameSchema,
+      clusterArn: ClusterArnSchema,
+    }),
+    score: number(),
+    reasons: array(string()),
+  })),
+  input: string(),
+});
+
+export type UniversalSearchConfig = InferOutput<
+  typeof UniversalSearchConfigSchema
+>;
+export type UniversalSearchParams = InferOutput<
+  typeof UniversalSearchParamsSchema
+>;
+export type KeywordSearchParams = InferOutput<typeof KeywordSearchParamsSchema>;
+export type SearchRegionsParams = InferOutput<typeof SearchRegionsParamsSchema>;
+export type SearchClustersParams = InferOutput<
+  typeof SearchClustersParamsSchema
+>;
+export type SearchTasksParams = InferOutput<typeof SearchTasksParamsSchema>;
+export type SearchRDSParams = InferOutput<typeof SearchRDSParamsSchema>;
+export type SearchContainersParams = InferOutput<
+  typeof SearchContainersParamsSchema
+>;
+export type SearchInferenceResultsParams = InferOutput<
+  typeof SearchInferenceResultsParamsSchema
+>;
+
+export interface InferenceResult {
+  cluster: ECSCluster;
+  score: number;
+  reasons: string[];
+}
 
 export interface DryRunResult {
   awsCommand: string;

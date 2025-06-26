@@ -364,13 +364,13 @@ async function execECSTaskWithSimpleUIFlow(
 
   // branded typesで渡す
   if (options.dryRun) {
-    const dryRunResult = generateExecDryRun({
+    const dryRunResult = generateExecDryRun(
       region,
-      cluster: selectedCluster.clusterName,
-      task: selectedTask.taskId,
-      container: selectedContainer,
+      selectedCluster.clusterName,
+      selectedTask.taskId,
+      selectedContainer,
       command,
-    });
+    );
     displayDryRunResult(dryRunResult);
     messages.success("Dry run completed successfully.");
   } else {
