@@ -69,6 +69,7 @@ export async function handleConnection(
       rdsPortResult.data,
       localPortResult.data,
     );
+    return;
   } else {
     await handleLiveConnection(
       taskResult.data,
