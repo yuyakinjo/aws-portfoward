@@ -291,11 +291,11 @@ async function execECSTaskWithSimpleUIFlow(
         })()
       : await (async () => {
           messages.warning("Getting container list...");
-          const containersResult = await getECSTaskContainers(
+          const containersResult = await getECSTaskContainers({
             ecsClient,
-            selectedCluster.clusterName,
-            selectedTask.realTaskArn,
-          );
+            clusterName: selectedCluster.clusterName,
+            taskArn: selectedTask.realTaskArn,
+          });
           if (!containersResult.success)
             throw new Error(containersResult.error);
           const containers = containersResult.data;
@@ -364,22 +364,22 @@ async function execECSTaskWithSimpleUIFlow(
 
   // branded typesで渡す
   if (options.dryRun) {
-    const dryRunResult = generateExecDryRun(
+    const dryRunResult = generateExecDryRun({
       region,
-      selectedCluster.clusterName,
-      selectedTask.taskId,
-      selectedContainer,
+      cluster: selectedCluster.clusterName,
+      task: selectedTask.taskId,
+      container: selectedContainer,
       command,
-    );
+    });
     displayDryRunResult(dryRunResult);
     messages.success("Dry run completed successfully.");
   } else {
-    await executeECSCommand(
+    await executeECSCommand({
       region,
-      selectedCluster.clusterName,
-      selectedTask.realTaskArn,
-      selectedContainer,
+      clusterName: selectedCluster.clusterName,
+      taskArn: selectedTask.realTaskArn,
+      containerName: selectedContainer,
       command,
-    );
+    });
   }
 }

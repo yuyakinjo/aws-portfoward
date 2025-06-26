@@ -37,10 +37,10 @@ export async function inferECSTargets(
 
     tracker.startStep("RDS name-based cluster inference");
     // Phase 0: Infer likely ECS clusters from RDS name (performance optimization)
-    const likelyClusterNames = inferClustersFromRDSName(
-      rdsInstance.dbInstanceIdentifier,
+    const likelyClusterNames = inferClustersFromRDSName({
+      rdsName: rdsInstance.dbInstanceIdentifier,
       allClusters,
-    );
+    });
     // likelyClusterNamesはstring[]の可能性があるのでparseしてbranded typesに
     const likelyClusters = likelyClusterNames
       .map((name: string) => {
@@ -66,13 +66,13 @@ export async function inferECSTargets(
           if (!tasksResult.success) return [];
           const tasks = tasksResult.data;
           if (tasks.length > 0) {
-            const scored = await scoreTasksAgainstRDS(
+            const scored = await scoreTasksAgainstRDS({
               ecsClient,
               tasks,
               cluster,
               rdsInstance,
               analysisResults,
-            );
+            });
             return scored;
           } else {
             return [];
@@ -102,11 +102,11 @@ export async function inferECSTargets(
             if (!tasksResult.success) return [];
             const tasks = tasksResult.data;
             if (tasks.length > 0) {
-              const scored = await scoreTasksByNaming(
+              const scored = await scoreTasksByNaming({
                 tasks,
                 cluster,
                 rdsInstance,
-              );
+              });
               return scored;
             } else {
               return [];
