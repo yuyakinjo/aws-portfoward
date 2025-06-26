@@ -1,7 +1,13 @@
+import type { DescribeDBInstancesCommandInput } from "@aws-sdk/client-rds";
 import { mockRDSInstances } from "../mock-data/index.js";
 
+interface MockCommand {
+  constructor: { name: string };
+  input?: unknown;
+}
+
 export class RDSClient {
-  send(command: any) {
+  send(command: MockCommand) {
     const commandName = command.constructor.name;
     switch (commandName) {
       case "DescribeDBInstancesCommand":
@@ -33,5 +39,5 @@ export class RDSClient {
 }
 
 export class DescribeDBInstancesCommand {
-  constructor(public input?: any) {}
+  constructor(public input?: DescribeDBInstancesCommandInput) {}
 }

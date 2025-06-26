@@ -1,7 +1,19 @@
+import type {
+  DescribeClustersCommandInput,
+  DescribeTasksCommandInput,
+  ListClustersCommandInput,
+  ListServicesCommandInput,
+  ListTasksCommandInput,
+} from "@aws-sdk/client-ecs";
 import { mockECSClusters, mockECSTasks } from "../mock-data/index.js";
 
+interface MockCommand {
+  constructor: { name: string };
+  input?: unknown;
+}
+
 export class ECSClient {
-  send(command: any) {
+  send(command: MockCommand) {
     const commandName = command.constructor.name;
     switch (commandName) {
       case "ListClustersCommand":
@@ -89,17 +101,17 @@ export class ECSClient {
 
 // コマンドクラスのダミー
 export class ListClustersCommand {
-  constructor(public input?: any) {}
+  constructor(public input?: ListClustersCommandInput) {}
 }
 export class DescribeClustersCommand {
-  constructor(public input?: any) {}
+  constructor(public input?: DescribeClustersCommandInput) {}
 }
 export class ListServicesCommand {
-  constructor(public input?: any) {}
+  constructor(public input?: ListServicesCommandInput) {}
 }
 export class ListTasksCommand {
-  constructor(public input?: any) {}
+  constructor(public input?: ListTasksCommandInput) {}
 }
 export class DescribeTasksCommand {
-  constructor(public input?: any) {}
+  constructor(public input?: DescribeTasksCommandInput) {}
 }

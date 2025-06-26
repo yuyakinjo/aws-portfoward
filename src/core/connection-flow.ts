@@ -115,9 +115,7 @@ export async function connectToRDSDryRun(
   // Use RDS port automatically with type safety
   const rdsPort: Port = isDefined(options.rdsPort)
     ? (() => {
-        messages.success(
-          `RDS Port (from CLI): ${unwrapBrandedNumber(options.rdsPort)}`,
-        );
+        messages.success(`RDS Port (from CLI): ${options.rdsPort}`);
         return options.rdsPort;
       })()
     : (() => {

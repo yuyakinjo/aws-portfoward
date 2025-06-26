@@ -19,7 +19,7 @@ export async function selectECSTarget(
     "Finding ECS targets with exec capability that can connect to this RDS...",
   );
 
-  const inferenceResults = await inferECSTargets(ecsClient, selectedRDS, false);
+  const inferenceResults = await inferECSTargets({ ecsClient, selectedRDS, enableNetworkAnalysis: false });
 
   if (isEmpty(inferenceResults)) {
     throw new Error(

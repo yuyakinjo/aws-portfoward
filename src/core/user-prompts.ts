@@ -67,7 +67,7 @@ export async function promptForRegion(
   const selectedValue = await search({
     message: "Search and select AWS region:",
     source: async (input) => {
-      return await searchRegions({ regions, input: input || "", defaultRegion });
+      return await searchRegions(regions, input || "", defaultRegion);
     },
     pageSize: DEFAULT_PAGE_SIZE,
   });
@@ -93,7 +93,7 @@ export async function promptForCluster(
   const selectedValue = await search({
     message: "Search and select ECS cluster:",
     source: async (input) => {
-      return await searchClusters({ clusters, input: input || "" });
+      return await searchClusters(clusters, input || "");
     },
     pageSize: DEFAULT_PAGE_SIZE,
   });
@@ -112,7 +112,7 @@ export async function promptForTask(
   const selectedValue = await search({
     message: "Search and select ECS task:",
     source: async (input) => {
-      return await searchTasks({ tasks, input: input || "" });
+      return await searchTasks(tasks, input || "");
     },
     pageSize: DEFAULT_PAGE_SIZE,
   });
@@ -136,7 +136,7 @@ export async function promptForRDS(
   const selectedValue = await search({
     message: "Search and select RDS instance:",
     source: async (input) => {
-      return await searchRDS({ rdsInstances, input: input || "" });
+      return await searchRDS(rdsInstances, input || "");
     },
     pageSize: DEFAULT_PAGE_SIZE,
   });
@@ -156,7 +156,7 @@ export async function promptForInferenceResult(
     message:
       "Select ECS target (filter with keywords like 'prod web' or 'staging api'):",
     source: async (input) => {
-      return await searchInferenceResults({ results: inferenceResults, input: input || "" });
+      return await searchInferenceResults(inferenceResults, input || "");
     },
     pageSize: DEFAULT_PAGE_SIZE,
   });

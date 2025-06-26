@@ -1,6 +1,8 @@
+import { parse } from "valibot";
 import type { RDSInstance } from "../../src/types.js";
+import { RDSInstanceSchema } from "../../src/types.js";
 
-export const mockRDSInstances: RDSInstance[] = [
+const rawMockData = [
   {
     dbInstanceIdentifier: "prod-web-db",
     endpoint: "prod-web-db.cluster-xyz.ap-northeast-1.rds.amazonaws.com",
@@ -67,3 +69,8 @@ export const mockRDSInstances: RDSInstance[] = [
     createdTime: new Date("2023-06-05T11:20:00Z"),
   },
 ];
+
+// Parse mock data with schemas for type safety
+export const mockRDSInstances: RDSInstance[] = rawMockData.map(instance => 
+  parse(RDSInstanceSchema, instance)
+);

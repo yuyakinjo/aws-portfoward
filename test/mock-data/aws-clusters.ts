@@ -1,6 +1,8 @@
+import { parse } from "valibot";
 import type { ECSCluster } from "../../src/types.js";
+import { ClusterNameSchema, ClusterArnSchema } from "../../src/types.js";
 
-export const mockECSClusters: ECSCluster[] = [
+const rawMockData = [
   {
     clusterName: "prod-web",
     clusterArn: "arn:aws:ecs:ap-northeast-1:123456789012:cluster/prod-web",
@@ -35,3 +37,9 @@ export const mockECSClusters: ECSCluster[] = [
       "arn:aws:ecs:ap-northeast-1:123456789012:cluster/staging-backend",
   },
 ];
+
+// Parse mock data with schemas for type safety
+export const mockECSClusters: ECSCluster[] = rawMockData.map(cluster => ({
+  clusterName: parse(ClusterNameSchema, cluster.clusterName),
+  clusterArn: parse(ClusterArnSchema, cluster.clusterArn),
+}));

@@ -6,6 +6,7 @@ export interface InferenceResult {
   method: "environment" | "naming" | "network";
   score: number;
   reason: string;
+  reasons: string[]; // Add reasons array for compatibility
 }
 
 export interface InferenceMatch {

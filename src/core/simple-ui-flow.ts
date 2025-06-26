@@ -100,12 +100,15 @@ async function connectToRDSWithSimpleUIInternal(
   messages.ui.displaySelectionState(selections);
 
   // Step 4: ECS Target Selection with Inference
-  const { selectedInference, selectedTask } = await selectECSTarget(
+  const { selectedInference, selectedTask } = await selectECSTarget({
     ecsClient,
     selectedRDS,
-    options,
+    options: {
+      cluster: options.cluster,
+      task: options.task,
+    },
     selections,
-  );
+  });
 
   // Update UI with ECS target selection
   messages.ui.displaySelectionState(selections);

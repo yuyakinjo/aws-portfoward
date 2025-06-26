@@ -5,7 +5,7 @@ import { displayCLIArguments } from "./display-utils.js";
  * Selection state for UI display
  */
 export interface SelectionState {
-  region?: string;
+  region: string;
   rds?: string;
   rdsPort?: string;
   ecsTarget?: string;

@@ -1,7 +1,13 @@
+import type { DescribeRegionsCommandInput } from "@aws-sdk/client-ec2";
 import { mockAWSRegions } from "../mock-data/index.js";
 
+interface MockCommand {
+  constructor: { name: string };
+  input?: unknown;
+}
+
 export class EC2Client {
-  send(command: any) {
+  send(command: MockCommand) {
     const commandName = command.constructor.name;
     switch (commandName) {
       case "DescribeRegionsCommand":
@@ -18,5 +24,5 @@ export class EC2Client {
 }
 
 export class DescribeRegionsCommand {
-  constructor(public input?: any) {}
+  constructor(public input?: DescribeRegionsCommandInput) {}
 }

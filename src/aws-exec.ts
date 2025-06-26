@@ -80,13 +80,13 @@ async function execECSTaskDryRun(options: ValidatedExecOptions): Promise<void> {
   messages.info(`Command: ${command}`);
 
   // Generate and display dry run result
-  const dryRunResult = generateExecDryRun(
-    options.region,
-    options.cluster,
-    options.task,
-    options.container,
+  const dryRunResult = generateExecDryRun({
+    region: options.region,
+    cluster: options.cluster,
+    task: options.task,
+    container: options.container,
     command,
-  );
+  });
 
   displayDryRunResult(dryRunResult);
   messages.success("Dry run completed successfully.");
