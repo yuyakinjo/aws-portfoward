@@ -16,13 +16,17 @@ import {
 import {
   ClusterArnSchema,
   ClusterNameSchema,
+  CommandSchema,
   type ContainerName,
-  type DatabaseEngine,
-  type DBEndpoint,
+  ContainerNameSchema,
+  DatabaseEngineSchema,
+  DateStringSchema,
+  DBEndpointSchema,
   type DBInstanceIdentifier,
   DBInstanceIdentifierSchema,
   DBInstanceStatusSchema,
   ECSClientSchema,
+  NonEmptyStringSchema,
   PortNumberSchema,
   PortSchema,
   RegionNameSchema,
@@ -31,6 +35,7 @@ import {
   TaskArnSchema,
   TaskIdSchema,
   TaskStatusSchema,
+  VpcSecurityGroupsSchema,
 } from "./branded.js";
 
 // =============================================================================
@@ -39,39 +44,17 @@ import {
 
 // RDS Instance schema for parsing AWS API responses
 export const RDSInstanceSchema = object({
-  dbInstanceIdentifier: pipe(
-    string(),
-    minLength(1, "DB Instance identifier cannot be empty"),
-    transform((id): DBInstanceIdentifier => id as DBInstanceIdentifier),
-  ),
-  endpoint: pipe(
-    string(),
-    minLength(1, "DB endpoint cannot be empty"),
-    transform((endpoint): DBEndpoint => endpoint as DBEndpoint),
-  ),
+  dbInstanceIdentifier: DBInstanceIdentifierSchema,
+  endpoint: DBEndpointSchema,
   port: PortNumberSchema,
-  engine: pipe(
-    string(),
-    minLength(1, "Database engine cannot be empty"),
-    transform((engine): DatabaseEngine => engine as DatabaseEngine),
-  ),
+  engine: DatabaseEngineSchema,
   dbInstanceClass: string(),
   dbInstanceStatus: DBInstanceStatusSchema,
   allocatedStorage: number(),
   availabilityZone: string(),
-  vpcSecurityGroups: pipe(
-    union([string(), array(string())]),
-    transform((groups): string[] =>
-      Array.isArray(groups) ? groups : [groups],
-    ),
-  ),
+  vpcSecurityGroups: VpcSecurityGroupsSchema,
   dbSubnetGroup: optional(string()),
-  createdTime: optional(
-    pipe(
-      string(),
-      transform((dateStr): Date => new Date(dateStr)),
-    ),
-  ),
+  createdTime: optional(DateStringSchema),
 });
 
 // =============================================================================
@@ -92,12 +75,8 @@ export const ExecDryRunParamsSchema = object({
   region: RegionNameSchema,
   cluster: ClusterNameSchema,
   task: TaskIdSchema,
-  container: pipe(
-    string(),
-    minLength(1, "Container name cannot be empty"),
-    transform((container): ContainerName => container as ContainerName),
-  ),
-  command: pipe(string(), minLength(1, "Command cannot be empty")),
+  container: ContainerNameSchema,
+  command: CommandSchema,
 });
 
 export const ReproducibleCommandParamsSchema = object({
@@ -114,19 +93,15 @@ export const SSMSessionParamsSchema = object({
   rdsInstance: RDSInstanceSchema,
   rdsPort: PortNumberSchema,
   localPort: PortNumberSchema,
-  reproducibleCommand: optional(pipe(string(), minLength(1))),
+  reproducibleCommand: optional(NonEmptyStringSchema),
 });
 
 export const ECSExecParamsSchema = object({
   region: RegionNameSchema,
   clusterName: ClusterNameSchema,
   taskArn: union([TaskArnSchema, TaskIdSchema]),
-  containerName: pipe(
-    string(),
-    minLength(1, "Container name cannot be empty"),
-    transform((container): ContainerName => container as ContainerName),
-  ),
-  command: pipe(string(), minLength(1, "Command cannot be empty")),
+  containerName: ContainerNameSchema,
+  command: CommandSchema,
 });
 
 // Task scoring parameter schemas
@@ -453,7 +428,7 @@ export const InferenceResultSchema = object({
 export const HandleConnectionParamsSchema = object({
   selections: SelectionStateSchema,
   selectedRDS: RDSInstanceSchema,
-  selectedTask: string(),
+  selectedTask: TaskArnSchema,
   selectedInference: InferenceResultSchema,
   rdsPort: PortNumberSchema,
   options: object({ dryRun: optional(boolean()) }),

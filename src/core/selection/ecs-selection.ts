@@ -3,7 +3,7 @@ import type { InferenceResult } from "../../inference/index.js";
 import { inferECSTargets } from "../../inference/index.js";
 import { isTaskArnShape } from "../../regex.js";
 import { searchInferenceResults } from "../../search.js";
-import type { ECSTargetSelectionParams } from "../../types.js";
+import type { ECSTargetSelectionParams, TaskArn } from "../../types.js";
 import { unwrapBrandedString } from "../../types.js";
 import { isEmpty, messages } from "../../utils/index.js";
 import { clearLoadingMessage } from "../ui/display-utils.js";
@@ -25,7 +25,7 @@ export async function selectECSTarget(
       rdsPort?: string;
     };
   },
-): Promise<{ selectedInference: InferenceResult; selectedTask: string }> {
+): Promise<{ selectedInference: InferenceResult; selectedTask: TaskArn }> {
   const { ecsClient, selectedRDS, options, selections } = params;
 
   messages.warning(
@@ -35,7 +35,6 @@ export async function selectECSTarget(
   const inferenceResults = await inferECSTargets({
     ecsClient,
     selectedRDS,
-    enableNetworkAnalysis: false,
   });
 
   if (isEmpty(inferenceResults)) {
@@ -72,7 +71,7 @@ export async function selectECSTarget(
       selections.ecsCluster = unwrapBrandedString(
         matchingResult.cluster.clusterName,
       );
-      selections.ecsTarget = matchingResult.task.taskArn;
+      selections.ecsTarget = unwrapBrandedString(matchingResult.task.taskArn);
       messages.success(`✓ ECS cluster (from CLI): ${options.cluster}`);
       messages.success(`✓ ECS task (from CLI): ${options.task}`);
       return { selectedInference: inference, selectedTask: task };
@@ -101,7 +100,7 @@ export async function selectECSTarget(
   const inference = selectedInference as InferenceResult;
   const task = inference.task.taskArn;
   selections.ecsCluster = unwrapBrandedString(inference.cluster.clusterName);
-  selections.ecsTarget = inference.task.taskArn;
+  selections.ecsTarget = unwrapBrandedString(inference.task.taskArn);
 
   return { selectedInference: inference, selectedTask: task };
 }

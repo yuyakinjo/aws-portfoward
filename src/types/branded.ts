@@ -1,6 +1,7 @@
 import type { ECSClient } from "@aws-sdk/client-ecs";
 import { isFunction } from "remeda";
 import {
+  array,
   type BaseSchema,
   brand,
   type InferOutput,
@@ -11,6 +12,7 @@ import {
   minValue,
   number,
   object,
+  optional,
   pipe,
   regex,
   string,
@@ -161,6 +163,34 @@ export const DatabaseEngineSchema = pipe(
   brand("DatabaseEngine"),
 );
 export type DatabaseEngine = InferOutput<typeof DatabaseEngineSchema>;
+
+// Command schema for CLI commands
+export const CommandSchema = pipe(
+  string(),
+  minLength(1, "Command cannot be empty"),
+);
+export type Command = InferOutput<typeof CommandSchema>;
+
+// Optional command schema for CLI commands
+export const OptionalCommandSchema = optional(CommandSchema);
+
+// Non-empty string schema for reusable validation
+export const NonEmptyStringSchema = pipe(
+  string(),
+  minLength(1, "String cannot be empty"),
+);
+
+// Date string schema for parsing date strings
+export const DateStringSchema = pipe(
+  string(),
+  transform((dateStr): Date => new Date(dateStr)),
+);
+
+// VPC Security Groups schema (can be string or array of strings)
+export const VpcSecurityGroupsSchema = pipe(
+  union([string(), array(string())]),
+  transform((groups): string[] => (Array.isArray(groups) ? groups : [groups])),
+);
 
 // Task status with union types for compile-time safety
 export const TaskStatusSchema = union([

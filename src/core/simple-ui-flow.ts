@@ -1,7 +1,7 @@
 import { ECSClient } from "@aws-sdk/client-ecs";
 import { RDSClient } from "@aws-sdk/client-rds";
 import type { ValidatedConnectOptions } from "../types.js";
-import { parsePortNumber } from "../types.js";
+import { parsePortNumber, unwrapBrandedString } from "../types.js";
 import { askRetry, displayFriendlyError, messages } from "../utils/index.js";
 import { handleConnection } from "./connection/rds-connection.js";
 import { selectECSTarget } from "./selection/ecs-selection.js";
@@ -143,8 +143,8 @@ async function connectToRDSWithSimpleUIInternal(
   });
 
   // selectionsに反映（UI表示用）
-  selections.ecsTarget = selectedTask;
-  selections.ecsCluster = selectedInference.cluster.clusterName;
+  selections.ecsTarget = unwrapBrandedString(selectedTask);
+  selections.ecsCluster = String(selectedInference.cluster.clusterName);
 
   // Update UI with ECS target selection
   const displaySelections3 = {
@@ -184,8 +184,8 @@ async function connectToRDSWithSimpleUIInternal(
     selections,
     selectedInference,
     selectedRDS,
-    rdsPort: rdsPortResult.data,
     selectedTask,
+    rdsPort: rdsPortResult.data,
     options,
   });
 }

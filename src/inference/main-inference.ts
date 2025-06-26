@@ -1,4 +1,5 @@
 import type { ECSClient } from "@aws-sdk/client-ecs";
+import { isDefined } from "remeda";
 import {
   getECSClustersWithExecCapability,
   getECSTasksWithExecCapability,
@@ -61,7 +62,7 @@ export async function inferECSTargets(
         if (!clusterNameResult.success) return undefined;
         return clusterMap.get(clusterNameResult.data);
       })
-      .filter((cluster): cluster is ECSCluster => cluster !== undefined);
+      .filter((cluster): cluster is ECSCluster => isDefined(cluster));
     tracker.endStep();
 
     // Phase 1: 推論されたクラスターでタスク検索（最優先）
