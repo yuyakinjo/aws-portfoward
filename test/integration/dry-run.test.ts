@@ -75,18 +75,18 @@ describe("Dry Run Integration Tests", () => {
     });
   });
 
-  describe("exec-task command with --dry-run", () => {
-    it("should show help when --dry-run is used with exec-task command", async () => {
-      const result = await runCommand(["exec-task", "--help"]);
+  describe("exec command with --dry-run", () => {
+    it("should show help when --dry-run is used with exec command", async () => {
+      const result = await runCommand(["exec", "--help"]);
 
       expect(result.exitCode).toBe(0);
       expect(result.stdout).toContain("--dry-run");
       expect(result.stdout).toContain("Show commands without execution");
     });
 
-    it("should show error for missing required parameters in exec-task dry run", async () => {
+    it("should show error for missing required parameters in exec dry run", async () => {
       const result = await runCommand([
-        "exec-task",
+        "exec",
         "--dry-run",
         "--region",
         "us-east-1",
@@ -101,7 +101,7 @@ describe("Dry Run Integration Tests", () => {
 
     it("should execute dry run successfully with all required parameters", async () => {
       const result = await runCommand([
-        "exec-task",
+        "exec",
         "--dry-run",
         "--region",
         "us-east-1",

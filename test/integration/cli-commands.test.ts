@@ -111,7 +111,7 @@ describe("CLI Commands Integration", () => {
       const output = stdout + stderr;
       expect(output).toContain("Usage:");
       expect(output).toContain("connect");
-      expect(output).toContain("exec-task");
+      expect(output).toContain("exec");
     });
 
     it("should display version with --version flag", async () => {
@@ -143,7 +143,7 @@ describe("CLI Commands Integration", () => {
       const { code, stdout } = await runCLI(["connect", "--help"]);
 
       expect(code).toBe(0);
-      expect(stdout).toContain("Connect to RDS via ECS with interactive UI");
+      expect(stdout).toContain("Connect to an AWS RDS instance via ECS Exec");
       expect(stdout).toContain("--region");
       expect(stdout).toContain("--cluster");
       expect(stdout).toContain("--task");
@@ -233,14 +233,12 @@ describe("CLI Commands Integration", () => {
     });
   });
 
-  describe("exec-task command", () => {
-    it("should show help for exec-task command", async () => {
-      const { code, stdout } = await runCLI(["exec-task", "--help"]);
+  describe("exec command", () => {
+    it("should show help for exec command", async () => {
+      const { code, stdout } = await runCLI(["exec", "--help"]);
 
       expect(code).toBe(0);
-      expect(stdout).toContain(
-        "Execute command in ECS task container with interactive UI",
-      );
+      expect(stdout).toContain("Execute a command on an AWS ECS task");
       expect(stdout).toContain("--region");
       expect(stdout).toContain("--cluster");
       expect(stdout).toContain("--task");
@@ -250,7 +248,7 @@ describe("CLI Commands Integration", () => {
     });
 
     it("should handle missing required parameters with interactive UI", async () => {
-      const { code } = await runCLI(["exec-task"], 2000);
+      const { code } = await runCLI(["exec"], 2000);
 
       // インタラクティブUIモードでは失敗するかタイムアウトするはず
       expect(code === 1 || code === null).toBe(true);
@@ -259,7 +257,7 @@ describe("CLI Commands Integration", () => {
     it("should validate task parameter format", async () => {
       const { code, stdout } = await runCLI(
         [
-          "exec-task",
+          "exec",
           "--region",
           "ap-northeast-1",
           "--cluster",
@@ -281,7 +279,7 @@ describe("CLI Commands Integration", () => {
     it("should validate container parameter format", async () => {
       const { code, stdout } = await runCLI(
         [
-          "exec-task",
+          "exec",
           "--region",
           "ap-northeast-1",
           "--cluster",
@@ -303,7 +301,7 @@ describe("CLI Commands Integration", () => {
     it("should accept valid command parameter", async () => {
       const { code, stdout } = await runCLI(
         [
-          "exec-task",
+          "exec",
           "--region",
           "ap-northeast-1",
           "--cluster",
@@ -335,7 +333,7 @@ describe("CLI Commands Integration", () => {
 
       // 統合後はconnect-uiコマンドは存在しないので、exec-taskでのバリデーションと比較
       const { stdout: execTaskError } = await runCLI(
-        ["exec-task", "--region", ""],
+        ["exec", "--region", ""],
         2000,
       );
 
