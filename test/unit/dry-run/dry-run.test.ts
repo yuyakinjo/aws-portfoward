@@ -6,13 +6,13 @@ import {
   generateExecDryRun,
 } from "../../../src/core/dry-run.js";
 import {
+  type ClusterName,
+  type ContainerName,
+  type Port,
   RDSInstanceSchema,
   type RegionName,
-  type ClusterName,
-  type TaskId,
-  type Port,
-  type ContainerName,
   type TaskArn,
+  type TaskId,
 } from "../../../src/types.js";
 
 // Mock console.log to capture output

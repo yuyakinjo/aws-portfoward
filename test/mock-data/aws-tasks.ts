@@ -1,11 +1,11 @@
 import { parse } from "valibot";
 import type { ECSTask } from "../../src/types.js";
 import {
+  ClusterNameSchema,
+  RuntimeIdSchema,
+  ServiceNameSchema,
   TaskArnSchema,
   TaskIdSchema,
-  RuntimeIdSchema,
-  ClusterNameSchema,
-  ServiceNameSchema,
   TaskStatusSchema,
 } from "../../src/types.js";
 

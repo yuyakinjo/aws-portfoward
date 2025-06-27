@@ -1,6 +1,6 @@
 import { parse } from "valibot";
 import type { ECSCluster } from "../../src/types.js";
-import { ClusterNameSchema, ClusterArnSchema } from "../../src/types.js";
+import { ClusterArnSchema, ClusterNameSchema } from "../../src/types.js";
 
 const rawMockData = [
   {
