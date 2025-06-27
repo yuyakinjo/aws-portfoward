@@ -1,6 +1,5 @@
 import * as net from "node:net";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { parsePort } from "../../../src/types.js";
 import {
   areAllPortsInRange,
   findAvailablePort,

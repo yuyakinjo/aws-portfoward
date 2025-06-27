@@ -1,4 +1,4 @@
-import { type InferIssue, safeParse } from "valibot";
+import { safeParse } from "valibot";
 import { isTaskArnShape } from "../regex.js";
 import {
   type ClusterArn,
