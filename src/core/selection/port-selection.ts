@@ -18,12 +18,12 @@ export async function selectLocalPort(
   selections: SelectionState,
 ): Promise<string> {
   if (isDefined(options.localPort)) {
-    const portResult = parsePortNumber(Number(options.localPort));
+    const portResult = parsePortNumber(options.localPort);
     if (!portResult.success) throw new Error(portResult.error);
 
     selections.localPort = portResult.data;
     messages.success(`✓ Local port (from CLI): ${options.localPort}`);
-    return `${Number(options.localPort)}`;
+    return `${options.localPort}`;
   }
 
   try {
@@ -53,7 +53,7 @@ export async function selectLocalPort(
       },
     });
 
-    const portResult = parsePortNumber(parseInt(port));
+    const portResult = parsePortNumber(port);
     if (!portResult.success) throw new Error(portResult.error);
 
     selections.localPort = portResult.data;

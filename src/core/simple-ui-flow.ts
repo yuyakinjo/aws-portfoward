@@ -177,7 +177,7 @@ async function connectToRDSWithSimpleUIInternal(
   messages.ui.displaySelectionState(displaySelections4);
 
   // Step 6: Handle Connection or Dry Run - use correct parameter order
-  const rdsPortResult = parsePortNumber(Number(rdsPort));
+  const rdsPortResult = parsePortNumber(rdsPort);
   if (!rdsPortResult.success) throw new Error(rdsPortResult.error);
 
   await handleConnection({
@@ -235,10 +235,10 @@ async function handleDirectDryRun(
   const taskIdResult = parseTaskId(taskId);
   if (!taskIdResult.success) throw new Error(taskIdResult.error);
 
-  const rdsPortResult = parsePortNumber(Number(options.rdsPort));
+  const rdsPortResult = parsePortNumber(options.rdsPort);
   if (!rdsPortResult.success) throw new Error(rdsPortResult.error);
 
-  const localPortResult = parsePortNumber(Number(options.localPort));
+  const localPortResult = parsePortNumber(options.localPort);
   if (!localPortResult.success) throw new Error(localPortResult.error);
 
   // Parse RDS identifier for mock instance

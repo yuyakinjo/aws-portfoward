@@ -95,7 +95,7 @@ export function determineRDSPort(
   selections: SelectionState,
 ): string {
   if (options.rdsPort) {
-    const portResult = parsePortNumber(Number(options.rdsPort));
+    const portResult = parsePortNumber(options.rdsPort);
     if (!portResult.success) throw new Error(portResult.error);
 
     selections.rdsPort = portResult.data;
@@ -104,7 +104,7 @@ export function determineRDSPort(
   }
 
   // Use the actual port from RDS instance (branded type), fallback to engine default
-  const actualRDSPort = Number(selectedRDS.port);
+  const actualRDSPort = selectedRDS.port;
   const fallbackPort = getDefaultPortForEngine(selectedRDS.engine);
   const port = actualRDSPort || fallbackPort;
 

@@ -55,11 +55,11 @@ export async function handleConnection(
   const taskResult = parseTaskArn(selectedTask);
   if (!taskResult.success) throw new Error(taskResult.error);
 
-  const rdsPortResult = parsePortNumber(Number(rdsPort));
+  const rdsPortResult = parsePortNumber(rdsPort);
   if (!rdsPortResult.success) throw new Error(rdsPortResult.error);
 
   const localPortStr = selections.localPort || "8888";
-  const localPortResult = parsePortNumber(Number(localPortStr));
+  const localPortResult = parsePortNumber(localPortStr);
   if (!localPortResult.success) throw new Error(localPortResult.error);
 
   // Generate reproducible command with parsed branded types
