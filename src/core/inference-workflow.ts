@@ -1,10 +1,10 @@
-import { isEmpty } from "../utils/index.js";
 import {
   formatInferenceResult,
   type InferenceResult,
 } from "../inference/index.js";
 import { splitByWhitespace } from "../regex.js";
 import type { ECSCluster } from "../types.js";
+import { isEmpty } from "../utils/index.js";
 
 export interface InferenceWorkflowResult {
   selectedInference?: InferenceResult;

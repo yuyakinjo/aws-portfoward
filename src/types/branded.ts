@@ -180,12 +180,6 @@ export const NonEmptyStringSchema = pipe(
   minLength(1, "String cannot be empty"),
 );
 
-// Date string schema for parsing date strings
-export const DateStringSchema = pipe(
-  string(),
-  transform((dateStr): Date => new Date(dateStr)),
-);
-
 // VPC Security Groups schema (can be string or array of strings)
 export const VpcSecurityGroupsSchema = pipe(
   union([string(), array(string())]),

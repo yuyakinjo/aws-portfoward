@@ -20,7 +20,6 @@ import {
   type ContainerName,
   ContainerNameSchema,
   DatabaseEngineSchema,
-  DateStringSchema,
   DBEndpointSchema,
   type DBInstanceIdentifier,
   DBInstanceIdentifierSchema,
@@ -54,7 +53,15 @@ export const RDSInstanceSchema = object({
   availabilityZone: string(),
   vpcSecurityGroups: VpcSecurityGroupsSchema,
   dbSubnetGroup: optional(string()),
-  createdTime: optional(DateStringSchema),
+  createdTime: optional(
+    pipe(
+      union([string(), custom<Date>((input) => input instanceof Date)]),
+      transform((input): Date => {
+        if (input instanceof Date) return input;
+        return new Date(input);
+      }),
+    ),
+  ),
 });
 
 // =============================================================================
@@ -418,7 +425,15 @@ export const InferenceResultSchema = object({
     clusterName: ClusterNameSchema,
     serviceName: ServiceNameSchema,
     taskStatus: TaskStatusSchema,
-    createdAt: optional(string()), // Date型はstringで受けて後で変換
+    createdAt: optional(
+      pipe(
+        union([string(), custom<Date>((input) => input instanceof Date)]),
+        transform((input): Date => {
+          if (input instanceof Date) return input;
+          return new Date(input);
+        }),
+      ),
+    ),
   }),
 });
 

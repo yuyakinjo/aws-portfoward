@@ -1,4 +1,4 @@
-import { parse } from "valibot";
+import { safeParse } from "valibot";
 import { startSSMSession } from "../../session.js";
 import {
   parseClusterName,
@@ -26,6 +26,14 @@ import { displayDryRunResult, generateConnectDryRun } from "../dry-run.js";
 export async function handleConnection(
   params: HandleConnectionParams,
 ): Promise<void> {
+  // Validate parameters with schema
+  const parseResult = safeParse(HandleConnectionParamsSchema, params);
+  if (!parseResult.success) {
+    throw new Error(
+      `Invalid parameters: ${parseResult.issues.map((issue) => `${issue.path?.map((p) => p.key).join(".")} - ${issue.message}`).join(", ")}`,
+    );
+  }
+
   const {
     selections,
     selectedInference,
@@ -33,7 +41,7 @@ export async function handleConnection(
     rdsPort,
     selectedTask,
     options,
-  } = parse(HandleConnectionParamsSchema, params);
+  } = parseResult.output;
 
   // Parse external inputs only once at the boundary
   const regionResult = parseRegionName(selections.region);
