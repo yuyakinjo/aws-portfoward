@@ -25,7 +25,6 @@ export interface InferenceMatch {
   match_details?: Record<string, unknown>;
 }
 
-export { loadAnalysisResults } from "./analysis-loader.js";
 export { inferClustersFromRDSName } from "./cluster-inference.js";
 // メイン推論関数とフォーマッタ
 export { formatInferenceResult, inferECSTargets } from "./main-inference.js";

@@ -41,7 +41,6 @@ export default defineConfig({
         "src/types.ts",
         "src/version.ts",
         // 外部データ読み込み
-        "src/inference/analysis-loader.ts",
         "src/inference/performance-tracker.ts",
         // 設定ファイル
         "vitest.config.ts",
