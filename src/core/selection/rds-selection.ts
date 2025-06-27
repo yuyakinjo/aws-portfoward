@@ -2,10 +2,7 @@ import type { RDSClient } from "@aws-sdk/client-rds";
 import { search } from "@inquirer/prompts";
 import { getRDSInstances } from "../../aws-services.js";
 import { searchRDS } from "../../search.js";
-import {
-  parseDBInstanceIdentifier,
-  parsePort,
-} from "../../types/parsers.js";
+import { parseDBInstanceIdentifier, parsePort } from "../../types/parsers.js";
 import type { RDSInstance, SelectionState } from "../../types.js";
 import { getDefaultPortForEngine, messages } from "../../utils/index.js";
 import { clearLoadingMessage } from "../ui/display-utils.js";
