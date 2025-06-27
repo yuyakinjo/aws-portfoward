@@ -21,9 +21,17 @@ export const messages = {
     console.log(message);
   },
 
+  warn: (message: string) => {
+    console.warn(chalk.yellow(message));
+  },
+
+  debug: (message: string) => {
+    console.log(chalk.gray(`[DEBUG] ${message}`));
+  },
+
   // Clear previous lines
   clearLines: (count: number) => {
-    for (let i = 0; i < count; i++) {
+    for (const _ of Array(count)) {
       process.stdout.write("\x1b[1A"); // Move cursor up
       process.stdout.write("\x1b[2K"); // Clear entire line
     }

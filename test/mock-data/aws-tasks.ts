@@ -1,6 +1,15 @@
+import { parse } from "valibot";
 import type { ECSTask } from "../../src/types.js";
+import {
+  TaskArnSchema,
+  TaskIdSchema,
+  RuntimeIdSchema,
+  ClusterNameSchema,
+  ServiceNameSchema,
+  TaskStatusSchema,
+} from "../../src/types.js";
 
-export const mockECSTasks: ECSTask[] = [
+const rawMockData = [
   {
     taskArn: "ecs:prod-web_a1b2c3d4e5f6_0123456789abcdef",
     realTaskArn:
@@ -74,3 +83,16 @@ export const mockECSTasks: ECSTask[] = [
     createdAt: new Date("2023-11-20T09:00:00Z"),
   },
 ];
+
+// Parse mock data with schemas for type safety
+export const mockECSTasks: ECSTask[] = rawMockData.map((task) => ({
+  taskArn: parse(TaskArnSchema, task.taskArn),
+  realTaskArn: parse(TaskArnSchema, task.realTaskArn),
+  displayName: task.displayName,
+  runtimeId: parse(RuntimeIdSchema, task.runtimeId),
+  taskId: parse(TaskIdSchema, task.taskId),
+  clusterName: parse(ClusterNameSchema, task.clusterName),
+  serviceName: parse(ServiceNameSchema, task.serviceName),
+  taskStatus: parse(TaskStatusSchema, task.taskStatus),
+  createdAt: task.createdAt,
+}));

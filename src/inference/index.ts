@@ -1,11 +1,12 @@
 // 型定義をエクスポート
 export interface InferenceResult {
   cluster: import("../types.js").ECSCluster;
-  task: import("../types.js").ECSTask;
+  task: Omit<import("../types.js").ECSTask, "realTaskArn" | "createdAt">;
   confidence: "high" | "medium" | "low";
   method: "environment" | "naming" | "network";
   score: number;
   reason: string;
+  reasons: string[];
 }
 
 export interface InferenceMatch {
@@ -24,7 +25,6 @@ export interface InferenceMatch {
   match_details?: Record<string, unknown>;
 }
 
-export { loadAnalysisResults } from "./analysis-loader.js";
 export { inferClustersFromRDSName } from "./cluster-inference.js";
 // メイン推論関数とフォーマッタ
 export { formatInferenceResult, inferECSTargets } from "./main-inference.js";

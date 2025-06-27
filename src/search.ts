@@ -1,24 +1,24 @@
 import chalk from "chalk";
 import Fuse from "fuse.js";
+import { isEmpty, isObjectType } from "remeda";
 import {
   formatInferenceResult,
   type InferenceResult,
 } from "./inference/index.js";
+import { splitByWhitespace } from "./regex.js";
 import type { AWSRegion, ECSCluster, ECSTask, RDSInstance } from "./types.js";
 
 // Helper functions for type-safe property access
 function hasRegionName(item: unknown): item is AWSRegion {
-  return typeof item === "object" && item !== null && "regionName" in item;
+  return isObjectType(item) && "regionName" in item;
 }
 
 function hasClusterName(item: unknown): item is ECSCluster {
-  return typeof item === "object" && item !== null && "clusterName" in item;
+  return isObjectType(item) && "clusterName" in item;
 }
 
 function hasDbInstanceIdentifier(item: unknown): item is RDSInstance {
-  return (
-    typeof item === "object" && item !== null && "dbInstanceIdentifier" in item
-  );
+  return isObjectType(item) && "dbInstanceIdentifier" in item;
 }
 
 function getResourceIdentifier(item: unknown): string | undefined {
@@ -28,7 +28,6 @@ function getResourceIdentifier(item: unknown): string | undefined {
   return undefined;
 }
 
-// 汎用的な検索アイテムの型定義
 interface SearchableItem {
   name: string;
   value: unknown;
@@ -37,7 +36,6 @@ interface SearchableItem {
   isDefault?: boolean;
 }
 
-// 検索設定の型定義
 interface SearchConfig<T> {
   items: T[];
   searchKeys: string[];
@@ -57,10 +55,6 @@ interface SearchConfig<T> {
   pageSize?: number;
 }
 
-/**
- * 汎用的な検索関数（キーワード絞り込み優先）
- * スペース区切りキーワードでの絞り込みを重視し、ファジー検索は補助的に使用
- */
 export async function universalSearch<T>(
   config: SearchConfig<T>,
   input: string,
@@ -78,24 +72,26 @@ export async function universalSearch<T>(
   // 空の入力の場合
   if (!input || input.trim() === "") {
     // デフォルト値がある場合は先頭に表示
-    let sortedItems = items;
-    if (defaultValue) {
-      const defaultKey = typeof defaultValue === "string" ? defaultValue : null;
-      sortedItems = [
-        ...items.filter((item) => {
-          if (defaultKey) {
-            return getResourceIdentifier(item) === defaultKey;
-          }
-          return item === defaultValue;
-        }),
-        ...items.filter((item) => {
-          if (defaultKey) {
-            return getResourceIdentifier(item) !== defaultKey;
-          }
-          return item !== defaultValue;
-        }),
-      ];
-    }
+    const sortedItems = defaultValue
+      ? (() => {
+          const defaultKey =
+            typeof defaultValue === "string" ? defaultValue : null;
+          return [
+            ...items.filter((item) => {
+              if (defaultKey) {
+                return getResourceIdentifier(item) === defaultKey;
+              }
+              return item === defaultValue;
+            }),
+            ...items.filter((item) => {
+              if (defaultKey) {
+                return getResourceIdentifier(item) !== defaultKey;
+              }
+              return item !== defaultValue;
+            }),
+          ];
+        })()
+      : items;
 
     return sortedItems.map((item, index) => {
       const isDefault =
@@ -114,12 +110,14 @@ export async function universalSearch<T>(
         const keys = key.split(".");
         let value: unknown = item;
         for (const k of keys) {
-          value =
-            value && typeof value === "object" && k in value
-              ? (value as Record<string, unknown>)[k]
-              : undefined;
+          if (value && typeof value === "object" && k in value) {
+            value = (value as Record<string, unknown>)[k];
+          } else {
+            value = undefined;
+            break;
+          }
         }
-        return value?.toString() || "";
+        return value || "";
       })
       .filter(Boolean)
       .join(" ")
@@ -127,11 +125,9 @@ export async function universalSearch<T>(
   };
 
   // Step 1: スペース区切りキーワード検索（優先）
-  const keywords = input
-    .trim()
-    .toLowerCase()
-    .split(/\s+/)
-    .filter((keyword) => keyword.length > 0);
+  const keywords = splitByWhitespace(input.trim().toLowerCase()).filter(
+    (keyword) => keyword.length > 0,
+  );
 
   if (keywords.length > 0) {
     // キーワード検索で絞り込み
@@ -166,10 +162,10 @@ export async function universalSearch<T>(
 
           // 完全一致を優先
           const aExactMatches = keywords.filter((keyword) =>
-            aText.split(/\s+/).includes(keyword),
+            splitByWhitespace(aText).includes(keyword),
           ).length;
           const bExactMatches = keywords.filter((keyword) =>
-            bText.split(/\s+/).includes(keyword),
+            splitByWhitespace(bText).includes(keyword),
           ).length;
 
           if (aExactMatches !== bExactMatches) {
@@ -233,10 +229,6 @@ export async function universalSearch<T>(
     });
 }
 
-/**
- * スペース区切りキーワード検索関数
- * 複数のキーワードをAND条件で検索
- */
 export function keywordSearch<T>(
   items: T[],
   input: string,
@@ -247,13 +239,11 @@ export function keywordSearch<T>(
   }
 
   // スペース区切りでキーワードを分割
-  const keywords = input
-    .trim()
-    .toLowerCase()
-    .split(/\s+/)
-    .filter((keyword) => keyword.length > 0);
+  const keywords = splitByWhitespace(input.trim().toLowerCase()).filter(
+    (keyword) => keyword.length > 0,
+  );
 
-  if (keywords.length === 0) {
+  if (isEmpty(keywords)) {
     return items;
   }
 
@@ -269,11 +259,6 @@ export function keywordSearch<T>(
   });
 }
 
-// ===== 各リソース用の検索関数 =====
-
-/**
- * AWS Region検索
- */
 export async function searchRegions(
   regions: AWSRegion[],
   input: string,
@@ -306,9 +291,6 @@ export async function searchRegions(
   return universalSearch(config, input, defaultRegion);
 }
 
-/**
- * ECS Cluster検索
- */
 export async function searchClusters(
   clusters: ECSCluster[],
   input: string,
@@ -340,9 +322,6 @@ export async function searchClusters(
   return universalSearch(config, input);
 }
 
-/**
- * ECS Task検索
- */
 export async function searchTasks(
   tasks: ECSTask[],
   input: string,
@@ -373,9 +352,6 @@ export async function searchTasks(
   return universalSearch(config, input);
 }
 
-/**
- * RDS Instance検索
- */
 export async function searchRDS(
   rdsInstances: RDSInstance[],
   input: string,
@@ -403,10 +379,6 @@ export async function searchRDS(
   return universalSearch(config, input);
 }
 
-/**
- * Container検索（ECS Task内のコンテナ）
- * キーワード絞り込み優先
- */
 export async function searchContainers(
   containers: string[],
   input: string,
@@ -454,10 +426,6 @@ export async function searchContainers(
     });
 }
 
-/**
- * Inference Results検索（RDS-ECS推論結果）
- * キーワード絞り込み優先
- */
 export async function searchInferenceResults(
   results: InferenceResult[],
   input: string,

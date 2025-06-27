@@ -1,23 +1,17 @@
-import { EC2Client } from "@aws-sdk/client-ec2";
 import { ECSClient } from "@aws-sdk/client-ecs";
 import { RDSClient } from "@aws-sdk/client-rds";
-import { input, search } from "@inquirer/prompts";
-import chalk from "chalk";
-import { isDefined, isEmpty } from "remeda";
-import { getAWSRegions, getRDSInstances } from "../aws-services.js";
-import { type InferenceResult, inferECSTargets } from "../inference/index.js";
-import { searchInferenceResults, searchRDS, searchRegions } from "../search.js";
-import { startSSMSession } from "../session.js";
-import type { RDSInstance, ValidatedConnectOptions } from "../types.js";
+import type { ValidatedConnectOptions } from "../types.js";
+import { parsePort, unwrapBrandedString } from "../types.js";
+import { askRetry, displayFriendlyError, messages } from "../utils/index.js";
+import { handleConnection } from "./connection/rds-connection.js";
+import { selectECSTarget } from "./selection/ecs-selection.js";
+import { selectLocalPort } from "./selection/port-selection.js";
 import {
-  askRetry,
-  displayFriendlyError,
-  findAvailablePort,
-  getDefaultPortForEngine,
-  messages,
-} from "../utils/index.js";
-import { generateReproducibleCommand } from "./command-generation.js";
-import { displayDryRunResult, generateConnectDryRun } from "./dry-run.js";
+  determineRDSPort,
+  selectRDSInstance,
+} from "./selection/rds-selection.js";
+import { selectRegion } from "./selection/region-selection.js";
+import { initializeSelectionState } from "./ui/selection-ui.js";
 
 /**
  * Simple UI workflow with step-by-step selection
@@ -61,6 +55,12 @@ export async function connectToRDSWithSimpleUI(
 async function connectToRDSWithSimpleUIInternal(
   options: ValidatedConnectOptions,
 ): Promise<void> {
+  // Check if dry run mode with all parameters provided - skip interactive UI
+  if (options.dryRun && hasAllRequiredParameters(options)) {
+    await handleDirectDryRun(options);
+    return;
+  }
+
   // Check if dry run mode is enabled and show appropriate message
   if (options.dryRun) {
     messages.info(
@@ -70,257 +70,217 @@ async function connectToRDSWithSimpleUIInternal(
     messages.info("Starting AWS ECS RDS connection tool with Simple UI...");
   }
 
-  // Show CLI arguments if provided
-  const cliArgs = [];
-  if (options.region) cliArgs.push(`--region ${options.region}`);
-  if (options.cluster) cliArgs.push(`--cluster ${options.cluster}`);
-  if (options.task) cliArgs.push(`--task ${options.task}`);
-  if (options.rds) cliArgs.push(`--rds ${options.rds}`);
-  if (options.rdsPort) cliArgs.push(`--rds-port ${options.rdsPort}`);
-  if (options.localPort) cliArgs.push(`--local-port ${options.localPort}`);
-
-  if (cliArgs.length > 0) {
-    messages.info(`CLI arguments: ${cliArgs.join(" ")}`);
-  }
-
-  // Initialize state object for UI display
-  const selections: {
-    region?: string;
-    rds?: string;
-    rdsPort?: string;
-    ecsTarget?: string;
-    ecsCluster?: string;
-    localPort?: string;
-  } = {};
-
-  // Initialize EC2 client with default region to get region list
-  const defaultEc2Client = new EC2Client({ region: "us-east-1" });
+  // Initialize selection state - convert branded types to strings only for UI
+  const selections = initializeSelectionState({
+    region: options.region ? options.region : undefined,
+    cluster: options.cluster ? options.cluster : undefined,
+    task: options.task ? options.task : undefined,
+    rds: options.rds ? options.rds : undefined,
+    rdsPort: options.rdsPort ? String(options.rdsPort) : undefined,
+    localPort: options.localPort ? String(options.localPort) : undefined,
+    dryRun: options.dryRun,
+  });
 
   // Step 1: Select Region
-  if (options.region) {
-    selections.region = options.region;
-    messages.success(`✓ Region (from CLI): ${options.region}`);
-  } else {
-    // Show initial UI state
-    messages.ui.displaySelectionState(selections);
+  const selectedRegion = await selectRegion(options, selections);
 
-    console.log(chalk.yellow("Getting available AWS regions..."));
-    const regions = await getAWSRegions(defaultEc2Client);
-
-    if (isEmpty(regions)) {
-      throw new Error("Failed to get AWS regions");
-    }
-
-    // Clear the loading message and show search prompt
-    process.stdout.write("\x1b[1A"); // Move cursor up
-    process.stdout.write("\x1b[2K"); // Clear line
-    process.stdout.write("\r"); // Move to start
-
-    selections.region = (await search({
-      message: "Search and select AWS region:",
-      source: async (input) => {
-        return await searchRegions(regions, input || "");
-      },
-      pageSize: 50,
-    })) as string;
-  }
-
-  // Update UI with region selection
-  messages.ui.displaySelectionState(selections);
+  // Update UI with region selection - convert branded types to strings for display
+  const displaySelections1 = {
+    region: selections.region ? String(selections.region) : undefined,
+    rds: selections.rds ? String(selections.rds) : undefined,
+    rdsPort: selections.rdsPort ? String(selections.rdsPort) : undefined,
+    ecsTarget: selections.ecsTarget,
+    ecsCluster: selections.ecsCluster,
+    localPort: selections.localPort ? String(selections.localPort) : undefined,
+  };
+  messages.ui.displaySelectionState(displaySelections1);
 
   // Initialize AWS clients
-  const ecsClient = new ECSClient({ region: selections.region });
-  const rdsClient = new RDSClient({ region: selections.region });
+  const ecsClient = new ECSClient({ region: selectedRegion });
+  const rdsClient = new RDSClient({ region: selectedRegion });
 
   // Step 2: Select RDS Instance
-  let selectedRDS: RDSInstance;
-  if (options.rds) {
-    selections.rds = options.rds;
-    messages.success(`✓ RDS (from CLI): ${options.rds}`);
-    messages.info("Validating RDS instance...");
-    const rdsInstances = await getRDSInstances(rdsClient);
-    const rdsInstance = rdsInstances.find(
-      (r) => r.dbInstanceIdentifier === options.rds,
-    );
-    if (!rdsInstance) {
-      throw new Error(`RDS instance not found: ${options.rds}`);
-    }
-    selectedRDS = rdsInstance;
-  } else {
-    console.log(chalk.yellow("Getting RDS instances..."));
-    const rdsInstances = await getRDSInstances(rdsClient);
-
-    if (rdsInstances.length === 0) {
-      throw new Error("No RDS instances found");
-    }
-
-    // Clear the loading message
-    process.stdout.write("\x1b[1A");
-    process.stdout.write("\x1b[2K");
-    process.stdout.write("\r");
-
-    selectedRDS = (await search({
-      message: "Search and select RDS instance:",
-      source: async (input) => {
-        return await searchRDS(rdsInstances, input || "");
-      },
-      pageSize: 50,
-    })) as RDSInstance;
-
-    selections.rds = selectedRDS.dbInstanceIdentifier;
-  }
+  const selectedRDS = await selectRDSInstance(rdsClient, options, selections);
 
   // Step 3: Determine RDS Port
-  let rdsPort: string;
-  if (options.rdsPort) {
-    rdsPort = `${options.rdsPort}`;
-    selections.rdsPort = rdsPort;
-    messages.success(`✓ RDS port (from CLI): ${options.rdsPort}`);
-  } else {
-    const actualRDSPort = selectedRDS.port;
-    const fallbackPort = getDefaultPortForEngine(selectedRDS.engine);
-    rdsPort = `${actualRDSPort || fallbackPort}`;
-    selections.rdsPort = rdsPort;
-    messages.success(`✓ RDS port (auto-detected): ${rdsPort}`);
-  }
+  const rdsPort = determineRDSPort(
+    selectedRDS,
+    {
+      rdsPort: options.rdsPort ? String(options.rdsPort) : undefined,
+    },
+    selections,
+  );
 
   // Update UI with RDS and port selection
-  messages.ui.displaySelectionState(selections);
+  const displaySelections2 = {
+    region: selections.region ? String(selections.region) : undefined,
+    rds: selections.rds ? String(selections.rds) : undefined,
+    rdsPort: selections.rdsPort ? String(selections.rdsPort) : undefined,
+    ecsTarget: selections.ecsTarget,
+    ecsCluster: selections.ecsCluster,
+    localPort: selections.localPort ? String(selections.localPort) : undefined,
+  };
+  messages.ui.displaySelectionState(displaySelections2);
 
   // Step 4: ECS Target Selection with Inference
-  console.log(
-    chalk.yellow(
-      "Finding ECS targets with exec capability that can connect to this RDS...",
-    ),
-  );
-  const inferenceResults = await inferECSTargets(ecsClient, selectedRDS, false);
-  let selectedInference: InferenceResult;
-  let selectedTask: string;
+  const { selectedInference, selectedTask } = await selectECSTarget({
+    ecsClient,
+    selectedRDS,
+    options: {
+      cluster: options.cluster,
+      task: options.task,
+    },
+    selections: {
+      region: selectedRegion,
+      ecsTarget: selections.ecsTarget,
+      ecsCluster: selections.ecsCluster,
+      localPort: selections.localPort
+        ? String(selections.localPort)
+        : undefined,
+      rds: selections.rds ? String(selections.rds) : undefined,
+      rdsPort: selections.rdsPort ? String(selections.rdsPort) : undefined,
+    },
+  });
 
-  if (inferenceResults.length > 0) {
-    // Clear the loading message
-    process.stdout.write("\x1b[1A");
-    process.stdout.write("\x1b[2K");
-    process.stdout.write("\r");
-
-    console.log(
-      chalk.green(`Found ${inferenceResults.length} potential ECS targets`),
-    );
-    messages.empty();
-
-    if (options.cluster && options.task) {
-      // Try to find matching inference result
-      const matchingResult = inferenceResults.find(
-        (result) =>
-          result.cluster.clusterName === options.cluster &&
-          result.task.taskId === options.task,
-      );
-
-      if (matchingResult) {
-        selectedInference = matchingResult;
-        selectedTask = matchingResult.task.taskArn;
-        selections.ecsTarget = matchingResult.task.serviceName;
-        selections.ecsCluster = matchingResult.cluster.clusterName;
-        messages.success(`✓ ECS cluster (from CLI): ${options.cluster}`);
-        messages.success(`✓ ECS task (from CLI): ${options.task}`);
-      } else {
-        messages.warning(
-          `Specified cluster/task not found in inference results`,
-        );
-        selectedInference = (await search({
-          message: "Select ECS target:",
-          source: async (input) => {
-            return await searchInferenceResults(inferenceResults, input || "");
-          },
-          pageSize: 10,
-        })) as InferenceResult;
-        selectedTask = selectedInference.task.taskArn;
-        selections.ecsTarget = selectedInference.task.serviceName;
-        selections.ecsCluster = selectedInference.cluster.clusterName;
-      }
-    } else {
-      selectedInference = (await search({
-        message: "Select ECS target:",
-        source: async (input) => {
-          return await searchInferenceResults(inferenceResults, input || "");
-        },
-        pageSize: 10,
-      })) as InferenceResult;
-      selectedTask = selectedInference.task.taskArn;
-      selections.ecsTarget = selectedInference.task.serviceName;
-      selections.ecsCluster = selectedInference.cluster.clusterName;
-    }
-  } else {
-    throw new Error(
-      "No ECS targets found with exec capability that can connect to this RDS instance",
-    );
-  }
+  // selectionsに反映（UI表示用）
+  selections.ecsTarget = unwrapBrandedString(selectedTask);
+  selections.ecsCluster = String(selectedInference.cluster.clusterName);
 
   // Update UI with ECS target selection
-  messages.ui.displaySelectionState(selections);
+  const displaySelections3 = {
+    region: selections.region ? String(selections.region) : undefined,
+    rds: selections.rds ? String(selections.rds) : undefined,
+    rdsPort: selections.rdsPort ? String(selections.rdsPort) : undefined,
+    ecsTarget: selections.ecsTarget,
+    ecsCluster: selections.ecsCluster,
+    localPort: selections.localPort ? String(selections.localPort) : undefined,
+  };
+  messages.ui.displaySelectionState(displaySelections3);
 
   // Step 5: Local Port Selection
-  if (isDefined(options.localPort)) {
-    selections.localPort = `${options.localPort}`;
-    messages.success(`✓ Local port (from CLI): ${options.localPort}`);
-  } else {
-    try {
-      console.log(chalk.yellow("Finding available local port..."));
-      const availablePort = await findAvailablePort(8888);
-      selections.localPort = `${availablePort}`;
-
-      // Clear the loading message
-      process.stdout.write("\x1b[1A");
-      process.stdout.write("\x1b[2K");
-      process.stdout.write("\r");
-    } catch {
-      selections.localPort = await input({
-        message: "Enter local port number:",
-        default: "8888",
-        validate: (inputValue: string) => {
-          const port = parseInt(inputValue || "8888");
-          return port > 0 && port < 65536
-            ? true
-            : "Please enter a valid port number (1-65535)";
-        },
-      });
-    }
-  }
-
-  // Final display with all selections complete
-  messages.ui.displaySelectionState(selections);
-
-  // Generate reproducible command
-  const reproducibleCommand = generateReproducibleCommand(
-    selections.region || "",
-    selections.ecsCluster || selectedInference.cluster.clusterName,
-    selectedTask,
-    selectedRDS.dbInstanceIdentifier,
-    rdsPort,
-    selections.localPort || "",
+  await selectLocalPort(
+    {
+      localPort: options.localPort ? options.localPort : undefined,
+    },
+    selections,
   );
 
-  // Check if dry run mode is enabled
-  if (options.dryRun) {
-    // Generate and display dry run result
-    const dryRunResult = generateConnectDryRun(
-      selections.region || "",
-      selections.ecsCluster || selectedInference.cluster.clusterName,
-      selectedTask,
-      selectedRDS,
-      rdsPort,
-      selections.localPort || "",
-    );
+  // Final display with all selections complete
+  const displaySelections4 = {
+    region: selections.region ? String(selections.region) : undefined,
+    rds: selections.rds ? String(selections.rds) : undefined,
+    rdsPort: selections.rdsPort ? String(selections.rdsPort) : undefined,
+    ecsTarget: selections.ecsTarget,
+    ecsCluster: selections.ecsCluster,
+    localPort: selections.localPort ? String(selections.localPort) : undefined,
+  };
+  messages.ui.displaySelectionState(displaySelections4);
 
-    displayDryRunResult(dryRunResult);
-    messages.success("Dry run completed successfully.");
-  } else {
-    await startSSMSession(
-      selectedTask,
-      selectedRDS,
-      rdsPort,
-      selections.localPort || "",
-      reproducibleCommand,
-    );
-  }
+  // Step 6: Handle Connection or Dry Run - use correct parameter order
+  const rdsPortResult = parsePort(rdsPort);
+  if (!rdsPortResult.success) throw new Error(rdsPortResult.error);
+
+  await handleConnection({
+    selections,
+    selectedInference,
+    selectedRDS,
+    selectedTask,
+    rdsPort: rdsPortResult.data,
+    options,
+  });
+}
+
+/**
+ * Check if all required parameters are provided for dry run
+ */
+function hasAllRequiredParameters(options: ValidatedConnectOptions): boolean {
+  return !!(
+    options.region &&
+    options.cluster &&
+    options.task &&
+    options.rds &&
+    options.rdsPort &&
+    options.localPort
+  );
+}
+
+/**
+ * Handle direct dry run without interactive UI
+ */
+async function handleDirectDryRun(
+  options: ValidatedConnectOptions,
+): Promise<void> {
+  messages.info("Running dry run with provided parameters...");
+
+  // Import dry run functions
+  const { generateConnectDryRun, displayDryRunResult } = await import(
+    "./dry-run.js"
+  );
+  const { parseRegionName, parseClusterName, parseTaskId, parsePort } =
+    await import("../types.js");
+
+  // Parse all parameters
+  const regionResult = parseRegionName(String(options.region));
+  if (!regionResult.success) throw new Error(regionResult.error);
+
+  const clusterResult = parseClusterName(String(options.cluster));
+  if (!clusterResult.success) throw new Error(clusterResult.error);
+
+  // Handle TaskArn or TaskId format
+  const taskStr = String(options.task);
+  // If taskStr contains '_', treat as TaskArn, else as TaskId
+  const [_, extractedTaskId] = taskStr.split("_");
+  const taskId = extractedTaskId ?? taskStr.replace(/^ecs:/, "");
+
+  const taskIdResult = parseTaskId(taskId);
+  if (!taskIdResult.success) throw new Error(taskIdResult.error);
+
+  const rdsPortResult = parsePort(options.rdsPort);
+  if (!rdsPortResult.success) throw new Error(rdsPortResult.error);
+
+  const localPortResult = parsePort(options.localPort);
+  if (!localPortResult.success) throw new Error(localPortResult.error);
+
+  // Parse RDS identifier for mock instance
+  const { parseDBInstanceIdentifier, parseDBEndpoint, parseDatabaseEngine } =
+    await import("../types.js");
+
+  const rdsIdResult = parseDBInstanceIdentifier(String(options.rds));
+  if (!rdsIdResult.success) throw new Error(rdsIdResult.error);
+
+  const endpointResult = parseDBEndpoint(
+    `${String(options.rds)}.region.rds.amazonaws.com`,
+  );
+  if (!endpointResult.success) throw new Error(endpointResult.error);
+
+  const engineResult = parseDatabaseEngine("postgres");
+  if (!engineResult.success) throw new Error(engineResult.error);
+
+  // Create mock RDS instance for dry run
+  const mockRDSInstance = {
+    dbInstanceIdentifier: rdsIdResult.data,
+    endpoint: endpointResult.data,
+    port: rdsPortResult.data,
+    engine: engineResult.data,
+    dbInstanceClass: "unknown",
+    dbInstanceStatus: "available" as const,
+    allocatedStorage: 0,
+    availabilityZone: "unknown",
+    vpcSecurityGroups: [],
+    dbSubnetGroup: undefined,
+    createdTime: undefined,
+  };
+
+  // Generate and display dry run result
+  const dryRunResult = generateConnectDryRun({
+    region: regionResult.data,
+    cluster: clusterResult.data,
+    task: taskIdResult.data,
+    rdsInstance: mockRDSInstance,
+    rdsPort: rdsPortResult.data,
+    localPort: localPortResult.data,
+  });
+
+  displayDryRunResult(dryRunResult);
+  messages.success("Dry run completed successfully.");
 }

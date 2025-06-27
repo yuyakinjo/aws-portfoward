@@ -1,47 +1,68 @@
-import type { DryRunResult, RDSInstance } from "../types.js";
+import { safeParse } from "valibot";
+import {
+  type ConnectDryRunParams,
+  type DryRunResult,
+  type ExecDryRunParams,
+  TaskArnSchema,
+} from "../types.js";
 import { messages } from "../utils/messages.js";
 import { VERSION } from "../version.js";
 import { generateReproducibleCommand } from "./command-generation.js";
 
-/**
- * Display dry run results in a formatted way using messages.dryRun
- */
 export function displayDryRunResult(result: DryRunResult): void {
   messages.dryRun.header();
   messages.dryRun.awsCommand(result.awsCommand);
   messages.dryRun.reproducibleCommand(result.reproducibleCommand);
-  messages.dryRun.sessionInfo(result.sessionInfo);
+  // Convert branded types to strings only for display
+  messages.dryRun.sessionInfo({
+    ...result.sessionInfo,
+    region: result.sessionInfo.region,
+    cluster: result.sessionInfo.cluster,
+    task: result.sessionInfo.task,
+    rds: result.sessionInfo.rds ? result.sessionInfo.rds : undefined,
+    rdsPort: result.sessionInfo.rdsPort
+      ? String(result.sessionInfo.rdsPort)
+      : undefined,
+    localPort: result.sessionInfo.localPort
+      ? String(result.sessionInfo.localPort)
+      : undefined,
+    container: result.sessionInfo.container
+      ? String(result.sessionInfo.container)
+      : undefined,
+    command: result.sessionInfo.command,
+  });
 }
 
-/**
- * Generate dry run result for connect commands
- */
 export function generateConnectDryRun(
-  region: string,
-  cluster: string,
-  task: string,
-  rdsInstance: RDSInstance,
-  rdsPort: string,
-  localPort: string,
+  params: ConnectDryRunParams,
 ): DryRunResult {
-  // Generate SSM command
+  const { region, cluster, task, rdsInstance, rdsPort, localPort } = params;
+
+  // Generate SSM command - Convert TaskId to TaskArn format for SSM
+  const taskArnStr = `ecs:${cluster}_${task}_${task}`;
+  const { output: taskArn, success } = safeParse(TaskArnSchema, taskArnStr);
+  if (!success) {
+    throw new Error(
+      `Invalid TaskId format: ${task}. Expected format: ecs:<cluster>_<task>_<task>`,
+    );
+  }
   const parameters = {
     host: [rdsInstance.endpoint],
-    portNumber: [rdsPort],
-    localPortNumber: [localPort],
+    portNumber: [String(rdsPort)],
+    localPortNumber: [String(localPort)],
   };
   const parametersJson = JSON.stringify(parameters);
-  const awsCommand = `aws ssm start-session --target ${task} --parameters '${parametersJson}' --document-name AWS-StartPortForwardingSessionToRemoteHost`;
+  const awsCommand = `aws ssm start-session --target ${taskArn} --parameters '${parametersJson}' --document-name AWS-StartPortForwardingSessionToRemoteHost`;
 
   // Generate reproducible command
-  const reproducibleCommand = generateReproducibleCommand(
+  const reproducibleCommand = generateReproducibleCommand({
     region,
     cluster,
-    task,
-    rdsInstance.dbInstanceIdentifier,
+    task: taskArn,
+    rds: rdsInstance.dbInstanceIdentifier,
     rdsPort,
     localPort,
-  );
+  });
 
   return {
     awsCommand,
@@ -49,7 +70,7 @@ export function generateConnectDryRun(
     sessionInfo: {
       region,
       cluster,
-      task,
+      task: taskArn,
       rds: rdsInstance.dbInstanceIdentifier,
       rdsPort,
       localPort,
@@ -57,17 +78,17 @@ export function generateConnectDryRun(
   };
 }
 
-/**
- * Generate dry run result for exec commands
- */
-export function generateExecDryRun(
-  region: string,
-  cluster: string,
-  task: string,
-  container: string,
-  command: string,
-): DryRunResult {
-  // Generate ECS execute command
+export function generateExecDryRun(params: ExecDryRunParams): DryRunResult {
+  const { region, cluster, task, container, command } = params;
+
+  // Convert TaskId to TaskArn format for ECS execute command
+  const taskArnResult = safeParse(TaskArnSchema, task);
+  if (!taskArnResult.success) {
+    throw new Error(`Invalid TaskId format: ${task}`);
+  }
+  const taskArnForECS = taskArnResult.output;
+
+  // Generate ECS execute command - convert to strings only at output boundary
   const awsCommand = `aws ecs execute-command --region ${region} --cluster ${cluster} --task ${task} --container ${container} --command "${command}" --interactive`;
 
   // Generate reproducible command
@@ -79,7 +100,7 @@ export function generateExecDryRun(
     sessionInfo: {
       region,
       cluster,
-      task,
+      task: taskArnForECS,
       container,
       command,
     },

@@ -4,7 +4,7 @@ import { execECSTaskWithSimpleUI } from "../aws-exec.js";
 import { ExecOptionsSchema } from "../types.js";
 import {
   displayFriendlyError,
-  displayValidationErrors,
+  displayParsingErrors,
   messages,
 } from "../utils/index.js";
 
@@ -27,7 +27,7 @@ export function registerExecTaskCommand(program: Command): void {
         );
 
         if (!success) {
-          displayValidationErrors(issues);
+          displayParsingErrors(issues);
           process.exit(1);
         }
 

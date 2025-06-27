@@ -1,8 +1,7 @@
 import { EC2Client } from "@aws-sdk/client-ec2";
 import { ECSClient } from "@aws-sdk/client-ecs";
 import { input, search } from "@inquirer/prompts";
-import chalk from "chalk";
-import { isEmpty } from "remeda";
+import { isEmpty, isString } from "remeda";
 import {
   getAWSRegions,
   getECSClustersWithExecCapability,
@@ -17,6 +16,14 @@ import {
 } from "../search.js";
 import { executeECSCommand } from "../session.js";
 import type { ECSCluster, ECSTask, ValidatedExecOptions } from "../types.js";
+import {
+  parseClusterName,
+  parseContainerName,
+  parseRegionName,
+  parseTaskArn,
+  parseTaskId,
+  unwrapBrandedString,
+} from "../types.js";
 import { askRetry, displayFriendlyError, messages } from "../utils/index.js";
 import { displayDryRunResult, generateExecDryRun } from "./dry-run.js";
 
@@ -65,234 +72,309 @@ export async function execECSTaskWithSimpleUIInternal(
 async function execECSTaskWithSimpleUIFlow(
   options: ValidatedExecOptions,
 ): Promise<void> {
-  // Check if dry run mode is enabled and show appropriate message
   if (options.dryRun) {
     messages.info(
       "Starting AWS ECS execute command tool with Simple UI (DRY RUN)...",
     );
   }
 
-  // Initialize state object for UI display
+  // selectionsをbranded typesで保持
   const selections: {
-    region?: string;
-    cluster?: string;
-    task?: string;
-    container?: string;
+    region?: import("../types.js").RegionName;
+    cluster?: import("../types.js").ClusterName;
+    task?: import("../types.js").TaskId | import("../types.js").TaskArn;
+    container?: import("../types.js").ContainerName;
     command?: string;
   } = {};
 
-  // Initialize EC2 client with default region to get region list
-  const defaultEc2Client = new EC2Client({ region: "us-east-1" });
-
   // Step 1: Select Region
-  if (options.region) {
-    selections.region = options.region;
-  } else {
-    // Show initial UI state
-    messages.ui.displayExecSelectionState(selections);
-
-    console.log(chalk.yellow("Getting available AWS regions..."));
-    const regions = await getAWSRegions(defaultEc2Client);
-
-    if (isEmpty(regions)) {
-      throw new Error("Failed to get AWS regions");
-    }
-
-    // Clear the loading message and show search prompt
-    process.stdout.write("\x1b[1A"); // Move cursor up
-    process.stdout.write("\x1b[2K"); // Clear line
-    process.stdout.write("\r"); // Move to start
-
-    selections.region = (await search({
-      message: "Search and select AWS region:",
-      source: async (input) => {
-        return await searchRegions(regions, input || "");
-      },
-      pageSize: DEFAULT_PAGE_SIZE,
-    })) as string;
-  }
-
-  // Update UI with region selection
-  messages.ui.displayExecSelectionState(selections);
-
-  // Initialize AWS clients
-  const ecsClient = new ECSClient({ region: selections.region });
+  const region: import("../types.js").RegionName = options.region
+    ? (() => {
+        const regionResult = parseRegionName(options.region);
+        if (!regionResult.success) throw new Error(regionResult.error);
+        return regionResult.data;
+      })()
+    : await (async () => {
+        messages.ui.displayExecSelectionState({
+          ...selections,
+          region: selections.region ? selections.region : undefined,
+        });
+        messages.warning("Getting available AWS regions...");
+        const regionsResult = await getAWSRegions(
+          new EC2Client({ region: "us-east-1" }),
+        );
+        if (!regionsResult.success) throw new Error(regionsResult.error);
+        const regions = regionsResult.data;
+        if (isEmpty(regions)) {
+          throw new Error("Failed to get AWS regions");
+        }
+        process.stdout.write("\x1b[1A");
+        process.stdout.write("\x1b[2K");
+        process.stdout.write("\r");
+        const selectedRegion = await search({
+          message: "Search and select AWS region:",
+          source: async (input) => await searchRegions(regions, input || ""),
+          pageSize: DEFAULT_PAGE_SIZE,
+        });
+        if (!isString(selectedRegion)) {
+          throw new Error("Invalid region selection");
+        }
+        const regionResult = parseRegionName(selectedRegion);
+        if (!regionResult.success) throw new Error(regionResult.error);
+        return regionResult.data;
+      })();
+  selections.region = region;
+  messages.ui.displayExecSelectionState({
+    ...selections,
+    region: selections.region
+      ? unwrapBrandedString(selections.region)
+      : undefined,
+  });
+  const ecsClient = new ECSClient({ region: unwrapBrandedString(region) });
 
   // Step 2: Select ECS Cluster
-  let selectedCluster: ECSCluster;
-  if (options.cluster) {
-    selections.cluster = options.cluster;
-    console.log(chalk.yellow("Getting ECS clusters..."));
-    const clusters = await getECSClustersWithExecCapability(ecsClient);
-    const cluster = clusters.find((c) => c.clusterName === options.cluster);
-    if (!cluster) {
-      throw new Error(
-        `ECS cluster not found or does not support exec: ${options.cluster}`,
-      );
-    }
-    selectedCluster = cluster;
-  } else {
-    console.log(chalk.yellow("Getting ECS clusters with exec capability..."));
-    const clusters = await getECSClustersWithExecCapability(ecsClient);
+  const selectedCluster: ECSCluster = options.cluster
+    ? await (async () => {
+        const clusterResult = parseClusterName(options.cluster);
+        if (!clusterResult.success) throw new Error(clusterResult.error);
+        selections.cluster = clusterResult.data;
+        messages.warning("Getting ECS clusters...");
+        const clustersResult =
+          await getECSClustersWithExecCapability(ecsClient);
+        if (!clustersResult.success) throw new Error(clustersResult.error);
+        const clusters = clustersResult.data;
+        const targetClusterName = clusterResult.data;
+        const cluster = clusters.find(
+          (c: ECSCluster) => c.clusterName === targetClusterName,
+        );
+        if (!cluster) {
+          throw new Error(
+            `ECS cluster not found or does not support exec: ${options.cluster}`,
+          );
+        }
+        return cluster;
+      })()
+    : await (async () => {
+        messages.warning("Getting ECS clusters with exec capability...");
+        const clustersResult =
+          await getECSClustersWithExecCapability(ecsClient);
+        if (!clustersResult.success) throw new Error(clustersResult.error);
+        const clusters = clustersResult.data;
+        if (isEmpty(clusters)) {
+          throw new Error("No ECS clusters found with exec capability");
+        }
+        process.stdout.write("\x1b[1A");
+        process.stdout.write("\x1b[2K");
+        process.stdout.write("\r");
+        const cluster = await search({
+          message: "Search and select ECS cluster:",
+          source: async (input) => await searchClusters(clusters, input || ""),
+          pageSize: DEFAULT_PAGE_SIZE,
+        });
 
-    if (clusters.length === 0) {
-      throw new Error("No ECS clusters found with exec capability");
-    }
+        if (
+          !cluster ||
+          typeof cluster !== "object" ||
+          !("clusterName" in cluster) ||
+          !("clusterArn" in cluster)
+        ) {
+          throw new Error("Invalid cluster selection");
+        }
+        const clusterNameResult = parseClusterName(cluster.clusterName);
+        if (!clusterNameResult.success)
+          throw new Error(clusterNameResult.error);
+        selections.cluster = clusterNameResult.data;
+        return cluster as ECSCluster;
+      })();
 
-    // Clear the loading message
-    process.stdout.write("\x1b[1A");
-    process.stdout.write("\x1b[2K");
-    process.stdout.write("\r");
-
-    selectedCluster = (await search({
-      message: "Search and select ECS cluster:",
-      source: async (input) => {
-        const results = await searchClusters(clusters, input || "");
-        return results;
-      },
-      pageSize: DEFAULT_PAGE_SIZE,
-    })) as ECSCluster;
-
-    selections.cluster = selectedCluster.clusterName;
-  }
-
-  // Update UI with cluster selection
-  messages.ui.displayExecSelectionState(selections);
+  messages.ui.displayExecSelectionState({
+    ...selections,
+    region: selections.region
+      ? unwrapBrandedString(selections.region)
+      : undefined,
+    cluster: selections.cluster
+      ? unwrapBrandedString(selections.cluster)
+      : undefined,
+  });
 
   // Step 3: Select ECS Task
-  let selectedTask: ECSTask | undefined;
-  if (options.task) {
-    selections.task = options.task;
-    console.log(chalk.yellow("Getting ECS tasks..."));
-    const tasks = await getECSTasksWithExecCapability(
-      ecsClient,
-      selectedCluster,
-    );
-    const task = tasks.find(
-      (t) => t.taskId === options.task || t.taskArn === options.task,
-    );
-    if (!task) {
-      throw new Error(
-        `ECS task not found or does not support exec: ${options.task}`,
-      );
-    }
-    selectedTask = task;
-  } else {
-    console.log(chalk.yellow("Getting ECS tasks with exec capability..."));
-    const tasks = await getECSTasksWithExecCapability(
-      ecsClient,
-      selectedCluster,
-    );
+  const selectedTask: ECSTask = options.task
+    ? await (async () => {
+        const taskIdResult = parseTaskId(options.task);
+        const taskArnResult = parseTaskArn(options.task);
+        selections.task = taskIdResult.success
+          ? taskIdResult.data
+          : taskArnResult.success
+            ? taskArnResult.data
+            : undefined;
+        if (!selections.task)
+          throw new Error(`Invalid task id or arn: ${options.task}`);
+        messages.warning("Getting ECS tasks...");
+        const tasksResult = await getECSTasksWithExecCapability(
+          ecsClient,
+          selectedCluster,
+        );
+        if (!tasksResult.success) throw new Error(tasksResult.error);
+        const tasks = tasksResult.data;
+        const task = tasks.find(
+          (t: ECSTask) =>
+            (taskIdResult.success && t.taskId === taskIdResult.data) ||
+            (taskArnResult.success && t.taskArn === taskArnResult.data),
+        );
+        if (!task) {
+          throw new Error(
+            `ECS task not found or does not support exec: ${options.task}`,
+          );
+        }
+        return task;
+      })()
+    : await (async () => {
+        messages.warning("Getting ECS tasks with exec capability...");
+        const tasksResult = await getECSTasksWithExecCapability(
+          ecsClient,
+          selectedCluster,
+        );
+        if (!tasksResult.success) throw new Error(tasksResult.error);
+        const tasks = tasksResult.data;
+        if (isEmpty(tasks)) {
+          throw new Error(
+            "No ECS tasks found with exec capability in this cluster",
+          );
+        }
+        process.stdout.write("\x1b[1A");
+        process.stdout.write("\x1b[2K");
+        process.stdout.write("\r");
+        const selectedTaskArn = await search({
+          message: "Search and select ECS task:",
+          source: async (input) => await searchTasks(tasks, input || ""),
+          pageSize: DEFAULT_PAGE_SIZE,
+        });
+        if (typeof selectedTaskArn !== "string") {
+          throw new Error("Invalid task selection");
+        }
+        const taskArnResult = parseTaskArn(selectedTaskArn);
+        if (!taskArnResult.success) throw new Error(taskArnResult.error);
+        const task = tasks.find(
+          (t: ECSTask) => t.taskArn === taskArnResult.data,
+        );
+        if (!task) {
+          throw new Error(`Selected task not found: ${selectedTaskArn}`);
+        }
+        selections.task = task.taskId;
+        return task;
+      })();
 
-    if (tasks.length === 0) {
-      throw new Error(
-        "No ECS tasks found with exec capability in this cluster",
-      );
-    }
-
-    // Clear the loading message
-    process.stdout.write("\x1b[1A");
-    process.stdout.write("\x1b[2K");
-    process.stdout.write("\r");
-
-    const selectedTaskArn = await search({
-      message: "Search and select ECS task:",
-      source: async (input) => {
-        const results = await searchTasks(tasks, input || "");
-        return results;
-      },
-      pageSize: DEFAULT_PAGE_SIZE,
-    });
-
-    selectedTask = tasks.find((t) => t.taskArn === selectedTaskArn);
-    if (!selectedTask) {
-      throw new Error(`Selected task not found: ${selectedTaskArn}`);
-    }
-
-    selections.task = selectedTask.taskId;
-  }
-
-  // Update UI with task selection
-  messages.ui.displayExecSelectionState(selections);
+  messages.ui.displayExecSelectionState({
+    ...selections,
+    region: selections.region
+      ? unwrapBrandedString(selections.region)
+      : undefined,
+    cluster: selections.cluster
+      ? unwrapBrandedString(selections.cluster)
+      : undefined,
+    task: selections.task ? unwrapBrandedString(selections.task) : undefined,
+  });
 
   // Step 4: Select Container
-  if (!selectedTask) {
-    throw new Error("No task selected");
-  }
-
-  let selectedContainer: string;
-  if (options.container) {
-    selections.container = options.container;
-    selectedContainer = options.container;
-  } else {
-    console.log(chalk.yellow("Getting container list..."));
-    const containers = await getECSTaskContainers(
-      ecsClient,
-      selectedCluster.clusterName,
-      selectedTask.realTaskArn,
-    );
-
-    if (containers.length === 0) {
-      throw new Error("No containers found in this task");
-    }
-
-    // Clear the loading message
-    process.stdout.write("\x1b[1A");
-    process.stdout.write("\x1b[2K");
-    process.stdout.write("\r");
-
-    selectedContainer = (await search({
-      message: "Search and select container:",
-      source: async (input) => {
-        const results = await searchContainers(containers, input || "");
-        return results;
-      },
-      pageSize: DEFAULT_PAGE_SIZE,
-    })) as string;
-
-    selections.container = selectedContainer;
-  }
-
-  // Update UI with container selection
-  messages.ui.displayExecSelectionState(selections);
+  const selectedContainer: import("../types.js").ContainerName =
+    options.container
+      ? (() => {
+          const containerResult = parseContainerName(options.container);
+          if (!containerResult.success) throw new Error(containerResult.error);
+          selections.container = containerResult.data;
+          return containerResult.data;
+        })()
+      : await (async () => {
+          messages.warning("Getting container list...");
+          const containersResult = await getECSTaskContainers({
+            ecsClient,
+            clusterName: selectedCluster.clusterName,
+            taskArn: selectedTask.realTaskArn,
+          });
+          if (!containersResult.success)
+            throw new Error(containersResult.error);
+          const containers = containersResult.data;
+          if (isEmpty(containers)) {
+            throw new Error("No containers found in this task");
+          }
+          process.stdout.write("\x1b[1A");
+          process.stdout.write("\x1b[2K");
+          process.stdout.write("\r");
+          const selectedContainerName = await search({
+            message: "Search and select container:",
+            source: async (input) =>
+              await searchContainers(
+                containers.map((c) => String(c)),
+                input || "",
+              ),
+            pageSize: DEFAULT_PAGE_SIZE,
+          });
+          if (typeof selectedContainerName !== "string") {
+            throw new Error("Invalid container selection");
+          }
+          const containerResult = parseContainerName(selectedContainerName);
+          if (!containerResult.success) throw new Error(containerResult.error);
+          const container = containerResult.data;
+          selections.container = container;
+          return container;
+        })();
+  messages.ui.displayExecSelectionState({
+    ...selections,
+    region: selections.region ? selections.region : undefined,
+    cluster: selections.cluster ? selections.cluster : undefined,
+    task: selections.task ? selections.task : undefined,
+    container: selections.container ? selections.container : undefined,
+  });
 
   // Step 5: Specify Command
-  let command: string;
-  if (options.command) {
-    selections.command = options.command;
-    command = options.command;
-  } else {
-    command = await input({
-      message: "Enter command to execute:",
-      default: "/bin/bash",
-    });
-    selections.command = command;
-  }
+  const command: string = options.command
+    ? (() => {
+        selections.command = options.command;
+        return options.command;
+      })()
+    : await (async () => {
+        const cmd = await input({
+          message: "Enter command to execute:",
+          default: "/bin/bash",
+        });
+        selections.command = cmd;
+        return cmd;
+      })();
 
   // Final display with all selections complete
-  messages.ui.displayExecSelectionState(selections);
+  messages.ui.displayExecSelectionState({
+    ...selections,
+    region: selections.region
+      ? unwrapBrandedString(selections.region)
+      : undefined,
+    cluster: selections.cluster
+      ? unwrapBrandedString(selections.cluster)
+      : undefined,
+    task: selections.task ? unwrapBrandedString(selections.task) : undefined,
+    container: selections.container
+      ? unwrapBrandedString(selections.container)
+      : undefined,
+    command: selections.command,
+  });
 
-  // Check if dry run mode is enabled
+  // branded typesで渡す
   if (options.dryRun) {
-    // Generate and display dry run result
-    const dryRunResult = generateExecDryRun(
-      selections.region || "",
-      selectedCluster.clusterName,
-      selectedTask.realTaskArn,
-      selectedContainer,
+    const dryRunResult = generateExecDryRun({
+      region,
+      cluster: selectedCluster.clusterName,
+      task: selectedTask.taskId,
+      container: selectedContainer,
       command,
-    );
-
+    });
     displayDryRunResult(dryRunResult);
     messages.success("Dry run completed successfully.");
   } else {
-    // Execute the command
-    await executeECSCommand(
-      selections.region || "",
-      selectedCluster.clusterName,
-      selectedTask.realTaskArn,
-      selectedContainer,
+    await executeECSCommand({
+      region,
+      clusterName: selectedCluster.clusterName,
+      taskArn: selectedTask.realTaskArn,
+      containerName: selectedContainer,
       command,
-    );
+    });
   }
 }

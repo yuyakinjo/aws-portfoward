@@ -181,7 +181,7 @@ describe("CLI Commands Integration", () => {
       );
 
       expect(code).toBe(1);
-      expect(stdout).toContain("Region cannot be empty");
+      expect(stdout).toContain("Region name cannot be empty");
     });
 
     it("should validate cluster parameter format", async () => {
@@ -229,7 +229,7 @@ describe("CLI Commands Integration", () => {
       );
 
       expect(code).toBe(1);
-      expect(stdout).toContain("RDS port must be a number"); // 実際のValibot validation error
+      expect(stdout).toContain("Invalid type"); // 統合後のValibot validation error
     });
   });
 
@@ -340,8 +340,8 @@ describe("CLI Commands Integration", () => {
       );
 
       // 両方とも同じバリデーションエラーメッセージを表示するはず
-      expect(connectError).toContain("Region cannot be empty");
-      expect(execTaskError).toContain("Region cannot be empty");
+      expect(connectError).toContain("Region name cannot be empty");
+      expect(execTaskError).toContain("Region name cannot be empty");
     });
 
     it("should provide helpful error messages for invalid options", async () => {

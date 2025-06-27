@@ -1,14 +1,16 @@
-import type { ECSCluster } from "../types.js";
+import { splitByHyphenUnderscore, splitByWordSeparators } from "../regex.js";
+import type { ClusterInferenceParams } from "../types.js";
 
 /**
  * RDS名からECSクラスター名を推論する関数
  */
 export function inferClustersFromRDSName(
-  rdsName: string,
-  allClusters: ECSCluster[],
+  params: ClusterInferenceParams,
 ): string[] {
-  const rdsSegments = rdsName.toLowerCase().split(/[-_]/);
-  const rdsWords = rdsName.toLowerCase().split(/[-_\s]/);
+  const { rdsName, allClusters } = params;
+
+  const rdsSegments = splitByHyphenUnderscore(rdsName.toLowerCase());
+  const rdsWords = splitByWordSeparators(rdsName.toLowerCase());
   const rdsLower = rdsName.toLowerCase();
 
   const envIndicators = [

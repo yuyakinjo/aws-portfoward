@@ -25,9 +25,9 @@ export function displayFriendlyError(error: unknown): void {
   // Present solutions
   if (errorDetails.suggestions.length > 0) {
     messages.bold.warning("Hint:");
-    for (let i = 0; i < errorDetails.suggestions.length; i++) {
-      messages.warning(`   ${i + 1}. ${errorDetails.suggestions[i]}`);
-    }
+    errorDetails.suggestions.forEach((suggestion, i) => {
+      messages.warning(`   ${i + 1}. ${suggestion}`);
+    });
     messages.empty();
   }
 
