@@ -178,20 +178,6 @@ export function isPortRange(port: number): boolean {
 }
 
 /**
- * Check if a string represents a valid port number
- * This combines format and range validation
- */
-export function isValidPortString(portString: string): boolean {
-  // Check if string contains only digits
-  if (!/^\d+$/.test(portString)) {
-    return false;
-  }
-
-  const port = Number(portString);
-  return isPortRange(port);
-}
-
-/**
  * Check if multiple ports are all within valid range
  * Useful for validating port arrays or multiple port parameters
  */

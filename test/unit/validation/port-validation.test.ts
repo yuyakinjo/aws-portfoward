@@ -1,12 +1,12 @@
 import * as net from "node:net";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { parsePort } from "../../../src/types.js";
 import {
   areAllPortsInRange,
   findAvailablePort,
   getPortRange,
   isPortAvailable,
   isPortRange,
-  isValidPortString,
 } from "../../../src/utils/validation.js";
 
 // Type definition for mocked createServer function
@@ -295,27 +295,27 @@ describe("isPortRange", () => {
   });
 });
 
-describe("isValidPortString", () => {
+describe("parsePort", () => {
   it("有効なポート文字列の場合trueを返す", () => {
-    expect(isValidPortString("1")).toBe(true);
-    expect(isValidPortString("80")).toBe(true);
-    expect(isValidPortString("443")).toBe(true);
-    expect(isValidPortString("8080")).toBe(true);
-    expect(isValidPortString("65535")).toBe(true);
+    expect(parsePort("1").success).toBe(true);
+    expect(parsePort("80").success).toBe(true);
+    expect(parsePort("443").success).toBe(true);
+    expect(parsePort("8080").success).toBe(true);
+    expect(parsePort("65535").success).toBe(true);
   });
 
   it("無効なポート文字列の場合falseを返す", () => {
-    expect(isValidPortString("0")).toBe(false);
-    expect(isValidPortString("-1")).toBe(false);
-    expect(isValidPortString("65536")).toBe(false);
-    expect(isValidPortString("abc")).toBe(false);
-    expect(isValidPortString("80.5")).toBe(false);
-    expect(isValidPortString("")).toBe(false);
-    expect(isValidPortString(" 80 ")).toBe(false);
+    expect(parsePort("0").success).toBe(false);
+    expect(parsePort("-1").success).toBe(false);
+    expect(parsePort("65536").success).toBe(false);
+    expect(parsePort("abc").success).toBe(false);
+    expect(parsePort("80.5").success).toBe(false);
+    expect(parsePort("").success).toBe(false);
+    expect(parsePort(" 80 ").success).toBe(false);
   });
 
   it("先頭ゼロを含む文字列も正しく処理する", () => {
-    expect(isValidPortString("0080")).toBe(true);
-    expect(isValidPortString("00001")).toBe(true);
+    expect(parsePort("0080").success).toBe(true);
+    expect(parsePort("00001").success).toBe(true);
   });
 });

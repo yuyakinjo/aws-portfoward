@@ -26,5 +26,4 @@ export {
   getPortRange,
   isPortAvailable,
   isPortRange,
-  isValidPortString,
 } from "./validation.js";
