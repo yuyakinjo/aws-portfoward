@@ -295,27 +295,27 @@ describe("isPortRange", () => {
   });
 });
 
-describe("parsePort", () => {
+describe("isPortRange string", () => {
   it("有効なポート文字列の場合trueを返す", () => {
-    expect(parsePort("1").success).toBe(true);
-    expect(parsePort("80").success).toBe(true);
-    expect(parsePort("443").success).toBe(true);
-    expect(parsePort("8080").success).toBe(true);
-    expect(parsePort("65535").success).toBe(true);
+    expect(isPortRange("1")).toBe(true);
+    expect(isPortRange("80")).toBe(true);
+    expect(isPortRange("443")).toBe(true);
+    expect(isPortRange("8080")).toBe(true);
+    expect(isPortRange("65535")).toBe(true);
   });
 
   it("無効なポート文字列の場合falseを返す", () => {
-    expect(parsePort("0").success).toBe(false);
-    expect(parsePort("-1").success).toBe(false);
-    expect(parsePort("65536").success).toBe(false);
-    expect(parsePort("abc").success).toBe(false);
-    expect(parsePort("80.5").success).toBe(false);
-    expect(parsePort("").success).toBe(false);
-    expect(parsePort(" 80 ").success).toBe(false);
+    expect(isPortRange("0")).toBe(false);
+    expect(isPortRange("-1")).toBe(false);
+    expect(isPortRange("65536")).toBe(false);
+    expect(isPortRange("abc")).toBe(false);
+    expect(isPortRange("80.5")).toBe(false);
+    expect(isPortRange("")).toBe(false);
+    expect(isPortRange(" 80 ")).toBe(false);
   });
 
   it("先頭ゼロを含む文字列も正しく処理する", () => {
-    expect(parsePort("0080").success).toBe(true);
-    expect(parsePort("00001").success).toBe(true);
+    expect(isPortRange("0080")).toBe(true);
+    expect(isPortRange("00001")).toBe(true);
   });
 });

@@ -173,8 +173,8 @@ export async function findAvailablePort(startPort = 8888): Promise<number> {
  * Check if a number is within valid port range (1-65535)
  * This is a simple range check without type conversion
  */
-export function isPortRange(port: number): boolean {
-  return Number.isInteger(port) && port >= 1 && port <= 65535;
+export function isPortRange(port: number | string): boolean {
+  return parsePort(port).success;
 }
 
 /**
