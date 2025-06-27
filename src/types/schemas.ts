@@ -399,10 +399,10 @@ export const ExecOptionsSchema = object({
 export const SelectionStateSchema = object({
   region: optional(RegionNameSchema),
   rds: optional(DBInstanceIdentifierSchema),
-  rdsPort: optional(PortNumberSchema),
+  rdsPort: optional(PortSchema),
   ecsTarget: optional(string()),
   ecsCluster: optional(string()),
-  localPort: optional(PortNumberSchema),
+  localPort: optional(PortSchema),
 });
 
 // =============================================================================
