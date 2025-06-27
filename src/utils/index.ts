@@ -22,9 +22,9 @@ export {
   displayParsingErrors,
   findAvailablePort,
   findAvailablePortSafe,
+  formatValidationErrors,
   getPortRange,
   isPortAvailable,
   isPortRange,
   isValidPortString,
-  parsePort,
 } from "./validation.js";

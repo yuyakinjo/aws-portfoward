@@ -4,7 +4,7 @@ import { getRDSInstances } from "../../aws-services.js";
 import { searchRDS } from "../../search.js";
 import {
   parseDBInstanceIdentifier,
-  parsePortNumber,
+  parsePort,
 } from "../../types/parsers.js";
 import type { RDSInstance, SelectionState } from "../../types.js";
 import { getDefaultPortForEngine, messages } from "../../utils/index.js";
@@ -95,7 +95,7 @@ export function determineRDSPort(
   selections: SelectionState,
 ): string {
   if (options.rdsPort) {
-    const portResult = parsePortNumber(options.rdsPort);
+    const portResult = parsePort(options.rdsPort);
     if (!portResult.success) throw new Error(portResult.error);
 
     selections.rdsPort = portResult.data;
@@ -108,7 +108,7 @@ export function determineRDSPort(
   const fallbackPort = getDefaultPortForEngine(selectedRDS.engine);
   const port = actualRDSPort || fallbackPort;
 
-  const portResult = parsePortNumber(port);
+  const portResult = parsePort(port);
   if (!portResult.success) throw new Error(portResult.error);
 
   selections.rdsPort = portResult.data;

@@ -17,6 +17,7 @@ import {
   searchRegions,
   searchTasks,
 } from "../search.js";
+import { parsePort } from "../types/parsers.js";
 import type {
   ECSCluster,
   RDSInstance,
@@ -29,7 +30,6 @@ import {
   findAvailablePortSafe,
   getDefaultPortForEngine,
   messages,
-  parsePort,
 } from "../utils/index.js";
 
 const DEFAULT_PAGE_SIZE = 50;
@@ -335,9 +335,7 @@ export async function getLocalPort(
     default: "8888",
     validate: (inputValue: string) => {
       const parseResult = parsePort(inputValue || "8888");
-      return parseResult.success
-        ? true
-        : `Invalid port: ${parseResult.error.map((e) => e.message).join(", ")}`;
+      return parseResult.success ? true : `Invalid port: ${parseResult.error}`;
     },
   });
   return localPortInput;

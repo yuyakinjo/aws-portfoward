@@ -1,4 +1,4 @@
-import { safeParse } from "valibot";
+import { type InferIssue, safeParse } from "valibot";
 import { isTaskArnShape } from "../regex.js";
 import {
   type ClusterArn,
@@ -172,14 +172,14 @@ export function parseDBEndpoint(endpoint: unknown): Result<DBEndpoint, string> {
 }
 
 /**
- * Safely parse a port number from AWS API response
+ * Safely parse a port from AWS API response or CLI input
  */
-export function parsePortNumber(port: unknown): Result<Port, string> {
+export function parsePort(port: unknown): Result<Port, string> {
   const result = safeParse(PortSchema, port);
   if (result.success) {
     return success(result.output);
   }
-  return failure("Invalid port number");
+  return failure(result.issues.map((issue) => issue.message).join(", "));
 }
 
 /**

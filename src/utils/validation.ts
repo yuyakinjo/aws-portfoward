@@ -5,13 +5,23 @@ import {
   ExecOptionsSchema,
   failure,
   type Port,
-  PortSchema,
+  type PortSchema,
+  parsePort,
   type Result,
   success,
   type ValidatedConnectOptions,
   type ValidatedExecOptions,
 } from "../types.js";
 import { messages } from "./messages.js";
+
+/**
+ * Convert validation issues to a readable error message
+ */
+export function formatValidationErrors(
+  issues: InferIssue<typeof PortSchema>[],
+): string {
+  return issues.map((issue) => issue.message).join(", ");
+}
 
 // =============================================================================
 // Parse-first Validation Functions
@@ -40,22 +50,6 @@ export function parseExecOptions(
   rawOptions: unknown,
 ): Result<ValidatedExecOptions, InferIssue<typeof ExecOptionsSchema>[]> {
   const result = safeParse(ExecOptionsSchema, rawOptions);
-
-  if (result.success) {
-    return success(result.output);
-  } else {
-    return failure(result.issues);
-  }
-}
-
-/**
- * Parse port string to strongly-typed Port
- * This replaces manual validation with parsing approach
- */
-export function parsePort(
-  portString: string,
-): Result<Port, InferIssue<typeof PortSchema>[]> {
-  const result = safeParse(PortSchema, portString);
 
   if (result.success) {
     return success(result.output);

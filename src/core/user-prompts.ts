@@ -8,6 +8,7 @@ import {
   searchRegions,
   searchTasks,
 } from "../search.js";
+import { parsePort } from "../types/parsers.js";
 import type {
   AWSRegion,
   ECSCluster,
@@ -18,7 +19,7 @@ import type {
   TaskArn,
 } from "../types.js";
 import { isFailure, parseRegionName, parseTaskArn } from "../types.js";
-import { messages, parsePort } from "../utils/index.js";
+import { messages } from "../utils/index.js";
 
 const DEFAULT_PAGE_SIZE = 50;
 
@@ -172,17 +173,13 @@ export async function promptForLocalPort(): Promise<Port> {
     default: "8888",
     validate: (inputValue: string) => {
       const parseResult = parsePort(inputValue || "8888");
-      return parseResult.success
-        ? true
-        : `Invalid port: ${parseResult.error.map((e) => e.message).join(", ")}`;
+      return parseResult.success ? true : `Invalid port: ${parseResult.error}`;
     },
   });
 
   const parseResult = parsePort(portString);
   if (isFailure(parseResult)) {
-    throw new Error(
-      `Failed to parse port: ${parseResult.error.map((e) => e.message).join(", ")}`,
-    );
+    throw new Error(`Failed to parse port: ${parseResult.error}`);
   }
 
   return parseResult.data;

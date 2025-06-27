@@ -2,7 +2,7 @@ import { safeParse } from "valibot";
 import { startSSMSession } from "../../session.js";
 import {
   parseClusterName,
-  parsePortNumber,
+  parsePort,
   parseRegionName,
   parseTaskArn,
   parseTaskId,
@@ -55,11 +55,11 @@ export async function handleConnection(
   const taskResult = parseTaskArn(selectedTask);
   if (!taskResult.success) throw new Error(taskResult.error);
 
-  const rdsPortResult = parsePortNumber(rdsPort);
+  const rdsPortResult = parsePort(rdsPort);
   if (!rdsPortResult.success) throw new Error(rdsPortResult.error);
 
   const localPortStr = selections.localPort || "8888";
-  const localPortResult = parsePortNumber(localPortStr);
+  const localPortResult = parsePort(localPortStr);
   if (!localPortResult.success) throw new Error(localPortResult.error);
 
   // Generate reproducible command with parsed branded types

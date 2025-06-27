@@ -29,7 +29,7 @@ import {
   parseDatabaseEngine,
   parseDBEndpoint,
   parseDBInstanceIdentifier,
-  parsePortNumber,
+  parsePort,
   parseRegionName,
   parseRuntimeId,
   parseServiceName,
@@ -410,7 +410,7 @@ async function getRDSInstancesResult(
           // Parse all DB instance components safely
           const dbIdResult = parseDBInstanceIdentifier(db.DBInstanceIdentifier);
           const endpointResult = parseDBEndpoint(db.Endpoint.Address);
-          const portResult = parsePortNumber(db.Endpoint.Port || 5432);
+          const portResult = parsePort(db.Endpoint.Port || 5432);
           const engineResult = parseDatabaseEngine(db.Engine);
 
           if (

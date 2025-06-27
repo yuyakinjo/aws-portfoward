@@ -1,6 +1,6 @@
 import { input } from "@inquirer/prompts";
 import { isDefined } from "remeda";
-import { parsePortNumber } from "../../types/parsers.js";
+import { parsePort } from "../../types/parsers.js";
 import type { Port, SelectionState } from "../../types.js";
 import {
   findAvailablePort,
@@ -18,7 +18,7 @@ export async function selectLocalPort(
   selections: SelectionState,
 ): Promise<string> {
   if (isDefined(options.localPort)) {
-    const portResult = parsePortNumber(options.localPort);
+    const portResult = parsePort(options.localPort);
     if (!portResult.success) throw new Error(portResult.error);
 
     selections.localPort = portResult.data;
@@ -30,7 +30,7 @@ export async function selectLocalPort(
     messages.warning("Finding available local port...");
     const availablePort = await findAvailablePort(8888);
 
-    const portResult = parsePortNumber(availablePort);
+    const portResult = parsePort(availablePort);
     if (!portResult.success) throw new Error(portResult.error);
 
     selections.localPort = portResult.data;
@@ -53,7 +53,7 @@ export async function selectLocalPort(
       },
     });
 
-    const portResult = parsePortNumber(port);
+    const portResult = parsePort(port);
     if (!portResult.success) throw new Error(portResult.error);
 
     selections.localPort = portResult.data;

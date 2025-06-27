@@ -1,7 +1,7 @@
 import { ECSClient } from "@aws-sdk/client-ecs";
 import { RDSClient } from "@aws-sdk/client-rds";
 import type { ValidatedConnectOptions } from "../types.js";
-import { parsePortNumber, unwrapBrandedString } from "../types.js";
+import { parsePort, unwrapBrandedString } from "../types.js";
 import { askRetry, displayFriendlyError, messages } from "../utils/index.js";
 import { handleConnection } from "./connection/rds-connection.js";
 import { selectECSTarget } from "./selection/ecs-selection.js";
@@ -177,7 +177,7 @@ async function connectToRDSWithSimpleUIInternal(
   messages.ui.displaySelectionState(displaySelections4);
 
   // Step 6: Handle Connection or Dry Run - use correct parameter order
-  const rdsPortResult = parsePortNumber(rdsPort);
+  const rdsPortResult = parsePort(rdsPort);
   if (!rdsPortResult.success) throw new Error(rdsPortResult.error);
 
   await handleConnection({
@@ -216,7 +216,7 @@ async function handleDirectDryRun(
   const { generateConnectDryRun, displayDryRunResult } = await import(
     "./dry-run.js"
   );
-  const { parseRegionName, parseClusterName, parseTaskId, parsePortNumber } =
+  const { parseRegionName, parseClusterName, parseTaskId, parsePort } =
     await import("../types.js");
 
   // Parse all parameters
@@ -235,10 +235,10 @@ async function handleDirectDryRun(
   const taskIdResult = parseTaskId(taskId);
   if (!taskIdResult.success) throw new Error(taskIdResult.error);
 
-  const rdsPortResult = parsePortNumber(options.rdsPort);
+  const rdsPortResult = parsePort(options.rdsPort);
   if (!rdsPortResult.success) throw new Error(rdsPortResult.error);
 
-  const localPortResult = parsePortNumber(options.localPort);
+  const localPortResult = parsePort(options.localPort);
   if (!localPortResult.success) throw new Error(localPortResult.error);
 
   // Parse RDS identifier for mock instance

@@ -5,7 +5,7 @@ import { startSSMSession } from "../session.js";
 import type { Port, ValidatedConnectOptions } from "../types.js";
 import {
   isFailure,
-  parsePortNumber,
+  parsePort,
   parseTaskId,
   unwrapBrandedNumber,
   unwrapBrandedString,
@@ -125,7 +125,7 @@ export async function connectToRDSDryRun(
         const portToUse = actualRDSPort
           ? unwrapBrandedNumber(actualRDSPort)
           : fallbackPortNumber;
-        const portResult = parsePortNumber(portToUse);
+        const portResult = parsePort(portToUse);
         if (isFailure(portResult)) {
           throw new Error(`Invalid RDS port: ${portResult.error}`);
         }
@@ -207,7 +207,7 @@ async function connectToRDSInternal(
         const portToUse = actualRDSPort
           ? unwrapBrandedNumber(actualRDSPort)
           : fallbackPortNumber;
-        const portResult = parsePortNumber(portToUse);
+        const portResult = parsePort(portToUse);
         if (isFailure(portResult)) {
           throw new Error(`Invalid RDS port: ${portResult.error}`);
         }
