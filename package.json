@@ -22,7 +22,7 @@
   "license": "MIT",
   "scripts": {
     "connect": "npm run build && node dist/cli.js connect",
-    "exec-task": "npm run build && node dist/cli.js exec-task",
+    "exec": "npm run build && node dist/cli.js exec",
     "dev": "npm run build && node dist/cli.js connect",
     "build": "./scripts/build.sh",
     "build:tsc": "npx tsc --project tsconfig.build.json",
