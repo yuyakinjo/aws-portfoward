@@ -17,7 +17,7 @@ import {
   DBInstanceStatusSchema,
   failure,
   type Port,
-  PortNumberSchema,
+  PortSchema,
   type RegionName,
   RegionNameSchema,
   type Result,
@@ -175,7 +175,7 @@ export function parseDBEndpoint(endpoint: unknown): Result<DBEndpoint, string> {
  * Safely parse a port number from AWS API response
  */
 export function parsePortNumber(port: unknown): Result<Port, string> {
-  const result = safeParse(PortNumberSchema, port);
+  const result = safeParse(PortSchema, port);
   if (result.success) {
     return success(result.output);
   }

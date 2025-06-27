@@ -44,26 +44,24 @@ export type ParseResult<T> = Result<
 // Basic Schemas
 // =============================================================================
 
-// Port schema with proper validation and branding
+// Port schema with proper validation and branding (accepts both string and number)
 export const PortSchema = pipe(
-  string(),
-  regex(DIGITS_ONLY, "Port must be a number"),
-  transform(Number),
+  union([
+    // String port (converted to number)
+    pipe(
+      string(),
+      regex(DIGITS_ONLY, "Port must be a number"),
+      transform(Number),
+    ),
+    // Number port (used as-is)
+    number(),
+  ]),
   integer("Port must be an integer"),
   minValue(1, "Port must be greater than 0"),
   maxValue(65535, "Port must be less than 65536"),
   brand("Port"),
 );
 export type Port = InferOutput<typeof PortSchema>;
-
-// Port number schema (for parsing from number)
-export const PortNumberSchema = pipe(
-  number(),
-  integer("Port must be an integer"),
-  minValue(1, "Port must be greater than 0"),
-  maxValue(65535, "Port must be less than 65536"),
-  brand("Port"),
-);
 
 // Region name schema
 export const RegionNameSchema = pipe(

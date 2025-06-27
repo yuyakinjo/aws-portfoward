@@ -229,7 +229,7 @@ describe("CLI Commands Integration", () => {
       );
 
       expect(code).toBe(1);
-      expect(stdout).toContain("Port must be a number"); // 実際のValibot validation error
+      expect(stdout).toContain("Invalid type"); // 統合後のValibot validation error
     });
   });
 

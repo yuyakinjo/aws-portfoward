@@ -26,7 +26,6 @@ import {
   DBInstanceStatusSchema,
   ECSClientSchema,
   NonEmptyStringSchema,
-  PortNumberSchema,
   PortSchema,
   RegionNameSchema,
   RuntimeIdSchema,
@@ -45,7 +44,7 @@ import {
 export const RDSInstanceSchema = object({
   dbInstanceIdentifier: DBInstanceIdentifierSchema,
   endpoint: DBEndpointSchema,
-  port: PortNumberSchema,
+  port: PortSchema,
   engine: DatabaseEngineSchema,
   dbInstanceClass: string(),
   dbInstanceStatus: DBInstanceStatusSchema,
@@ -74,8 +73,8 @@ export const ConnectDryRunParamsSchema = object({
   cluster: ClusterNameSchema,
   task: TaskIdSchema,
   rdsInstance: RDSInstanceSchema,
-  rdsPort: PortNumberSchema,
-  localPort: PortNumberSchema,
+  rdsPort: PortSchema,
+  localPort: PortSchema,
 });
 
 export const ExecDryRunParamsSchema = object({
@@ -91,15 +90,15 @@ export const ReproducibleCommandParamsSchema = object({
   cluster: ClusterNameSchema,
   task: TaskArnSchema,
   rds: DBInstanceIdentifierSchema,
-  rdsPort: PortNumberSchema,
-  localPort: PortNumberSchema,
+  rdsPort: PortSchema,
+  localPort: PortSchema,
 });
 
 export const SSMSessionParamsSchema = object({
   taskArn: TaskArnSchema,
   rdsInstance: RDSInstanceSchema,
-  rdsPort: PortNumberSchema,
-  localPort: PortNumberSchema,
+  rdsPort: PortSchema,
+  localPort: PortSchema,
   reproducibleCommand: optional(NonEmptyStringSchema),
 });
 
@@ -445,7 +444,7 @@ export const HandleConnectionParamsSchema = object({
   selectedRDS: RDSInstanceSchema,
   selectedTask: TaskArnSchema,
   selectedInference: InferenceResultSchema,
-  rdsPort: PortNumberSchema,
+  rdsPort: PortSchema,
   options: object({ dryRun: optional(boolean()) }),
 });
 
