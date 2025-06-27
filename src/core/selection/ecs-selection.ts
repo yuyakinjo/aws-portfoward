@@ -1,11 +1,12 @@
 import { search } from "@inquirer/prompts";
+import { isEmpty } from "remeda";
 import type { InferenceResult } from "../../inference/index.js";
 import { inferECSTargets } from "../../inference/index.js";
 import { isTaskArnShape } from "../../regex.js";
 import { searchInferenceResults } from "../../search.js";
 import type { ECSTargetSelectionParams, TaskArn } from "../../types.js";
 import { unwrapBrandedString } from "../../types.js";
-import { isEmpty, messages } from "../../utils/index.js";
+import { messages } from "../../utils/index.js";
 import { clearLoadingMessage } from "../ui/display-utils.js";
 
 // UI Configuration constants

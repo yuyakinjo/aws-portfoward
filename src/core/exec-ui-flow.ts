@@ -1,7 +1,7 @@
 import { EC2Client } from "@aws-sdk/client-ec2";
 import { ECSClient } from "@aws-sdk/client-ecs";
 import { input, search } from "@inquirer/prompts";
-import { isString } from "remeda";
+import { isEmpty, isString } from "remeda";
 import {
   getAWSRegions,
   getECSClustersWithExecCapability,
@@ -24,12 +24,7 @@ import {
   parseTaskId,
   unwrapBrandedString,
 } from "../types.js";
-import {
-  askRetry,
-  displayFriendlyError,
-  isEmpty,
-  messages,
-} from "../utils/index.js";
+import { askRetry, displayFriendlyError, messages } from "../utils/index.js";
 import { displayDryRunResult, generateExecDryRun } from "./dry-run.js";
 
 // UI Configuration constants

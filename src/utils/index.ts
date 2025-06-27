@@ -23,7 +23,6 @@ export {
   findAvailablePort,
   findAvailablePortSafe,
   getPortRange,
-  isEmpty,
   isPortAvailable,
   isPortRange,
   isValidPortString,

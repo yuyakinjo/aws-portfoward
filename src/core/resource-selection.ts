@@ -2,7 +2,7 @@ import { EC2Client } from "@aws-sdk/client-ec2";
 import { ECSClient } from "@aws-sdk/client-ecs";
 import { RDSClient } from "@aws-sdk/client-rds";
 import { input, search } from "@inquirer/prompts";
-import { isDefined } from "remeda";
+import { isDefined, isEmpty } from "remeda";
 import {
   getAWSRegions,
   getECSClusters,
@@ -28,7 +28,6 @@ import { isFailure, parseRegionName, parseTaskArn } from "../types.js";
 import {
   findAvailablePortSafe,
   getDefaultPortForEngine,
-  isEmpty,
   messages,
   parsePort,
 } from "../utils/index.js";

@@ -11,6 +11,7 @@ import {
   DescribeDBInstancesCommand,
   type RDSClient,
 } from "@aws-sdk/client-rds";
+import { isEmpty } from "remeda";
 import type {
   AWSRegion,
   ContainerName,
@@ -37,7 +38,6 @@ import {
   parseTaskStatus,
   success,
 } from "./types.js";
-import { isEmpty } from "./utils/index.js";
 
 export async function getECSClustersWithExecCapability(
   ecsClient: ECSClient,

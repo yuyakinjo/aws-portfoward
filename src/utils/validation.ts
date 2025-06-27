@@ -13,15 +13,6 @@ import {
 } from "../types.js";
 import { messages } from "./messages.js";
 
-/**
- * Checks if an array or string is empty
- * @param value Array or string to check
- * @returns true if the array or string is empty, false otherwise
- */
-export function isEmpty<T>(value: T[] | string): boolean {
-  return value.length === 0;
-}
-
 // =============================================================================
 // Parse-first Validation Functions
 // =============================================================================
