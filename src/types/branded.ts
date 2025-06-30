@@ -128,6 +128,14 @@ export const ServiceNameSchema = pipe(
 );
 export type ServiceName = InferOutput<typeof ServiceNameSchema>;
 
+// Service ARN schema
+export const ServiceArnSchema = pipe(
+  string(),
+  minLength(1, "Service ARN cannot be empty"),
+  brand("ServiceArn"),
+);
+export type ServiceArn = InferOutput<typeof ServiceArnSchema>;
+
 // DB Instance Identifier schema
 export const DBInstanceIdentifierSchema = pipe(
   string(),

@@ -23,6 +23,8 @@ import {
   type Result,
   type RuntimeId,
   RuntimeIdSchema,
+  type ServiceArn,
+  ServiceArnSchema,
   type ServiceName,
   ServiceNameSchema,
   success,
@@ -36,6 +38,7 @@ import {
 import {
   type HandleConnectionParams,
   HandleConnectionParamsSchema,
+  ProcessClusterServicesParamsSchema,
   type SelectionState,
   SelectionStateSchema,
 } from "./schemas.js";
@@ -97,6 +100,17 @@ export function parseServiceName(name: unknown): Result<ServiceName, string> {
     return success(result.output);
   }
   return failure("Invalid service name");
+}
+
+/**
+ * Safely parse a service ARN from AWS API response
+ */
+export function parseServiceArn(arn: unknown): Result<ServiceArn, string> {
+  const result = safeParse(ServiceArnSchema, arn);
+  if (result.success) {
+    return success(result.output);
+  }
+  return failure("Invalid service ARN");
 }
 
 /**
@@ -227,4 +241,17 @@ export function parseHandleConnectionParams(
     return success(result.output);
   }
   return failure(`Invalid handle connection params: ${params}`);
+}
+
+/**
+ * Safely parse process cluster services parameters
+ */
+export function parseProcessClusterServicesParams(
+  params: unknown,
+): Result<import("./entities.js").ProcessClusterServicesParams, string> {
+  const result = safeParse(ProcessClusterServicesParamsSchema, params);
+  if (result.success) {
+    return success(result.output);
+  }
+  return failure("Invalid process cluster services parameters");
 }

@@ -322,6 +322,43 @@ export async function searchClusters(
   return universalSearch(config, input);
 }
 
+export async function searchServices(
+  services: import("./types.js").ECSService[],
+  input: string,
+): Promise<SearchableItem[]> {
+  const config: SearchConfig<import("./types.js").ECSService> = {
+    items: services,
+    searchKeys: ["serviceName", "clusterName"],
+    displayFormatter: (service, index, _isDefault, score) => {
+      const icon = index === 0 ? chalk.green("•") : "  ";
+      const statusIcon = service.status === "ACTIVE" ? "🟢" : "🟡";
+      const scoreLabel = score ? ` [${((1 - score) * 100).toFixed(0)}%]` : "";
+      const execStatus = service.enableExecuteCommand
+        ? chalk.green("exec enabled")
+        : chalk.red("exec disabled");
+
+      return {
+        name: `${icon} ${service.serviceName} ${chalk.dim(`(${service.clusterName}) ${statusIcon} ${service.runningCount}/${service.desiredCount} running - ${execStatus}${scoreLabel}`)}`,
+        value: service,
+      };
+    },
+    emptyInputFormatter: (service, _index) => {
+      const icon = "  ";
+      const statusIcon = service.status === "ACTIVE" ? "🟢" : "🟡";
+      const execStatus = service.enableExecuteCommand
+        ? chalk.green("exec enabled")
+        : chalk.red("exec disabled");
+
+      return {
+        name: `${icon} ${service.serviceName} ${chalk.dim(`(${service.clusterName}) ${statusIcon} ${service.runningCount}/${service.desiredCount} running - ${execStatus}`)}`,
+        value: service,
+      };
+    },
+  };
+
+  return universalSearch(config, input);
+}
+
 export async function searchTasks(
   tasks: ECSTask[],
   input: string,

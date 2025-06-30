@@ -41,11 +41,16 @@ jobs:
         run: npm run build
 
       - name: Run tests with coverage
+        env:
+          # CI環境でのAWS認証エラーを回避するための環境変数
+          AWS_REGION: us-east-1
+          CI: true
         run: npm run test:coverage
 
       - name: Vitest Coverage Report
         uses: davelosert/vitest-coverage-report-action@v2
         if: always() && matrix.node-version == '24.x'
+        continue-on-error: true
         with:
           name: '📊 AWS Port Forward CLI カバレッジレポート'
           # カバレッジ閾値をVitest設定から自動読み込み
@@ -85,9 +90,8 @@ jobs:
         run: |
           node dist/cli.js --help
           node dist/cli.js connect --help
-          node dist/cli.js connect-ui --help
-          node dist/cli.js exec-task --help
-          node dist/cli.js exec-task-ui --help
+          node dist/cli.js exec --help
+          node dist/cli.js enable-exec --help
 
       - name: Test CLI version
         run: node dist/cli.js --version

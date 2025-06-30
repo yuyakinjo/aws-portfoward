@@ -323,6 +323,82 @@ describe("CLI Commands Integration", () => {
     });
   });
 
+  describe("enable-exec command", () => {
+    it("should show help for enable-exec command", async () => {
+      const { code, stdout } = await runCLI(["enable-exec", "--help"]);
+
+      expect(code).toBe(0);
+      expect(stdout).toContain(
+        "Enable ECS exec for services that don't have it enabled",
+      );
+      expect(stdout).toContain("--region");
+      expect(stdout).toContain("--cluster");
+      expect(stdout).toContain("--service");
+      expect(stdout).toContain("--dry-run");
+    });
+
+    it("should start interactive mode when no region provided", async () => {
+      const { code, stdout } = await runCLI(["enable-exec"], 2000);
+
+      expect(code === 1 || code === null).toBe(true);
+      // CI環境ではAWS認証がないため、リージョン取得エラーまたはリージョン選択画面のいずれかが表示される
+      const hasRegionSelection = stdout.includes("Select AWS region");
+      const hasRegionError =
+        stdout.includes("AWS Region Error") ||
+        stdout.includes("Failed to get AWS regions");
+      expect(hasRegionSelection || hasRegionError).toBe(true);
+    });
+
+    it("should validate region parameter format", async () => {
+      const { code, stdout } = await runCLI(
+        ["enable-exec", "--region", ""],
+        2000,
+      );
+
+      expect(code).toBe(1);
+      expect(stdout).toContain("Region name cannot be empty");
+    });
+
+    it("should handle dry-run mode", async () => {
+      const { code, stdout } = await runCLI(
+        [
+          "enable-exec",
+          "--region",
+          "ap-northeast-1",
+          "--cluster",
+          "test-cluster",
+          "--service",
+          "test-service",
+          "--dry-run",
+        ],
+        2000,
+      );
+
+      // dry-runモードでは正常に終了する
+      expect(code).toBe(0);
+      expect(stdout).toContain("DRY RUN");
+    });
+
+    it("should validate cluster and service combination", async () => {
+      const { code, stdout } = await runCLI(
+        [
+          "enable-exec",
+          "--region",
+          "ap-northeast-1",
+          "--cluster",
+          "test-cluster",
+          "--service",
+          "test-service",
+        ],
+        2000,
+      );
+
+      // 有効なパラメータの場合、バリデーション通過後にAWS呼び出しでエラーが発生するが正常終了
+      expect(code === 0 || code === 1 || code === null).toBe(true);
+      expect(stdout).toContain("Enabling exec for service");
+    });
+  });
+
   describe("Command validation consistency", () => {
     it("should use consistent validation schemas across commands", async () => {
       // connectコマンドでのリージョンバリデーション

@@ -1,11 +1,13 @@
 import { DescribeRegionsCommand, type EC2Client } from "@aws-sdk/client-ec2";
 import {
   DescribeClustersCommand,
+  DescribeServicesCommand,
   DescribeTasksCommand,
   type ECSClient,
   ListClustersCommand,
   ListServicesCommand,
   ListTasksCommand,
+  UpdateServiceCommand,
 } from "@aws-sdk/client-ecs";
 import {
   DescribeDBInstancesCommand,
@@ -16,8 +18,10 @@ import type {
   AWSRegion,
   ContainerName,
   ECSCluster,
+  ECSService,
   ECSTask,
   ECSTaskContainersParams,
+  EnableExecResult,
   RDSInstance,
   Result,
 } from "./types.js";
@@ -32,12 +36,14 @@ import {
   parsePort,
   parseRegionName,
   parseRuntimeId,
+  parseServiceArn,
   parseServiceName,
   parseTaskArn,
   parseTaskId,
   parseTaskStatus,
   success,
 } from "./types.js";
+import { messages } from "./utils/index.js";
 
 export async function getECSClustersWithExecCapability(
   ecsClient: ECSClient,
@@ -495,4 +501,301 @@ export async function checkECSExecCapability(
     // If we can't determine exec capability, assume it's not available
     return false;
   }
+}
+
+/**
+ * Get all ECS services in a cluster
+ */
+export async function getECSServices(
+  ecsClient: ECSClient,
+  cluster: ECSCluster,
+): Promise<Result<ECSService[], string>> {
+  try {
+    // Get list of services
+    const listCommand = new ListServicesCommand({
+      cluster: cluster.clusterName,
+    });
+    const listResponse = await ecsClient.send(listCommand);
+
+    if (!listResponse.serviceArns || isEmpty(listResponse.serviceArns)) {
+      return success([]);
+    }
+
+    // Get detailed service information
+    const describeCommand = new DescribeServicesCommand({
+      cluster: cluster.clusterName,
+      services: listResponse.serviceArns,
+    });
+    const describeResponse = await ecsClient.send(describeCommand);
+
+    const services: ECSService[] = [];
+    if (describeResponse.services) {
+      for (const service of describeResponse.services) {
+        if (service.serviceName && service.serviceArn) {
+          const serviceNameResult = parseServiceName(service.serviceName);
+          const serviceArnResult = parseServiceArn(service.serviceArn);
+
+          if (serviceNameResult.success && serviceArnResult.success) {
+            services.push({
+              serviceName: serviceNameResult.data,
+              serviceArn: serviceArnResult.data,
+              clusterName: cluster.clusterName,
+              status: service.status || "UNKNOWN",
+              taskDefinition: service.taskDefinition || "",
+              enableExecuteCommand: service.enableExecuteCommand || false,
+              desiredCount: service.desiredCount || 0,
+              runningCount: service.runningCount || 0,
+              pendingCount: service.pendingCount || 0,
+            });
+          }
+        }
+      }
+    }
+
+    return success(services);
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.name === "ClusterNotFoundException") {
+        return failure(`ECS cluster "${cluster.clusterName}" not found.`);
+      }
+      if (
+        error.name === "UnauthorizedOperation" ||
+        error.name === "AccessDenied"
+      ) {
+        return failure(
+          "Access denied to ECS services. Please check your IAM policies.",
+        );
+      }
+    }
+    return failure(
+      `Failed to get ECS services: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+}
+
+/**
+ * Get all ECS services from all clusters (parallel processing for better performance)
+ */
+export async function getAllECSServices(
+  ecsClient: ECSClient,
+): Promise<Result<ECSService[], string>> {
+  const clustersResult = await getECSClusters(ecsClient);
+  if (!clustersResult.success) {
+    return clustersResult;
+  }
+
+  // Process all clusters in parallel for better performance
+  // Limit concurrency to avoid overwhelming the API
+  const BATCH_SIZE = 5;
+  const clusters = clustersResult.data;
+  const allServices: ECSService[] = [];
+
+  for (let i = 0; i < clusters.length; i += BATCH_SIZE) {
+    const batch = clusters.slice(i, i + BATCH_SIZE);
+    const batchStart = i + 1;
+    const batchEnd = Math.min(i + BATCH_SIZE, clusters.length);
+
+    // Show progress
+    process.stdout.write(
+      `\rProcessing clusters ${batchStart}-${batchEnd}/${clusters.length}...`,
+    );
+
+    const servicePromises = batch.map(async (cluster) => {
+      const servicesResult = await getECSServices(ecsClient, cluster);
+      return servicesResult.success ? servicesResult.data : [];
+    });
+
+    try {
+      const serviceArrays = await Promise.all(servicePromises);
+      allServices.push(...serviceArrays.flat());
+    } catch (error) {
+      return failure(
+        `Failed to get services from clusters: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
+  // Clear the progress line
+  messages.clearCurrentLine();
+
+  return success(allServices);
+}
+
+/**
+ * Get all ECS services that do not have exec enabled from all clusters
+ */
+export async function getAllECSServicesWithoutExec(
+  ecsClient: ECSClient,
+): Promise<Result<ECSService[], string>> {
+  const servicesResult = await getAllECSServices(ecsClient);
+  if (!servicesResult.success) {
+    return servicesResult;
+  }
+
+  const servicesWithoutExec = servicesResult.data.filter(
+    (service) => !service.enableExecuteCommand,
+  );
+
+  return success(servicesWithoutExec);
+}
+
+/**
+ * Get ECS services that do not have exec enabled
+ */
+export async function getECSServicesWithoutExec(
+  ecsClient: ECSClient,
+  cluster: ECSCluster,
+): Promise<Result<ECSService[], string>> {
+  const servicesResult = await getECSServices(ecsClient, cluster);
+  if (!servicesResult.success) {
+    return servicesResult;
+  }
+
+  const servicesWithoutExec = servicesResult.data.filter(
+    (service) => !service.enableExecuteCommand,
+  );
+
+  return success(servicesWithoutExec);
+}
+
+/**
+ * Enable ECS exec for a specific service
+ */
+export async function enableECSExecForService(
+  ecsClient: ECSClient,
+  clusterName: string,
+  serviceName: string,
+): Promise<Result<EnableExecResult, string>> {
+  try {
+    // First, get current service state
+    const describeCommand = new DescribeServicesCommand({
+      cluster: clusterName,
+      services: [serviceName],
+    });
+    const describeResponse = await ecsClient.send(describeCommand);
+
+    if (!describeResponse.services || isEmpty(describeResponse.services)) {
+      return failure(
+        `Service "${serviceName}" not found in cluster "${clusterName}"`,
+      );
+    }
+
+    const service = describeResponse.services[0];
+    const previousState = service?.enableExecuteCommand || false;
+
+    // If already enabled, return success without making changes
+    if (previousState) {
+      const serviceNameResult = parseServiceName(serviceName);
+      const clusterNameResult = parseClusterName(clusterName);
+
+      if (!serviceNameResult.success || !clusterNameResult.success) {
+        return failure("Invalid service or cluster name format");
+      }
+
+      return success({
+        serviceName: serviceNameResult.data,
+        clusterName: clusterNameResult.data,
+        previousState: true,
+        newState: true,
+        success: true,
+      });
+    }
+
+    // Update service to enable exec
+    const updateCommand = new UpdateServiceCommand({
+      cluster: clusterName,
+      service: serviceName,
+      enableExecuteCommand: true,
+    });
+
+    await ecsClient.send(updateCommand);
+
+    const serviceNameResult = parseServiceName(serviceName);
+    const clusterNameResult = parseClusterName(clusterName);
+
+    if (!serviceNameResult.success || !clusterNameResult.success) {
+      return failure("Invalid service or cluster name format");
+    }
+
+    return success({
+      serviceName: serviceNameResult.data,
+      clusterName: clusterNameResult.data,
+      previousState: false,
+      newState: true,
+      success: true,
+    });
+  } catch (error) {
+    const serviceNameResult = parseServiceName(serviceName);
+    const clusterNameResult = parseClusterName(clusterName);
+
+    if (!serviceNameResult.success || !clusterNameResult.success) {
+      return failure("Invalid service or cluster name format");
+    }
+
+    let errorMessage = `Failed to enable exec for service "${serviceName}": `;
+    if (error instanceof Error) {
+      if (error.name === "ServiceNotFoundException") {
+        errorMessage += "Service not found";
+      } else if (error.name === "ClusterNotFoundException") {
+        errorMessage += "Cluster not found";
+      } else if (
+        error.name === "UnauthorizedOperation" ||
+        error.name === "AccessDenied"
+      ) {
+        errorMessage += "Access denied. Please check your IAM policies";
+      } else {
+        errorMessage += error.message;
+      }
+    } else {
+      errorMessage += String(error);
+    }
+
+    return success({
+      serviceName: serviceNameResult.data,
+      clusterName: clusterNameResult.data,
+      previousState: false,
+      newState: false,
+      success: false,
+      error: errorMessage,
+    });
+  }
+}
+
+/**
+ * Enable ECS exec for multiple services
+ */
+export async function enableECSExecForServices(
+  ecsClient: ECSClient,
+  clusterName: string,
+  serviceNames: string[],
+): Promise<Result<EnableExecResult[], string>> {
+  const results: EnableExecResult[] = [];
+
+  for (const serviceName of serviceNames) {
+    const result = await enableECSExecForService(
+      ecsClient,
+      clusterName,
+      serviceName,
+    );
+    if (result.success) {
+      results.push(result.data);
+    } else {
+      // Continue with other services even if one fails
+      const serviceNameResult = parseServiceName(serviceName);
+      const clusterNameResult = parseClusterName(clusterName);
+
+      if (serviceNameResult.success && clusterNameResult.success) {
+        results.push({
+          serviceName: serviceNameResult.data,
+          clusterName: clusterNameResult.data,
+          previousState: false,
+          newState: false,
+          success: false,
+          error: result.error,
+        });
+      }
+    }
+  }
+
+  return success(results);
 }

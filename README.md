@@ -11,6 +11,7 @@ A modern CLI tool for connecting to RDS databases through AWS ECS tasks using SS
 
 - **Port Forwarding**: Easily forward RDS ports through ECS tasks
 - **ECS Exec**: Execute commands in ECS containers with interactive UI
+- **Enable ECS Exec**: Automatically enable ECS exec capability for services that need it
 ## Quick Start
 
 ### Interactive UI
@@ -62,6 +63,32 @@ npx ecs-pf exec-task --dry-run \
   --command "/bin/bash"
 ```
 
+### Enable ECS Exec
+
+Enable ECS exec capability for services that don't have it enabled:
+
+```bash
+# Interactive mode - select services from all clusters
+npx ecs-pf enable-exec --region ap-northeast-1
+
+# Enable exec for specific service
+npx ecs-pf enable-exec \
+  --region ap-northeast-1 \
+  --cluster production-cluster \
+  --service api-service
+
+# Enable exec for all services in a cluster
+npx ecs-pf enable-exec \
+  --region ap-northeast-1 \
+  --cluster production-cluster
+
+# Dry run to see what would be changed
+npx ecs-pf enable-exec --dry-run \
+  --region ap-northeast-1 \
+  --cluster production-cluster \
+  --service api-service
+```
+
 
 ## Prerequisites
 
@@ -77,9 +104,13 @@ npx ecs-pf exec-task --dry-run \
 
 ### No ECS clusters found with exec capability
 
-This means your clusters don't have ECS exec enabled. Enable it with:
+This means your clusters don't have ECS exec enabled. Enable it with our built-in command:
 
 ```bash
+# Interactive mode to select and enable services
+npx ecs-pf enable-exec --region your-region
+
+# Or enable manually with AWS CLI
 aws ecs update-service \
   --cluster your-cluster \
   --service your-service \

@@ -17,7 +17,6 @@ import {
   ClusterArnSchema,
   ClusterNameSchema,
   CommandSchema,
-  type ContainerName,
   ContainerNameSchema,
   DatabaseEngineSchema,
   DBEndpointSchema,
@@ -371,25 +370,38 @@ export const ConnectOptionsSchema = object({
 export const ExecOptionsSchema = object({
   region: optional(RegionNameSchema),
   cluster: optional(ClusterNameSchema),
-  task: optional(
-    pipe(
-      string(),
-      minLength(1, "Task ID cannot be empty"),
-      transform(
-        (task): import("./branded.js").TaskId =>
-          task as import("./branded.js").TaskId,
-      ),
-    ),
-  ),
-  container: optional(
-    pipe(
-      string(),
-      minLength(1, "Container name cannot be empty"),
-      transform((container): ContainerName => container as ContainerName),
-    ),
-  ),
-  command: optional(pipe(string(), minLength(1, "Command cannot be empty"))),
-  dryRun: optional(boolean(), false),
+  task: optional(TaskIdSchema),
+  container: optional(ContainerNameSchema),
+  command: optional(CommandSchema),
+  dryRun: optional(boolean()),
+});
+
+export const EnableExecOptionsSchema = object({
+  region: optional(RegionNameSchema),
+  cluster: optional(ClusterNameSchema),
+  service: optional(ServiceNameSchema),
+  dryRun: optional(boolean()),
+});
+
+export const ECSServiceSchema = object({
+  serviceName: ServiceNameSchema,
+  serviceArn: string(),
+  clusterName: ClusterNameSchema,
+  status: string(),
+  taskDefinition: string(),
+  enableExecuteCommand: boolean(),
+  desiredCount: number(),
+  runningCount: number(),
+  pendingCount: number(),
+});
+
+export const EnableExecResultSchema = object({
+  serviceName: ServiceNameSchema,
+  clusterName: ClusterNameSchema,
+  previousState: boolean(),
+  newState: boolean(),
+  success: boolean(),
+  error: optional(string()),
 });
 
 // =============================================================================
@@ -410,6 +422,12 @@ export const SelectionStateSchema = object({
 export const ECSClusterSchema = object({
   clusterName: ClusterNameSchema,
   clusterArn: ClusterArnSchema,
+});
+
+export const ProcessClusterServicesParamsSchema = object({
+  ecsClient: ECSClientSchema, // ECSClient from AWS SDK
+  cluster: ECSClusterSchema,
+  options: EnableExecOptionsSchema,
 });
 
 export const InferenceResultSchema = object({
@@ -500,6 +518,12 @@ export type SearchInferenceResultsParams = InferOutput<
 >;
 export type ValidatedConnectOptions = InferOutput<typeof ConnectOptionsSchema>;
 export type ValidatedExecOptions = InferOutput<typeof ExecOptionsSchema>;
+export type ValidatedEnableExecOptions = InferOutput<
+  typeof EnableExecOptionsSchema
+>;
+export type ValidatedProcessClusterServicesParams = InferOutput<
+  typeof ProcessClusterServicesParamsSchema
+>;
 
 export type SelectionState = InferOutput<typeof SelectionStateSchema>;
 

@@ -24,7 +24,7 @@
   "scripts": {
     "connect": "npm run build && node dist/cli.js connect",
     "exec": "npm run build && node dist/cli.js exec",
-    "dev": "npm run build && node dist/cli.js connect",
+    "enable-exec": "npm run build && node dist/cli.js enable-exec",
     "build": "./scripts/build.sh",
     "build:tsc": "npx tsc --project tsconfig.build.json",
     "generate-version": "node scripts/generate-version.mjs",
