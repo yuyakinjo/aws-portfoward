@@ -1,3 +1,13 @@
+## [2.2.15](https://github.com/yuyakinjo/aws-portfoward/compare/v2.2.14...v2.2.15) (2025-06-30)
+
+### Features
+
+* CHANGELOG.mdの自動管理機能を追加 ([#22](https://github.com/yuyakinjo/aws-portfoward/issues/22)) ([777b3f6](https://github.com/yuyakinjo/aws-portfoward/commit/777b3f6014919753ab53962859ea93cf8288859e))
+
+### Bug Fixes
+
+* GitHub Actionsでのエラーハンドリングを改善 ([88aa123](https://github.com/yuyakinjo/aws-portfoward/commit/88aa1231773e3680c8fd51f90f2f3a628781b375))
+* npm versionの問題を修正してバージョン管理を手動化 ([ad9d87d](https://github.com/yuyakinjo/aws-portfoward/commit/ad9d87d77a1f3baddf576e7e50c7572bb9348005))
 ## [2.2.14](https://github.com/yuyakinjo/aws-portfoward/compare/v2.2.13...v2.2.14) (2025-06-27)
 ## [2.2.13](https://github.com/yuyakinjo/aws-portfoward/compare/v2.2.12...v2.2.13) (2025-06-27)
 
@@ -40,8 +50,7 @@
 ### Features
 
 * Improve version management with TypeScript and support -v flag ([#6](https://github.com/yuyakinjo/aws-portfoward/issues/6)) ([5b7cf18](https://github.com/yuyakinjo/aws-portfoward/commit/5b7cf18a9325d1bb006587c1b17a1cc9fba2c3de))
-## [2.2.3](https://github.com/yuyakinjo/aws-portfoward/compare/v2.2.2...v2.2.3) (2025-06-23)
-## [2.2.2](https://github.com/yuyakinjo/aws-portfoward/compare/v2.2.1...v2.2.2) (2025-06-23)
+## [2.2.3](https://github.com/yuyakinjo/aws-portfoward/compare/v2.2.1...v2.2.3) (2025-06-23)
 ## [2.2.1](https://github.com/yuyakinjo/aws-portfoward/compare/v2.2.0...v2.2.1) (2025-06-23)
 
 ### Performance Improvements

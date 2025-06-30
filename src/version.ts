@@ -1,5 +1,5 @@
 // This file is auto-generated during build process
 // Do not edit manually
 
-export const VERSION = "2.2.14";
+export const VERSION = "2.2.15";
 export const PACKAGE_NAME = "ecs-pf";
