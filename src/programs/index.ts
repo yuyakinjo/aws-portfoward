@@ -29,4 +29,16 @@ export function registerAllCommands(program: Command): void {
       const { runExecTaskCommand } = await import("./exec.js");
       await runExecTaskCommand(rawOptions);
     });
+
+  program
+    .command("enable-exec")
+    .description("Enable ECS exec for services that don't have it enabled")
+    .option("-r, --region <region>", "AWS region (required)")
+    .option("-c, --cluster <cluster>", "ECS cluster name")
+    .option("-s, --service <service>", "ECS service name")
+    .option("--dry-run", "Show commands without execution")
+    .action(async (rawOptions: unknown) => {
+      const { runEnableExecCommand } = await import("./enable-exec.js");
+      await runEnableExecCommand(rawOptions);
+    });
 }

@@ -9,6 +9,7 @@ import type {
   Port,
   RegionName,
   RuntimeId,
+  ServiceArn,
   ServiceName,
   TaskArn,
   TaskId,
@@ -97,4 +98,38 @@ export interface ExecOptions {
   container?: string;
   command?: string;
   dryRun?: boolean;
+}
+
+export interface EnableExecOptions {
+  region?: string;
+  cluster?: string;
+  service?: string;
+  dryRun?: boolean;
+}
+
+export interface ECSService {
+  serviceName: ServiceName;
+  serviceArn: ServiceArn;
+  clusterName: ClusterName;
+  status: string;
+  taskDefinition: string;
+  enableExecuteCommand: boolean;
+  desiredCount: number;
+  runningCount: number;
+  pendingCount: number;
+}
+
+export interface EnableExecResult {
+  serviceName: ServiceName;
+  clusterName: ClusterName;
+  previousState: boolean;
+  newState: boolean;
+  success: boolean;
+  error?: string;
+}
+
+export interface ProcessClusterServicesParams {
+  ecsClient: import("@aws-sdk/client-ecs").ECSClient;
+  cluster: ECSCluster;
+  options: EnableExecOptions;
 }
