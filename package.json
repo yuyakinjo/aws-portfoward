@@ -9,7 +9,8 @@
   },
   "files": [
     "dist/**/*",
-    "README.md"
+    "README.md",
+    "CHANGELOG.md"
   ],
   "keywords": [
     "aws",
@@ -27,6 +28,9 @@
     "build": "./scripts/build.sh",
     "build:tsc": "npx tsc --project tsconfig.build.json",
     "generate-version": "node scripts/generate-version.mjs",
+    "generate-changelog": "node scripts/generate-changelog.mjs",
+    "changelog:init": "node scripts/generate-changelog.mjs init",
+    "changelog:update": "node scripts/generate-changelog.mjs generate",
     "start": "node dist/cli.js connect",
     "type-check": "tsc --noEmit",
     "test": "npm run type-check && npm run build && npm run test:unit && npm run test:integration",
@@ -36,6 +40,8 @@
     "test:coverage": "vitest run --coverage",
     "test:ui": "vitest --ui",
     "prepublishOnly": "npm run check",
+    "preversion": "npm run check && npm run test",
+    "version": "npm run changelog:update && git add CHANGELOG.md",
     "format": "biome format --write",
     "format:check": "biome format",
     "lint": "biome lint --write",
@@ -49,6 +55,8 @@
     "@types/inquirer": "^9.0.8",
     "@vitest/coverage-v8": "^3.2.4",
     "@vitest/ui": "^3.2.4",
+    "conventional-changelog-cli": "^5.0.0",
+    "conventional-changelog-conventionalcommits": "^9.0.0",
     "vitest": "^3.2.4"
   },
   "peerDependencies": {
