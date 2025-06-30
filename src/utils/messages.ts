@@ -42,6 +42,11 @@ export const messages = {
     process.stdout.write("\x1b[1A\x1b[2K\r");
   },
 
+  // Clear current line (for progress indicators)
+  clearCurrentLine: () => {
+    process.stdout.write("\r\x1b[2K");
+  },
+
   // Clear and replace the last line
   clearAndReplace: (
     newMessage: string,

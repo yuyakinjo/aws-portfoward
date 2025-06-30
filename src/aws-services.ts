@@ -616,7 +616,7 @@ export async function getAllECSServices(
   }
 
   // Clear the progress line
-  messages.clearPreviousLine();
+  messages.clearCurrentLine();
 
   return success(allServices);
 }
