@@ -6,7 +6,8 @@
 2. **型チェック**: `npm run type-check`
 3. **コード品質チェック**: `npm run ci`
 4. **ビルド**: `npm run build`
-5. **npm公開**: `npm publish --access public`
+5. **CHANGELOG更新**: `npm run changelog:update`
+6. **npm公開**: `npm publish --access public`
 
 #### リリース手順
 
@@ -39,6 +40,16 @@ gh release create v1.1.3(current version) --target main --notes-start-tag v1.1.2
 # - "Generate release notes" をクリック
 # - "Publish release" をクリック
 ```
+
+##### CHANGELOG管理
+
+このプロジェクトでは**CHANGELOG.md**が自動管理されています：
+
+- **自動更新**: リリース時にGitHub Actionsが自動でCHANGELOG.mdを更新
+- **手動更新**: `npm run changelog:update` でいつでも手動更新可能
+- **初期化**: `npm run changelog:init` で初回のCHANGELOG.mdを作成
+
+CHANGELOGは[Conventional Commits](https://www.conventionalcommits.org/)形式のコミットメッセージから自動生成されます。
 
 ##### ⚠️ 重要な注意点
 
