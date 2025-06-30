@@ -1,3 +1,8 @@
+## [2.2.16](https://github.com/yuyakinjo/aws-portfoward/compare/v2.2.15...v2.2.16) (2025-06-30)
+
+### Features
+
+* Add enable-exec command for ECS services ([#23](https://github.com/yuyakinjo/aws-portfoward/issues/23)) ([1bb69d6](https://github.com/yuyakinjo/aws-portfoward/commit/1bb69d63a638e78e73acde8faba66687b4891110))
 ## [2.2.15](https://github.com/yuyakinjo/aws-portfoward/compare/v2.2.14...v2.2.15) (2025-06-30)
 
 ### Features
