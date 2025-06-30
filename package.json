@@ -41,7 +41,6 @@
     "test:ui": "vitest --ui",
     "prepublishOnly": "npm run check",
     "preversion": "npm run check && npm run test",
-    "version": "npm run changelog:update && git add CHANGELOG.md",
     "format": "biome format --write",
     "format:check": "biome format",
     "lint": "biome lint --write",
