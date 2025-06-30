@@ -337,11 +337,11 @@ describe("CLI Commands Integration", () => {
       expect(stdout).toContain("--dry-run");
     });
 
-    it("should require region parameter", async () => {
+    it("should start interactive mode when no region provided", async () => {
       const { code, stdout } = await runCLI(["enable-exec"], 2000);
 
       expect(code === 1 || code === null).toBe(true);
-      expect(stdout).toContain("Invalid options provided");
+      expect(stdout).toContain("Select AWS region");
     });
 
     it("should validate region parameter format", async () => {
