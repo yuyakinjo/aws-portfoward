@@ -20,6 +20,8 @@ updates:
     # セキュリティアップデートは即座に適用
     allow:
       - dependency-type: "all"
+    # 自動再ベースを有効化
+    rebase-strategy: "auto"
     # プロダクション依存関係は自動マージしない
     # デベロップメント依存関係は自動マージを検討
     groups:
@@ -62,3 +64,5 @@ updates:
     # セキュリティアップデートは即座に適用
     allow:
       - dependency-type: "all"
+    # 自動再ベースを有効化
+    rebase-strategy: "auto"
