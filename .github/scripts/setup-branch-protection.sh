@@ -30,15 +30,16 @@ gh api \
   "required_status_checks": {
     "strict": true,
     "contexts": [
-      "Tests and Coverage / test",
-      "Tests and Coverage / test-e2e",
-      "Tests and Coverage / quality-gate",
-      "Dependabot Auto-Merge / test"
+      "test",
+      "End-to-End CLI Tests",
+      "Run Tests",
+      "Run Tests with Coverage (24.x)",
+      "Quality Gate"
     ]
   },
   "enforce_admins": false,
   "required_pull_request_reviews": {
-    "dismiss_stale_reviews": true,
+    "dismiss_stale_reviews": false,
     "require_code_owner_reviews": false,
     "require_last_push_approval": false,
     "required_approving_review_count": 0
@@ -50,17 +51,22 @@ gh api \
   "block_creations": false,
   "required_conversation_resolution": true,
   "lock_branch": false,
-  "allow_fork_syncing": true
+  "allow_fork_syncing": false
 }
 EOF
 
-echo "🎉 Branch protection rules successfully configured!"
 echo ""
-echo "📋 Summary:"
-echo "  - Required status checks: ✅"
-echo "  - Required PR reviews: ✅ (0 approvals for dependabot)"
-echo "  - Dismiss stale reviews: ✅"
-echo "  - Require conversation resolution: ✅"
-echo "  - Restrict force pushes: ✅"
+echo "🎉 Branch protection rules have been successfully configured!"
 echo ""
-echo "🔗 View settings: https://github.com/$REPO_OWNER/$REPO_NAME/settings/branches"
+echo "📋 Summary of settings:"
+echo "✅ PR required before merge"
+echo "✅ Status checks required: test, End-to-End CLI Tests, Run Tests, Run Tests with Coverage (24.x), Quality Gate"
+echo "✅ Required approving reviews: 0 (セルフマージ可能)"
+echo "✅ Stale review dismissal: disabled (承認が維持される)"
+echo "✅ Code owner reviews: not required"
+echo "✅ Conversation resolution: required"
+echo "✅ Force pushes: blocked"
+echo "✅ Branch deletions: blocked"
+echo ""
+echo "🤖 Dependabot PRs with 0 required approvals can now auto-merge!"
+echo "👤 Manual PRs can be self-approved and merged!"
