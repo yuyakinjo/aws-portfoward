@@ -1,3 +1,8 @@
+## [2.2.22](https://github.com/yuyakinjo/aws-portfoward/compare/v2.2.21...v2.2.22) (2025-07-03)
+
+### Features
+
+* dependabot自動マージとブランチ保護ルール設定を追加 ([53e4670](https://github.com/yuyakinjo/aws-portfoward/commit/53e4670d007c610c1ec43e1c9096074261af1023))
 ## [2.2.21](https://github.com/yuyakinjo/aws-portfoward/compare/v2.2.20...v2.2.21) (2025-07-03)
 ## [2.2.20](https://github.com/yuyakinjo/aws-portfoward/compare/v2.2.19...v2.2.20) (2025-07-03)
 ## [2.2.19](https://github.com/yuyakinjo/aws-portfoward/compare/v2.2.18...v2.2.19) (2025-07-03)
