@@ -1,3 +1,8 @@
+## [2.2.17](https://github.com/yuyakinjo/aws-portfoward/compare/v2.2.16...v2.2.17) (2025-07-03)
+
+### Features
+
+* Add Dependabot configuration for automated dependency updates ([#24](https://github.com/yuyakinjo/aws-portfoward/issues/24)) ([58670f4](https://github.com/yuyakinjo/aws-portfoward/commit/58670f4a4be8feff402bc2ac61f6ec2468053972))
 ## [2.2.16](https://github.com/yuyakinjo/aws-portfoward/compare/v2.2.15...v2.2.16) (2025-06-30)
 
 ### Features
