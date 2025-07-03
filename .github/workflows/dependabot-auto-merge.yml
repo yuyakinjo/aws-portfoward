@@ -42,7 +42,7 @@ jobs:
     name: Run Tests
     runs-on: ubuntu-latest
     needs: check-dependabot
-    if: needs.check-dependabot.outputs.is-dependabot == 'true' && needs.check-dependabot.outputs.is-dev-dependency == 'true'
+    if: needs.check-dependabot.outputs.is-dependabot == 'true'
 
     permissions:
       contents: read
@@ -86,7 +86,7 @@ jobs:
     name: Auto-merge dependabot PR
     runs-on: ubuntu-latest
     needs: [check-dependabot, test]
-    if: needs.check-dependabot.outputs.is-dependabot == 'true' && needs.check-dependabot.outputs.is-dev-dependency == 'true' && needs.test.result == 'success'
+    if: needs.check-dependabot.outputs.is-dependabot == 'true' && needs.test.result == 'success'
 
     permissions:
       contents: write
@@ -117,7 +117,7 @@ jobs:
     name: Skip auto-merge notification
     runs-on: ubuntu-latest
     needs: [check-dependabot, test]
-    if: needs.check-dependabot.outputs.is-dependabot == 'true' && (needs.check-dependabot.outputs.is-dev-dependency == 'false' || needs.test.result != 'success')
+    if: needs.check-dependabot.outputs.is-dependabot == 'true' && needs.test.result != 'success'
 
     permissions:
       pull-requests: write
@@ -127,16 +127,9 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            let reason = '';
-            if ('${{ needs.check-dependabot.outputs.is-dev-dependency }}' === 'false') {
-              reason = '📦 本番依存関係のため、手動確認が必要です';
-            } else if ('${{ needs.test.result }}' !== 'success') {
-              reason = '❌ テストが失敗したため、自動マージをスキップしました';
-            }
-
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `🤖 **自動マージをスキップしました**\n\n${reason}\n\n手動でのレビューと承認をお願いします。`
+              body: '🤖 **自動マージをスキップしました**\n\n❌ テストが失敗したため、自動マージをスキップしました\n\n手動でのレビューと承認をお願いします。'
             })
