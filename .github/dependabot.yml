@@ -9,14 +9,9 @@ updates:
       time: "09:00"
       timezone: "Asia/Tokyo"
     open-pull-requests-limit: 10
-    reviewers:
-      - "@me"
     commit-message:
       prefix: "npm"
       include: "scope"
-    labels:
-      - "dependencies"
-      - "npm"
     # セキュリティアップデートは即座に適用
     allow:
       - dependency-type: "all"
@@ -35,6 +30,7 @@ updates:
           - "@vitest/*"
           - "vitest"
           - "typescript"
+          - "rollup"
       # テストツール関連のグループ化（自動マージ対象）
       test-tools:
         patterns:
@@ -51,14 +47,9 @@ updates:
       time: "09:00"
       timezone: "Asia/Tokyo"
     open-pull-requests-limit: 5
-    reviewers:
-      - "@me"
     commit-message:
       prefix: "ci"
       include: "scope"
-    labels:
-      - "dependencies"
-      - "github-actions"
     # セキュリティアップデートは即座に適用
     allow:
       - dependency-type: "all"
