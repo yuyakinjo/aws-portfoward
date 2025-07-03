@@ -1,3 +1,4 @@
+## [2.2.21](https://github.com/yuyakinjo/aws-portfoward/compare/v2.2.20...v2.2.21) (2025-07-03)
 ## [2.2.20](https://github.com/yuyakinjo/aws-portfoward/compare/v2.2.19...v2.2.20) (2025-07-03)
 ## [2.2.19](https://github.com/yuyakinjo/aws-portfoward/compare/v2.2.18...v2.2.19) (2025-07-03)
 ## [2.2.18](https://github.com/yuyakinjo/aws-portfoward/compare/v2.2.17...v2.2.18) (2025-07-03)
