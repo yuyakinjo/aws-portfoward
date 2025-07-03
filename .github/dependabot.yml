@@ -1,0 +1,64 @@
+version: 2
+updates:
+  # NPMパッケージの更新
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Tokyo"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "@me"
+    commit-message:
+      prefix: "npm"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "npm"
+    # セキュリティアップデートは即座に適用
+    allow:
+      - dependency-type: "all"
+    # プロダクション依存関係は自動マージしない
+    # デベロップメント依存関係は自動マージを検討
+    groups:
+      # AWS SDK のグループ化
+      aws-sdk:
+        patterns:
+          - "@aws-sdk/*"
+      # 開発ツール関連のグループ化
+      dev-tools:
+        patterns:
+          - "@biomejs/*"
+          - "@types/*"
+          - "@vitest/*"
+          - "vitest"
+          - "typescript"
+      # テストツール関連のグループ化
+      test-tools:
+        patterns:
+          - "vitest"
+          - "@vitest/*"
+          - "@types/*"
+
+  # GitHub Actionsの更新
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Tokyo"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "@me"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    # セキュリティアップデートは即座に適用
+    allow:
+      - dependency-type: "all"
