@@ -24,10 +24,21 @@ jobs:
             echo "is-dependabot=true" >> $GITHUB_OUTPUT
             echo "✅ This is a dependabot PR"
 
-            # 開発パッケージかどうかをチェック（グループ名で判定）
-            if [[ "${{ github.event.pull_request.title }}" =~ dev-tools|test-tools ]]; then
+            # 開発パッケージかどうかをチェック（複数の条件で判定）
+            PR_TITLE="${{ github.event.pull_request.title }}"
+
+            # deps-dev を含む場合は開発依存関係
+            if [[ "$PR_TITLE" =~ deps-dev ]]; then
               echo "is-dev-dependency=true" >> $GITHUB_OUTPUT
-              echo "✅ This is a dev dependency update"
+              echo "✅ This is a dev dependency update (deps-dev)"
+            # 特定の開発パッケージ名を含む場合
+            elif [[ "$PR_TITLE" =~ rollup|@types|@vitest|vitest|typescript|@biomejs ]]; then
+              echo "is-dev-dependency=true" >> $GITHUB_OUTPUT
+              echo "✅ This is a dev dependency update (package name match)"
+            # グループ名を含む場合（将来のため）
+            elif [[ "$PR_TITLE" =~ dev-tools|test-tools ]]; then
+              echo "is-dev-dependency=true" >> $GITHUB_OUTPUT
+              echo "✅ This is a dev dependency update (group name match)"
             else
               echo "is-dev-dependency=false" >> $GITHUB_OUTPUT
               echo "ℹ️ This is not a dev dependency update"
