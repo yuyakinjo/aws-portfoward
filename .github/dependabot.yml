@@ -27,7 +27,7 @@ updates:
       aws-sdk:
         patterns:
           - "@aws-sdk/*"
-      # 開発ツール関連のグループ化
+      # 開発ツール関連のグループ化（自動マージ対象）
       dev-tools:
         patterns:
           - "@biomejs/*"
@@ -35,7 +35,7 @@ updates:
           - "@vitest/*"
           - "vitest"
           - "typescript"
-      # テストツール関連のグループ化
+      # テストツール関連のグループ化（自動マージ対象）
       test-tools:
         patterns:
           - "vitest"
