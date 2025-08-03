@@ -113,32 +113,34 @@ export async function inferECSTargets(
 
     // すべての残りのクラスターを並列で検索
     const remainingResults = await Promise.all(
-      [...remainingInferredClusters, ...nonInferredClusters].map(async (cluster) => {
-        try {
-          const tasksResult = await getECSTasksWithExecCapability(
-            ecsClient,
-            cluster,
-          );
-          if (!tasksResult.success) return [];
-          const tasks = tasksResult.data;
-          if (tasks.length > 0) {
-            const scored = await scoreTasksByNaming({
-              tasks,
+      [...remainingInferredClusters, ...nonInferredClusters].map(
+        async (cluster) => {
+          try {
+            const tasksResult = await getECSTasksWithExecCapability(
+              ecsClient,
               cluster,
-              rdsInstance,
-            });
-            return scored.map((result) => ({
-              ...result,
-              confidence: "low" as const, // 推論外のクラスターは低信頼度
-              reasons: [result.reason],
-            }));
-          } else {
+            );
+            if (!tasksResult.success) return [];
+            const tasks = tasksResult.data;
+            if (tasks.length > 0) {
+              const scored = await scoreTasksByNaming({
+                tasks,
+                cluster,
+                rdsInstance,
+              });
+              return scored.map((result) => ({
+                ...result,
+                confidence: "low" as const, // 推論外のクラスターは低信頼度
+                reasons: [result.reason],
+              }));
+            } else {
+              return [];
+            }
+          } catch {
             return [];
           }
-        } catch {
-          return [];
-        }
-      }),
+        },
+      ),
     );
 
     results.push(...remainingResults.flat());
