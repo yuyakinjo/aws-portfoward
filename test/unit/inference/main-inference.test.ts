@@ -4,7 +4,7 @@ import * as awsServices from "../../../src/aws-services.js";
 import * as clusterInference from "../../../src/inference/cluster-inference.js";
 import { inferECSTargets } from "../../../src/inference/main-inference.js";
 import * as taskScoring from "../../../src/inference/task-scoring.js";
-import type { ECSCluster, RDSInstance } from "../../../src/types.js";
+import type { ECSCluster } from "../../../src/types.js";
 import {
   mockECSClusters,
   mockECSTasks,
@@ -110,18 +110,20 @@ describe("inferECSTargets - All clusters search", () => {
     vi.mocked(taskScoring.scoreTasksAgainstRDS).mockImplementation(
       async ({ cluster }) => {
         if (cluster.clusterName.includes("prod")) {
-          return [{
-            cluster,
-            task: {
-              ...mockECSTasks[0],
-              serviceName: `${cluster.clusterName}-service`,
-              displayName: `${cluster.clusterName}-task`,
+          return [
+            {
+              cluster,
+              task: {
+                ...mockECSTasks[0],
+                serviceName: `${cluster.clusterName}-service`,
+                displayName: `${cluster.clusterName}-task`,
+              },
+              confidence: "high" as const,
+              method: "environment" as const,
+              score: 90,
+              reason: "Production environment match",
             },
-            confidence: "high" as const,
-            method: "environment" as const,
-            score: 90,
-            reason: "Production environment match",
-          }];
+          ];
         }
         return [];
       },
@@ -132,7 +134,9 @@ describe("inferECSTargets - All clusters search", () => {
         return tasks.map((task) => ({
           cluster,
           task,
-          confidence: cluster.clusterName.includes("staging") ? "medium" as const : "low" as const,
+          confidence: cluster.clusterName.includes("staging")
+            ? ("medium" as const)
+            : ("low" as const),
           method: "naming" as const,
           score: cluster.clusterName.includes("staging") ? 60 : 30,
           reason: "Name pattern match",
@@ -175,7 +179,7 @@ describe("inferECSTargets - All clusters search", () => {
     for (let i = 0; i < results.length - 1; i++) {
       const current = results[i];
       const next = results[i + 1];
-      
+
       // 信頼度が同じ場合はスコアで比較
       if (current.confidence === next.confidence) {
         expect(current.score).toBeGreaterThanOrEqual(next.score);
@@ -216,14 +220,16 @@ describe("inferECSTargets - All clusters search", () => {
     vi.mocked(taskScoring.scoreTasksAgainstRDS).mockImplementation(
       async ({ cluster }) => {
         if (cluster.clusterName === "prod-web") {
-          return [{
-            cluster,
-            task: mockECSTasks[0],
-            confidence: "high" as const,
-            method: "environment" as const,
-            score: 90,
-            reason: "Production environment match",
-          }];
+          return [
+            {
+              cluster,
+              task: mockECSTasks[0],
+              confidence: "high" as const,
+              method: "environment" as const,
+              score: 90,
+              reason: "Production environment match",
+            },
+          ];
         }
         return [];
       },
