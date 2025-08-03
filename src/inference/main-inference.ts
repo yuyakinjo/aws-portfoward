@@ -65,13 +65,13 @@ export async function inferECSTargets(
       .filter((cluster): cluster is ECSCluster => isDefined(cluster));
     tracker.endStep();
 
-    // Phase 1: 推論されたクラスターでタスク検索（最優先）
-    tracker.startStep("Search tasks in inferred clusters");
-    const primaryClusters = likelyClusters.slice(0, 2); // 上位2つのクラスターのみ（さらに高速化）
+    // Phase 1: 推論されたクラスターでタスク検索（高スコア順）
+    tracker.startStep("Search tasks in high-scoring clusters");
+    const highScoreClusters = likelyClusters.slice(0, 4); // 上位4つのクラスターは詳細スコアリング
 
-    // 並列でタスクを取得し、スコアリングを実行
-    const primaryClusterResults = await Promise.all(
-      primaryClusters.map(async (cluster) => {
+    // 並列でタスクを取得し、詳細スコアリングを実行
+    const highScoreResults = await Promise.all(
+      highScoreClusters.map(async (cluster) => {
         try {
           const tasksResult = await getECSTasksWithExecCapability(
             ecsClient,
@@ -101,44 +101,47 @@ export async function inferECSTargets(
     );
 
     // 結果をフラット化
-    results.push(...primaryClusterResults.flat());
+    results.push(...highScoreResults.flat());
     tracker.endStep();
 
-    // Phase 2: 不十分な場合のフォールバック検索
-    tracker.startStep("Fallback search if needed");
-    if (results.length < 2) {
-      const remainingClusters = likelyClusters.slice(2, 4); // 次の2個のクラスターのみ（高速化）
+    // Phase 2: 残りのクラスターもすべて検索（簡易スコアリング）
+    tracker.startStep("Search tasks in remaining clusters");
+    const remainingInferredClusters = likelyClusters.slice(4); // 推論された残りのクラスター
+    const nonInferredClusters = allClusters.filter(
+      (cluster) => !likelyClusterNames.includes(cluster.clusterName),
+    ); // 推論されなかったクラスター
 
-      const fallbackResults = await Promise.all(
-        remainingClusters.map(async (cluster) => {
-          try {
-            const tasksResult = await getECSTasksWithExecCapability(
-              ecsClient,
+    // すべての残りのクラスターを並列で検索
+    const remainingResults = await Promise.all(
+      [...remainingInferredClusters, ...nonInferredClusters].map(async (cluster) => {
+        try {
+          const tasksResult = await getECSTasksWithExecCapability(
+            ecsClient,
+            cluster,
+          );
+          if (!tasksResult.success) return [];
+          const tasks = tasksResult.data;
+          if (tasks.length > 0) {
+            const scored = await scoreTasksByNaming({
+              tasks,
               cluster,
-            );
-            if (!tasksResult.success) return [];
-            const tasks = tasksResult.data;
-            if (tasks.length > 0) {
-              const scored = await scoreTasksByNaming({
-                tasks,
-                cluster,
-                rdsInstance,
-              });
-              return scored.map((result) => ({
-                ...result,
-                reasons: [result.reason],
-              }));
-            } else {
-              return [];
-            }
-          } catch {
+              rdsInstance,
+            });
+            return scored.map((result) => ({
+              ...result,
+              confidence: "low" as const, // 推論外のクラスターは低信頼度
+              reasons: [result.reason],
+            }));
+          } else {
             return [];
           }
-        }),
-      );
+        } catch {
+          return [];
+        }
+      }),
+    );
 
-      results.push(...fallbackResults.flat());
-    }
+    results.push(...remainingResults.flat());
     tracker.endStep();
 
     // 有効なタスクと無効なタスクを分離
@@ -178,7 +181,10 @@ export async function inferECSTargets(
 
     if (enablePerformanceTracking) {
       messages.debug(`推論結果サマリー:`);
+      messages.debug(`  - 総クラスター数: ${allClusters.length}個`);
+      messages.debug(`  - 高スコアクラスター: ${highScoreClusters.length}個`);
       messages.debug(`  - 推論クラスター: ${likelyClusterNames.length}個`);
+      messages.debug(`  - 検索済みクラスター: ${allClusters.length}個`);
       messages.debug(`  - 検索済みタスク: ${results.length}個`);
       messages.debug(`  - 接続可能: ${validResults.length}個`);
       messages.debug(`  - 接続不可: ${invalidResults.length}個`);

@@ -30,7 +30,7 @@ export async function selectECSTarget(
   const { ecsClient, selectedRDS, options, selections } = params;
 
   messages.warning(
-    "Finding ECS targets with exec capability that can connect to this RDS...",
+    "Searching all ECS clusters for targets with exec capability that can connect to this RDS...",
   );
 
   const inferenceResults = await inferECSTargets({
