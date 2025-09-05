@@ -1,6 +1,6 @@
 {
   "name": "ecs-pf",
-  "version": "2.2.24",
+  "version": "2.2.25",
   "description": "CLI for port-forwarding to RDS via AWS ECS",
   "type": "module",
   "main": "dist/cli.js",
