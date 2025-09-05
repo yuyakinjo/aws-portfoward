@@ -44,10 +44,10 @@ Execute commands in ECS containers:
 
 ```bash
 # Interactive mode
-npx ecs-pf exec-task
+npx ecs-pf exec
 
 # Direct execution
-npx ecs-pf exec-task \
+npx ecs-pf exec \
   --region ap-northeast-1 \
   --cluster production-cluster \
   --task arn:aws:ecs:ap-northeast-1:123456789:task/production-cluster/abcdef123456 \
@@ -55,7 +55,7 @@ npx ecs-pf exec-task \
   --command "/bin/bash"
 
 # Dry run for exec commands
-npx ecs-pf exec-task --dry-run \
+npx ecs-pf exec --dry-run \
   --region ap-northeast-1 \
   --cluster production-cluster \
   --task arn:aws:ecs:ap-northeast-1:123456789:task/production-cluster/abcdef123456 \
