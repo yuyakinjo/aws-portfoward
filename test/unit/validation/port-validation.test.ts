@@ -162,9 +162,9 @@ describe("findAvailablePort", () => {
         if (port === 8888 || port === 8889) {
           // エラーハンドラーを非同期で呼び出す
           setImmediate(() => {
-            errorHandlers.forEach((handler) =>
-              handler(new Error("EADDRINUSE")),
-            );
+            errorHandlers.forEach((handler) => {
+              handler(new Error("EADDRINUSE"));
+            });
           });
         } else if (port === 8890) {
           // 成功

@@ -45,7 +45,7 @@ export async function selectLocalPort(
       message: "Enter local port number:",
       default: "8888",
       validate: (inputValue) => {
-        const port = parseInt(inputValue || "8888");
+        const port = parseInt(inputValue || "8888", 10);
         const [minPort, maxPort] = getPortRange();
         return isPortRange(port)
           ? true
