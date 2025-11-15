@@ -133,19 +133,6 @@ jobs:
             bun scripts/generate-version.mjs
           fi
 
-      # プロジェクトのビルド
-      - name: Build project
-        run: bun run build
-
-      # ビルド結果の確認
-      - name: Verify build output
-        run: |
-          if [ ! -f "dist/cli.js" ]; then
-            echo "❌ Build failed: dist/cli.js not found"
-            exit 1
-          fi
-          echo "✅ Build successful: dist/cli.js exists"
-
       # CHANGELOGを更新
       - name: Update CHANGELOG
         run: |
@@ -170,8 +157,9 @@ jobs:
           echo "✅ CHANGELOG.md update completed"
 
       # 変更をコミットしてプッシュ
-      - name: Commit and push version bump
+      - name: Commit and push changes
         run: |
+          NEW_VERSION="${{ steps.version_bump.outputs.new_version }}"
           git add package.json src/version.ts
           if [ -f "CHANGELOG.md" ]; then
             git add CHANGELOG.md
@@ -179,8 +167,26 @@ jobs:
           else
             echo "⚠️ CHANGELOG.md not found, skipping"
           fi
-          git commit -m "chore: bump version to ${{ steps.version_bump.outputs.new_version }}"
+          git commit -m "chore: bump version to $NEW_VERSION"
           git push origin main
+
+      # プロジェクトのビルド
+      - name: Build project
+        run: bun run build
+
+      # ビルド結果の確認
+      - name: Verify build output
+        run: |
+          if [ ! -f "dist/cli.js" ]; then
+            echo "❌ Build failed: dist/cli.js not found"
+            exit 1
+          fi
+          echo "✅ Build successful: dist/cli.js exists"
+
+      # npmに公開（Provenance + Trusted Publishing）
+      - name: Publish to npm with Provenance and Trusted Publishing
+        run: npm publish --provenance --access public
+        # 🔐 Trusted Publishing使用（トークン不要）
 
       # GitHub Releaseを作成
       - name: Create GitHub Release
@@ -197,7 +203,3 @@ jobs:
             --notes-start-tag "$CURRENT_VERSION" \
             --generate-notes
 
-      # npmに公開（Provenance + Trusted Publishing）
-      - name: Publish to npm with Provenance and Trusted Publishing
-        run: npm publish --provenance --access public
-        # 🔐 Trusted Publishing使用（トークン不要）
