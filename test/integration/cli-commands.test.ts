@@ -56,6 +56,7 @@ function runCLI(
 }
 
 // 統合テストはCLIを実際に実行するため、AWS SDKのモックは不要
+// AWS SDK mocking is not required for integration tests, as the CLI is executed directly.
 
 describe("CLI Commands Integration", () => {
   // CLIファイルの存在確認
