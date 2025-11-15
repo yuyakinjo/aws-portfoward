@@ -4,11 +4,19 @@
     "source.organizeImports.biome": "explicit",
     "source.fixAll.biome": "explicit"
   },
-  "editor.defaultFormatter": "biomejs.biome",
+  // デフォルトはPrettier（Markdown、YAML、TOMLなど）
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  // Biomeがサポートしているファイルタイプは明示的にBiome指定
   "[typescript]": {
     "editor.defaultFormatter": "biomejs.biome"
   },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
   "[javascript]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+  "[javascriptreact]": {
     "editor.defaultFormatter": "biomejs.biome"
   },
   "[json]": {

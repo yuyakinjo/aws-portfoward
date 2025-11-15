@@ -2,7 +2,6 @@
 [![CI](https://github.com/yuyakinjo/aws-portfoward/actions/workflows/test.yml/badge.svg)](https://github.com/yuyakinjo/aws-portfoward/actions/workflows/test.yml)
 [![npm](https://img.shields.io/npm/dt/ecs-pf)](https://www.npmjs.com/package/ecs-pf)
 
-
 # AWS ECS-RDS Port Forwarding CLI
 
 A modern CLI tool for connecting to RDS databases through AWS ECS tasks using SSM Session Manager.
@@ -12,6 +11,7 @@ A modern CLI tool for connecting to RDS databases through AWS ECS tasks using SS
 - **Port Forwarding**: Easily forward RDS ports through ECS tasks
 - **ECS Exec**: Execute commands in ECS containers with interactive UI
 - **Enable ECS Exec**: Automatically enable ECS exec capability for services that need it
+
 ## Quick Start
 
 ### Interactive UI
@@ -23,6 +23,7 @@ npx ecs-pf connect
 ## Example Usage
 
 ### Interactive guided workflow
+
 ```bash
 $ npx ecs-pf connect
 
@@ -89,7 +90,6 @@ npx ecs-pf enable-exec --dry-run \
   --service api-service
 ```
 
-
 ## Prerequisites
 
 ### Required AWS Setup
@@ -104,7 +104,6 @@ npx ecs-pf enable-exec --dry-run \
 - **Bun**: 1.3.2 (managed by [mise](https://mise.jdx.dev/))
 - To install mise: `curl https://mise.run | sh`
 - After installing mise, run `mise install` in the project directory
-
 
 ## Troubleshooting
 
