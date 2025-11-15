@@ -34,15 +34,7 @@ updates:
         patterns:
           - "@biomejs/*"
           - "@types/*"
-          - "@vitest/*"
-          - "vitest"
           - "typescript"
-      # テストツール関連のグループ化（自動マージ対象）
-      test-tools:
-        patterns:
-          - "vitest"
-          - "@vitest/*"
-          - "@types/*"
 
   # GitHub Actionsの更新
   - package-ecosystem: "github-actions"
