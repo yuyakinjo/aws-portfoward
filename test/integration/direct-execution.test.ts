@@ -100,5 +100,4 @@ describe("Direct Execution (Success Path)", () => {
     );
     expect(result).toContain("Dry run completed successfully");
   });
-
 });
