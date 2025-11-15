@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 
 import { execSync } from "node:child_process";
 import fs from "node:fs";
@@ -19,7 +19,7 @@ function generateChangelog() {
 
     // conventional-changelogを実行してCHANGELOGを生成
     execSync(
-      "npx conventional-changelog -p conventionalcommits -i CHANGELOG.md -s -r 0",
+      "bunx conventional-changelog -p conventionalcommits -i CHANGELOG.md -s -r 0",
       {
         encoding: "utf8",
         cwd: process.cwd(),

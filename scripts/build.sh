@@ -4,10 +4,10 @@
 rm -rf dist
 
 # Generate version file from package.json
-npm run generate-version
+bun run generate-version
 
 # Build with TypeScript
-npx tsc --project tsconfig.build.json
+bunx tsc --project tsconfig.build.json
 
 # Check if build was successful
 if [ ! -f "dist/cli.js" ]; then
@@ -16,9 +16,9 @@ if [ ! -f "dist/cli.js" ]; then
 fi
 
 # Add shebang to cli.js (only if not already present)
-if ! head -n 1 dist/cli.js | grep -q "#!/usr/bin/env node"; then
+if ! head -n 1 dist/cli.js | grep -q "#!/usr/bin/env bun"; then
     sed -i.bak '1i\
-#!/usr/bin/env node
+#!/usr/bin/env bun
 ' dist/cli.js && rm dist/cli.js.bak
 fi
 

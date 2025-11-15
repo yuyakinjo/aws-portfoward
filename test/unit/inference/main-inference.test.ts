@@ -11,10 +11,7 @@ import {
   mockRDSInstances,
 } from "../../mock-data/index.js";
 
-// モックの設定
-vi.mock("../../../src/aws-services.js");
-vi.mock("../../../src/inference/cluster-inference.js");
-vi.mock("../../../src/inference/task-scoring.js");
+// モックの設定は各テストケース内で vi.spyOn() を使用
 
 describe("inferECSTargets - All clusters search", () => {
   let ecsClient: ECSClient;
@@ -45,7 +42,7 @@ describe("inferECSTargets - All clusters search", () => {
     ];
 
     // クラスター推論のモック - prod-*クラスターを上位に
-    vi.mocked(clusterInference.inferClustersFromRDSName).mockReturnValue([
+    vi.spyOn(clusterInference, "inferClustersFromRDSName").mockReturnValue([
       "prod-web-cluster",
       "prod-api-cluster",
       "prod-app-cluster",
@@ -59,13 +56,13 @@ describe("inferECSTargets - All clusters search", () => {
     ]);
 
     // モックの設定
-    vi.mocked(awsServices.getECSClustersWithExecCapability).mockResolvedValue({
+    vi.spyOn(awsServices, "getECSClustersWithExecCapability").mockResolvedValue({
       success: true,
       data: allClusters,
     });
 
     // 各クラスターに対してタスクを返す
-    vi.mocked(awsServices.getECSTasksWithExecCapability).mockImplementation(
+    vi.spyOn(awsServices, "getECSTasksWithExecCapability").mockImplementation(
       async (_, cluster) => {
         // クラスター名に基づいてタスクを返す
         const clusterName = cluster.clusterName;
@@ -107,7 +104,7 @@ describe("inferECSTargets - All clusters search", () => {
     );
 
     // スコアリング関数のモック
-    vi.mocked(taskScoring.scoreTasksAgainstRDS).mockImplementation(
+    vi.spyOn(taskScoring, "scoreTasksAgainstRDS").mockImplementation(
       async ({ cluster }) => {
         if (cluster.clusterName.includes("prod")) {
           return [
@@ -129,7 +126,7 @@ describe("inferECSTargets - All clusters search", () => {
       },
     );
 
-    vi.mocked(taskScoring.scoreTasksByNaming).mockImplementation(
+    vi.spyOn(taskScoring, "scoreTasksByNaming").mockImplementation(
       ({ tasks, cluster }) => {
         return tasks.map((task) => ({
           cluster,
@@ -202,22 +199,22 @@ describe("inferECSTargets - All clusters search", () => {
     ];
 
     // クラスター推論のモック - prod-webのみ推論される
-    vi.mocked(clusterInference.inferClustersFromRDSName).mockReturnValue([
+    vi.spyOn(clusterInference, "inferClustersFromRDSName").mockReturnValue([
       "prod-web",
     ]);
 
-    vi.mocked(awsServices.getECSClustersWithExecCapability).mockResolvedValue({
+    vi.spyOn(awsServices, "getECSClustersWithExecCapability").mockResolvedValue({
       success: true,
       data: allClusters,
     });
 
-    vi.mocked(awsServices.getECSTasksWithExecCapability).mockResolvedValue({
+    vi.spyOn(awsServices, "getECSTasksWithExecCapability").mockResolvedValue({
       success: true,
       data: [mockECSTasks[0]],
     });
 
     // スコアリング関数のモック
-    vi.mocked(taskScoring.scoreTasksAgainstRDS).mockImplementation(
+    vi.spyOn(taskScoring, "scoreTasksAgainstRDS").mockImplementation(
       async ({ cluster }) => {
         if (cluster.clusterName === "prod-web") {
           return [
@@ -235,7 +232,7 @@ describe("inferECSTargets - All clusters search", () => {
       },
     );
 
-    vi.mocked(taskScoring.scoreTasksByNaming).mockImplementation(
+    vi.spyOn(taskScoring, "scoreTasksByNaming").mockImplementation(
       ({ tasks, cluster }) => {
         return tasks.map((task) => ({
           cluster,
@@ -272,12 +269,12 @@ describe("inferECSTargets - All clusters search", () => {
     const allClusters: ECSCluster[] = [mockECSClusters[0], mockECSClusters[1]];
 
     // クラスター推論のモック
-    vi.mocked(clusterInference.inferClustersFromRDSName).mockReturnValue([
+    vi.spyOn(clusterInference, "inferClustersFromRDSName").mockReturnValue([
       mockECSClusters[0].clusterName,
       mockECSClusters[1].clusterName,
     ]);
 
-    vi.mocked(awsServices.getECSClustersWithExecCapability).mockResolvedValue({
+    vi.spyOn(awsServices, "getECSClustersWithExecCapability").mockResolvedValue({
       success: true,
       data: allClusters,
     });
@@ -287,7 +284,7 @@ describe("inferECSTargets - All clusters search", () => {
     const stoppedTask = { ...mockECSTasks[1], taskStatus: "STOPPED" as const };
     const pendingTask = { ...mockECSTasks[2], taskStatus: "PENDING" as const };
 
-    vi.mocked(awsServices.getECSTasksWithExecCapability)
+    vi.spyOn(awsServices, "getECSTasksWithExecCapability")
       .mockResolvedValueOnce({
         success: true,
         data: [runningTask, stoppedTask],
@@ -298,7 +295,7 @@ describe("inferECSTargets - All clusters search", () => {
       });
 
     // スコアリング関数のモック
-    vi.mocked(taskScoring.scoreTasksAgainstRDS).mockImplementation(
+    vi.spyOn(taskScoring, "scoreTasksAgainstRDS").mockImplementation(
       async ({ tasks, cluster }) => {
         return tasks.map((task) => ({
           cluster,
@@ -311,7 +308,7 @@ describe("inferECSTargets - All clusters search", () => {
       },
     );
 
-    vi.mocked(taskScoring.scoreTasksByNaming).mockImplementation(
+    vi.spyOn(taskScoring, "scoreTasksByNaming").mockImplementation(
       ({ tasks, cluster }) => {
         return tasks.map((task) => ({
           cluster,
@@ -350,19 +347,19 @@ describe("inferECSTargets - All clusters search", () => {
     ];
 
     // クラスター推論のモック
-    vi.mocked(clusterInference.inferClustersFromRDSName).mockReturnValue([
+    vi.spyOn(clusterInference, "inferClustersFromRDSName").mockReturnValue([
       mockECSClusters[0].clusterName,
       mockECSClusters[1].clusterName,
       mockECSClusters[2].clusterName,
     ]);
 
-    vi.mocked(awsServices.getECSClustersWithExecCapability).mockResolvedValue({
+    vi.spyOn(awsServices, "getECSClustersWithExecCapability").mockResolvedValue({
       success: true,
       data: allClusters,
     });
 
     // 2番目のクラスターでエラーを発生させる
-    vi.mocked(awsServices.getECSTasksWithExecCapability)
+    vi.spyOn(awsServices, "getECSTasksWithExecCapability")
       .mockResolvedValueOnce({
         success: true,
         data: [mockECSTasks[0]],
@@ -374,7 +371,7 @@ describe("inferECSTargets - All clusters search", () => {
       });
 
     // スコアリング関数のモック
-    vi.mocked(taskScoring.scoreTasksAgainstRDS).mockImplementation(
+    vi.spyOn(taskScoring, "scoreTasksAgainstRDS").mockImplementation(
       async ({ tasks, cluster }) => {
         return tasks.map((task) => ({
           cluster,
@@ -406,19 +403,19 @@ describe("inferECSTargets - All clusters search", () => {
     ];
 
     // クラスター推論のモック
-    vi.mocked(clusterInference.inferClustersFromRDSName).mockReturnValue([
+    vi.spyOn(clusterInference, "inferClustersFromRDSName").mockReturnValue([
       mockECSClusters[0].clusterName,
       mockECSClusters[1].clusterName,
       mockECSClusters[2].clusterName,
     ]);
 
-    vi.mocked(awsServices.getECSClustersWithExecCapability).mockResolvedValue({
+    vi.spyOn(awsServices, "getECSClustersWithExecCapability").mockResolvedValue({
       success: true,
       data: allClusters,
     });
 
     // 2番目のクラスターは空のタスクリストを返す
-    vi.mocked(awsServices.getECSTasksWithExecCapability)
+    vi.spyOn(awsServices, "getECSTasksWithExecCapability")
       .mockResolvedValueOnce({
         success: true,
         data: [mockECSTasks[0]],
@@ -433,7 +430,7 @@ describe("inferECSTargets - All clusters search", () => {
       });
 
     // スコアリング関数のモック
-    vi.mocked(taskScoring.scoreTasksAgainstRDS).mockImplementation(
+    vi.spyOn(taskScoring, "scoreTasksAgainstRDS").mockImplementation(
       async ({ tasks, cluster }) => {
         return tasks.map((task) => ({
           cluster,

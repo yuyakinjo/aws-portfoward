@@ -1,5 +1,5 @@
 import { parse } from "valibot";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   displayDryRunResult,
   generateConnectDryRun,
@@ -16,12 +16,15 @@ import {
 } from "../../../src/types.js";
 
 // Mock console.log to capture output
-const mockConsoleLog = vi.fn();
-vi.stubGlobal("console", { log: mockConsoleLog });
+let mockConsoleLog: ReturnType<typeof vi.spyOn>;
 
 describe("Dry Run Functions", () => {
   beforeEach(() => {
-    mockConsoleLog.mockClear();
+    mockConsoleLog = vi.spyOn(console, "log").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    mockConsoleLog.mockRestore();
   });
 
   describe("generateConnectDryRun", () => {

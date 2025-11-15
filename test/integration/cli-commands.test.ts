@@ -58,7 +58,7 @@ function runCLI(
 // モックセットアップ
 beforeEach(() => {
   // AWS SDK呼び出しをモック化
-  vi.doMock("@aws-sdk/client-ecs", () => ({
+  vi.mock("@aws-sdk/client-ecs", () => ({
     ECSClient: vi.fn().mockImplementation(() => ({
       send: vi.fn().mockResolvedValue({}),
     })),
@@ -69,14 +69,14 @@ beforeEach(() => {
     DescribeTasksCommand: vi.fn(),
   }));
 
-  vi.doMock("@aws-sdk/client-ec2", () => ({
+  vi.mock("@aws-sdk/client-ec2", () => ({
     EC2Client: vi.fn().mockImplementation(() => ({
       send: vi.fn().mockResolvedValue({}),
     })),
     DescribeRegionsCommand: vi.fn(),
   }));
 
-  vi.doMock("@aws-sdk/client-rds", () => ({
+  vi.mock("@aws-sdk/client-rds", () => ({
     RDSClient: vi.fn().mockImplementation(() => ({
       send: vi.fn().mockResolvedValue({}),
     })),
