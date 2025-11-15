@@ -1,7 +1,7 @@
 import { spawn } from "node:child_process";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "bun:test";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -21,7 +21,7 @@ function runCLI(
   stderr: string;
 }> {
   return new Promise((resolve) => {
-    const child = spawn("node", [CLI_PATH, ...args], {
+    const child = spawn("bun", [CLI_PATH, ...args], {
       env: { ...process.env, NODE_ENV: "test" },
     });
 
@@ -55,38 +55,7 @@ function runCLI(
   });
 }
 
-// モックセットアップ
-beforeEach(() => {
-  // AWS SDK呼び出しをモック化
-  vi.mock("@aws-sdk/client-ecs", () => ({
-    ECSClient: vi.fn().mockImplementation(() => ({
-      send: vi.fn().mockResolvedValue({}),
-    })),
-    ListClustersCommand: vi.fn(),
-    DescribeClustersCommand: vi.fn(),
-    ListServicesCommand: vi.fn(),
-    ListTasksCommand: vi.fn(),
-    DescribeTasksCommand: vi.fn(),
-  }));
-
-  vi.mock("@aws-sdk/client-ec2", () => ({
-    EC2Client: vi.fn().mockImplementation(() => ({
-      send: vi.fn().mockResolvedValue({}),
-    })),
-    DescribeRegionsCommand: vi.fn(),
-  }));
-
-  vi.mock("@aws-sdk/client-rds", () => ({
-    RDSClient: vi.fn().mockImplementation(() => ({
-      send: vi.fn().mockResolvedValue({}),
-    })),
-    DescribeDBInstancesCommand: vi.fn(),
-  }));
-});
-
-afterEach(() => {
-  vi.clearAllMocks();
-});
+// 統合テストはCLIを実際に実行するため、AWS SDKのモックは不要
 
 describe("CLI Commands Integration", () => {
   // CLIファイルの存在確認

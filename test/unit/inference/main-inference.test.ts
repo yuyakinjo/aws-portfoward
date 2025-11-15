@@ -1,5 +1,5 @@
 import { ECSClient } from "@aws-sdk/client-ecs";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "bun:test";
 import * as awsServices from "../../../src/aws-services.js";
 import * as clusterInference from "../../../src/inference/cluster-inference.js";
 import { inferECSTargets } from "../../../src/inference/main-inference.js";

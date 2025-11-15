@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { scoreTasksByNaming } from "../../../src/inference/task-scoring.js";
 import {
   mockECSClusters,

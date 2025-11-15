@@ -1,5 +1,5 @@
 import * as net from "node:net";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "bun:test";
 import {
   areAllPortsInRange,
   findAvailablePort,

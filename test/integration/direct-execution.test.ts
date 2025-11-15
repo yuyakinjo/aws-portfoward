@@ -1,8 +1,8 @@
 import { execSync } from "node:child_process";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 
-describe("Direct Dry Run Integration", () => {
-  const cliPath = "node dist/cli.js";
+describe("Direct Execution (Success Path)", () => {
+  const cliPath = "bun dist/cli.js";
 
   it("should execute dry run directly without interactive prompts when all parameters provided", () => {
     const command = [
@@ -100,4 +100,5 @@ describe("Direct Dry Run Integration", () => {
     );
     expect(result).toContain("Dry run completed successfully");
   });
+
 });

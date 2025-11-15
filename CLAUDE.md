@@ -29,7 +29,6 @@ npm run test:unit         # Unit tests only
 npm run test:integration  # Integration tests only
 npm run test:watch        # Watch mode for development
 npm run test:coverage     # Run with coverage report
-npm run test:ui           # Open Vitest UI
 
 # Type checking only (no build)
 npm run type-check

@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 
 const CLI_PATH = path.join(process.cwd(), "dist", "cli.js");
 
@@ -8,7 +8,7 @@ function runCommand(
   args: string[],
 ): Promise<{ stdout: string; stderr: string; exitCode: number }> {
   return new Promise((resolve) => {
-    const child = spawn("node", [CLI_PATH, ...args], {
+    const child = spawn("bun", [CLI_PATH, ...args], {
       stdio: ["pipe", "pipe", "pipe"],
       timeout: 3000, // 短いタイムアウトに変更
     });
@@ -54,8 +54,8 @@ function runCommand(
   });
 }
 
-describe("Dry Run Integration Tests", () => {
-  describe("connect command with --dry-run", () => {
+describe("Validation and Error Handling", () => {
+  describe("connect command validation", () => {
     it("should show help when --dry-run is used with connect command", async () => {
       const result = await runCommand(["connect", "--help"]);
 
@@ -75,7 +75,7 @@ describe("Dry Run Integration Tests", () => {
     });
   });
 
-  describe("exec command with --dry-run", () => {
+  describe("exec command validation", () => {
     it("should show help when --dry-run is used with exec command", async () => {
       const result = await runCommand(["exec", "--help"]);
 
