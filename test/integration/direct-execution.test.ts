@@ -1,5 +1,5 @@
-import { execSync } from "node:child_process";
 import { describe, expect, it } from "bun:test";
+import { execSync } from "node:child_process";
 
 describe("Direct Execution (Success Path)", () => {
   const cliPath = "bun dist/cli.js";
@@ -100,5 +100,4 @@ describe("Direct Execution (Success Path)", () => {
     );
     expect(result).toContain("Dry run completed successfully");
   });
-
 });

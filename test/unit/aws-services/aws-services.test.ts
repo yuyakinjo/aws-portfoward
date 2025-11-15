@@ -1,7 +1,7 @@
+import { beforeEach, describe, expect, it, vi } from "bun:test";
 import type { EC2Client } from "@aws-sdk/client-ec2";
 import type { ECSClient } from "@aws-sdk/client-ecs";
 import type { RDSClient } from "@aws-sdk/client-rds";
-import { beforeEach, describe, expect, it, vi } from "bun:test";
 import {
   checkECSExecCapability,
   getAWSRegions,
