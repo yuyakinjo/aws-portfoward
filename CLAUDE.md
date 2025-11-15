@@ -70,7 +70,7 @@ npm run ci             # Run all checks in CI mode
 
 ## Important Considerations
 
-- **Node Version**: Project uses Node 24.2.0 (managed by Volta)
+- **Node Version**: Project uses Node 24.11.1 (managed by mise)
 - **Module System**: ESM modules (`"type": "module"` in package.json)
 - **Build Process**: Custom build script that handles TypeScript compilation and CLI setup
 - **AWS Permissions**: Requires proper IAM permissions for ECS, RDS, EC2, and SSM

@@ -99,6 +99,12 @@ npx ecs-pf enable-exec --dry-run \
 3. **AWS CLI**: Installed and configured with appropriate credentials
 4. **Session Manager Plugin**: Installed for AWS CLI
 
+### Development Requirements
+
+- **Node.js**: 24.11.1 (managed by [mise](https://mise.jdx.dev/))
+- To install mise: `curl https://mise.run | sh`
+- After installing mise, run `mise install` in the project directory
+
 
 ## Troubleshooting
 
