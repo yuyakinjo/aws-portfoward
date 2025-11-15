@@ -1,10 +1,7 @@
 name: Release Package
 
-# mainブランチにマージされた時、または手動実行時に実行
+# 手動実行時のみ実行
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
     inputs:
       version_type:
@@ -92,7 +89,7 @@ jobs:
       - name: Bump version
         id: version_bump
         run: |
-          VERSION_TYPE="${{ github.event.inputs.version_type || 'patch' }}"
+          VERSION_TYPE="${{ github.event.inputs.version_type }}"
           echo "Version type: $VERSION_TYPE"
 
           # 現在のバージョンを取得
@@ -200,8 +197,7 @@ jobs:
             --notes-start-tag "$CURRENT_VERSION" \
             --generate-notes
 
-      # npmに公開
-      - name: Publish to npm
-        run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      # npmに公開（Provenance + Trusted Publishing）
+      - name: Publish to npm with Provenance and Trusted Publishing
+        run: npm publish --provenance --access public
+        # 🔐 Trusted Publishing使用（トークン不要）

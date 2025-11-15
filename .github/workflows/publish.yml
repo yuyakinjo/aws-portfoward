@@ -68,8 +68,7 @@ jobs:
           fi
           echo "✅ Build successful: dist/cli.js exists"
 
-      # npmに公開
-      - name: Publish to npm
-        run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      # npmに公開（Provenance + Trusted Publishing）
+      - name: Publish to npm with Provenance and Trusted Publishing
+        run: npm publish --provenance --access public
+        # 🔐 Trusted Publishing使用（トークン不要）
