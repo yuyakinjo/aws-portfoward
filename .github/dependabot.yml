@@ -1,6 +1,6 @@
 version: 2
 updates:
-  # NPMパッケージの更新
+  # Bunパッケージの更新（Dependabotはnpmエコシステムとして監視）
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
@@ -12,11 +12,11 @@ updates:
     reviewers:
       - "@me"
     commit-message:
-      prefix: "npm"
+      prefix: "deps"
       include: "scope"
     labels:
       - "dependencies"
-      - "npm"
+      - "bun"
     # セキュリティアップデートは即座に適用
     allow:
       - dependency-type: "all"
