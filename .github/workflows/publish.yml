@@ -10,6 +10,10 @@ permissions:
   contents: read
   id-token: write
 
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -43,6 +47,13 @@ jobs:
       # Biomeでコード品質チェック
       - name: Code quality check
         run: bun run ci
+
+      # テスト実行
+      - name: Run tests
+        env:
+          AWS_REGION: us-east-1
+          CI: true
+        run: bun run test
 
       # プロジェクトのビルド
       - name: Build project
