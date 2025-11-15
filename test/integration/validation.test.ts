@@ -1,6 +1,6 @@
+import { describe, expect, it } from "bun:test";
 import { spawn } from "node:child_process";
 import path from "node:path";
-import { describe, expect, it } from "bun:test";
 
 const CLI_PATH = path.join(process.cwd(), "dist", "cli.js");
 

@@ -1,7 +1,7 @@
+import { describe, expect, it } from "bun:test";
 import { spawn } from "node:child_process";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { describe, expect, it } from "bun:test";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -56,7 +56,6 @@ function runCLI(
 }
 
 // 統合テストはCLIを実際に実行するため、AWS SDKのモックは不要
-// AWS SDK mocking is not required for integration tests, as the CLI is executed directly.
 
 describe("CLI Commands Integration", () => {
   // CLIファイルの存在確認
