@@ -1,3 +1,10 @@
+## [Unreleased]
+
+### Changed
+
+* chore(deps): update all dependencies to latest versions (14 packages updated, vitest v3.2.4 kept due to v4 breaking changes)
+* chore: migrate from Volta to mise for Node.js version management (Node.js 24.2.0 → 24.11.1 LTS)
+
 ## [2.2.22](https://github.com/yuyakinjo/aws-portfoward/compare/v2.2.21...v2.2.22) (2025-07-03)
 
 ### Features

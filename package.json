@@ -73,8 +73,5 @@
     "inquirer-search-list": "^1.2.6",
     "remeda": "^2.23.1",
     "valibot": "^1.1.0"
-  },
-  "volta": {
-    "node": "24.2.0"
   }
 }
