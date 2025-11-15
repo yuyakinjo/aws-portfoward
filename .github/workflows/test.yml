@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ main ]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     name: Run Tests with Coverage
@@ -19,45 +23,35 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [24.x]
+        bun-version: [1.3.2]
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
 
-      - name: Setup Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v6
+      - name: Setup Bun ${{ matrix.bun-version }}
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: ${{ matrix.node-version }}
-          cache: 'npm'
+          bun-version: ${{ matrix.bun-version }}
 
       - name: Install dependencies
-        run: npm ci
+        run: bun install
 
       - name: Run TypeScript type check
-        run: npm run type-check
+        run: bun run type-check
 
       - name: Build project
-        run: npm run build
+        run: bun run build
 
       - name: Run tests with coverage
         env:
           # CI環境でのAWS認証エラーを回避するための環境変数
           AWS_REGION: us-east-1
           CI: true
-        run: npm run test:coverage
-
-      - name: Vitest Coverage Report
-        uses: davelosert/vitest-coverage-report-action@v2
-        if: always() && matrix.node-version == '24.x'
-        continue-on-error: true
-        with:
-          name: '📊 AWS Port Forward CLI カバレッジレポート'
-          # カバレッジ閾値をVitest設定から自動読み込み
-          vite-config-path: './vitest.config.ts'
+        run: bun run test:coverage
 
       - name: Upload coverage to artifacts
-        if: matrix.node-version == '24.x'
+        if: matrix.bun-version == '1.3.2'
         uses: actions/upload-artifact@v5
         with:
           name: coverage-report
@@ -74,32 +68,31 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: '24.x'
-          cache: 'npm'
+          bun-version: '1.3.2'
 
       - name: Install dependencies
-        run: npm ci
+        run: bun install
 
       - name: Build project
-        run: npm run build
+        run: bun run build
 
       - name: Test CLI help commands
         run: |
-          node dist/cli.js --help
-          node dist/cli.js connect --help
-          node dist/cli.js exec --help
-          node dist/cli.js enable-exec --help
+          bun dist/cli.js --help
+          bun dist/cli.js connect --help
+          bun dist/cli.js exec --help
+          bun dist/cli.js enable-exec --help
 
       - name: Test CLI version
-        run: node dist/cli.js --version
+        run: bun dist/cli.js --version
 
       - name: Test CLI error handling
         run: |
           # テスト: 無効なコマンド
-          if node dist/cli.js invalid-command 2>/dev/null; then
+          if bun dist/cli.js invalid-command 2>/dev/null; then
             echo "Error: Should fail with invalid command"
             exit 1
           else
@@ -107,7 +100,7 @@ jobs:
           fi
 
           # テスト: 無効なオプション
-          if node dist/cli.js connect --invalid-option 2>/dev/null; then
+          if bun dist/cli.js connect --invalid-option 2>/dev/null; then
             echo "Error: Should fail with invalid option"
             exit 1
           else

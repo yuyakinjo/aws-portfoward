@@ -1,5 +1,5 @@
 import * as net from "node:net";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "bun:test";
 import {
   areAllPortsInRange,
   findAvailablePort,
@@ -10,15 +10,6 @@ import {
 
 // Type definition for mocked createServer function
 type MockCreateServer = ReturnType<typeof vi.fn>;
-
-// net.createServerをモック化
-vi.mock("node:net", () => {
-  const actualNet = vi.importActual<typeof net>("node:net");
-  return {
-    ...actualNet,
-    createServer: vi.fn(),
-  };
-});
 
 // Type definitions for mocks
 type MockServer = {
@@ -38,7 +29,7 @@ describe("isPortAvailable", () => {
       close: vi.fn(),
       on: vi.fn(),
     };
-    (net.createServer as MockCreateServer).mockReturnValue(mockServer);
+    vi.spyOn(net, "createServer").mockReturnValue(mockServer as any);
   });
 
   afterEach(() => {

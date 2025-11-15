@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { keywordSearch } from "../../../src/search.js";
 import {
   mockECSClusters,

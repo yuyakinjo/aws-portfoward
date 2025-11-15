@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { filterInferenceResults } from "../../../src/core/inference-workflow.js";
 import type { InferenceResult } from "../../../src/inference/index.js";
 import { mockECSClusters, mockECSTasks } from "../../mock-data/index.js";

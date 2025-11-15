@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 import { Command } from "commander";
 import { registerAllCommands } from "./programs/index.js";
 import { displayFriendlyError, messages } from "./utils/index.js";

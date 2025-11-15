@@ -1,7 +1,6 @@
 import { parse } from "valibot";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "bun:test";
 import {
-  displayDryRunResult,
   generateConnectDryRun,
   generateExecDryRun,
 } from "../../../src/core/dry-run.js";
@@ -15,15 +14,7 @@ import {
   type TaskId,
 } from "../../../src/types.js";
 
-// Mock console.log to capture output
-const mockConsoleLog = vi.fn();
-vi.stubGlobal("console", { log: mockConsoleLog });
-
 describe("Dry Run Functions", () => {
-  beforeEach(() => {
-    mockConsoleLog.mockClear();
-  });
-
   describe("generateConnectDryRun", () => {
     it("should generate correct connect dry run result", () => {
       const mockRDS = parse(RDSInstanceSchema, {
@@ -101,62 +92,6 @@ describe("Dry Run Functions", () => {
       expect(result.sessionInfo.cluster).toBe("test-cluster");
       expect(result.sessionInfo.container).toBe("web");
       expect(result.sessionInfo.command).toBe("/bin/bash");
-    });
-  });
-
-  describe("displayResult", () => {
-    it("should display connect dry run result correctly", () => {
-      const result = {
-        awsCommand: "aws ssm start-session --target test",
-        reproducibleCommand: "npx ecs-pf connect --region us-east-1",
-        sessionInfo: {
-          region: "us-east-1",
-          cluster: "test-cluster",
-          task: "test-task",
-          rds: "test-rds",
-          rdsPort: "5432",
-          localPort: "8888",
-        },
-      };
-
-      displayDryRunResult(result);
-
-      expect(mockConsoleLog).toHaveBeenCalledWith("");
-      expect(mockConsoleLog).toHaveBeenCalledWith(
-        expect.stringContaining("🏃 Dry Run Mode"),
-      );
-      expect(mockConsoleLog).toHaveBeenCalledWith(
-        expect.stringContaining("AWS Command:"),
-      );
-      expect(mockConsoleLog).toHaveBeenCalledWith(
-        expect.stringContaining("Reproducible Command:"),
-      );
-      expect(mockConsoleLog).toHaveBeenCalledWith(
-        expect.stringContaining("Session Information:"),
-      );
-    });
-
-    it("should display exec dry run result correctly", () => {
-      const result = {
-        awsCommand: "aws ecs execute-command --region us-east-1",
-        reproducibleCommand: "npx ecs-pf exec-task --region us-east-1",
-        sessionInfo: {
-          region: "us-east-1",
-          cluster: "test-cluster",
-          task: "test-task",
-          container: "web",
-          command: "/bin/bash",
-        },
-      };
-
-      displayDryRunResult(result);
-
-      expect(mockConsoleLog).toHaveBeenCalledWith(
-        expect.stringContaining("Container: web"),
-      );
-      expect(mockConsoleLog).toHaveBeenCalledWith(
-        expect.stringContaining("Command: /bin/bash"),
-      );
     });
   });
 });

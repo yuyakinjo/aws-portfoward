@@ -10,6 +10,10 @@ permissions:
   contents: read
   id-token: write
 
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -19,8 +23,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      # Node.js環境のセットアップ
-      - name: Setup Node.js
+      # Bun環境のセットアップ
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.3.2'
+
+      # Node.js環境のセットアップ (npm publish用)
+      - name: Setup Node.js for npm publish
         uses: actions/setup-node@v6
         with:
           node-version: '24.x'
@@ -28,19 +38,26 @@ jobs:
 
       # 依存関係のインストール
       - name: Install dependencies
-        run: npm ci
+        run: bun install
 
       # TypeScriptの型チェック
       - name: TypeScript type check
-        run: npm run type-check
+        run: bun run type-check
 
       # Biomeでコード品質チェック
       - name: Code quality check
-        run: npm run ci
+        run: bun run ci
+
+      # テスト実行
+      - name: Run tests
+        env:
+          AWS_REGION: us-east-1
+          CI: true
+        run: bun run test
 
       # プロジェクトのビルド
       - name: Build project
-        run: npm run build
+        run: bun run build
 
             # ビルド結果の確認
       - name: Verify build output
@@ -51,8 +68,7 @@ jobs:
           fi
           echo "✅ Build successful: dist/cli.js exists"
 
-      # npmに公開
-      - name: Publish to npm
-        run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      # npmに公開（Provenance + Trusted Publishing）
+      - name: Publish to npm with Provenance and Trusted Publishing
+        run: npm publish --provenance --access public
+        # 🔐 Trusted Publishing使用（トークン不要）

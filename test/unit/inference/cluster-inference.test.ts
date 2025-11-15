@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { inferClustersFromRDSName } from "../../../src/inference/cluster-inference.js";
 import { mockECSClusters } from "../../mock-data/index.js";
 

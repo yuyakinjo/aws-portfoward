@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+coverage/
+
+# Lock files
+package-lock.json
+bun.lock
+yarn.lock
+pnpm-lock.yaml
+
+# Biomeがフォーマットするファイル（JS/TS/JSON）
+# これらはBiomeに任せる
+*.js
+*.mjs
+*.cjs
+*.jsx
+*.ts
+*.mts
+*.cts
+*.tsx
+*.json
+*.jsonc
+
+# Generated files
+src/version.ts
+CHANGELOG.md
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+.DS_Store
