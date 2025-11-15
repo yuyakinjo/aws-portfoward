@@ -25,7 +25,7 @@ jobs:
             echo "✅ This is a dependabot PR"
 
             # 開発パッケージかどうかをチェック（グループ名で判定）
-            if [[ "${{ github.event.pull_request.title }}" =~ dev-tools|test-tools ]]; then
+            if [[ "${{ github.event.pull_request.title }}" =~ dev-tools ]]; then
               echo "is-dev-dependency=true" >> $GITHUB_OUTPUT
               echo "✅ This is a dev dependency update"
             else
@@ -52,34 +52,33 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: '24.x'
-          cache: 'npm'
+          bun-version: '1.3.2'
 
       - name: Install dependencies
-        run: npm ci
+        run: bun install
 
       - name: Run TypeScript type check
-        run: npm run type-check
+        run: bun run type-check
 
       - name: Build project
-        run: npm run build
+        run: bun run build
 
       - name: Run tests with coverage
         env:
           AWS_REGION: us-east-1
           CI: true
-        run: npm run test:coverage
+        run: bun run test:coverage
 
       - name: Test CLI commands
         run: |
-          node dist/cli.js --help
-          node dist/cli.js connect --help
-          node dist/cli.js exec --help
-          node dist/cli.js enable-exec --help
-          node dist/cli.js --version
+          bun dist/cli.js --help
+          bun dist/cli.js connect --help
+          bun dist/cli.js exec --help
+          bun dist/cli.js enable-exec --help
+          bun dist/cli.js --version
 
   # 自動マージを実行
   auto-merge:
