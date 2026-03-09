@@ -172,9 +172,9 @@ export async function scoreTasksAgainstRDS(
   const envCheckResults = await Promise.all(envCheckPromises);
 
   // 環境変数マッチの結果を生成
-  const envResults = envCheckResults
-    .filter(({ envCheck }) => envCheck.hasMatch)
-    .map(({ task, envCheck }) => {
+  // hasMatchでフィルタリングせず、全タスクを返す（環境変数マッチなしの場合はベーススコアにフォールバック）
+  const envResults = envCheckResults.map(({ task, envCheck }) => {
+    if (envCheck.hasMatch) {
       const confidence: "high" | "medium" | "low" =
         envCheck.score >= 80 ? "high" : envCheck.score >= 50 ? "medium" : "low";
       return {
@@ -185,7 +185,17 @@ export async function scoreTasksAgainstRDS(
         score: envCheck.score,
         reason: "データベース接続関連",
       };
-    });
+    }
+    // 環境変数マッチなし: 推論されたクラスター内のタスクのためベーススコアで返す
+    return {
+      cluster,
+      task,
+      confidence: "low" as const,
+      method: "environment" as const,
+      score: 25,
+      reason: "推論クラスター内タスク",
+    };
+  });
 
   // 分析結果からのマッチを生成（型安全性のため空配列を返す）
   const analysisMatchResults: TaskScoringResult[] = [];

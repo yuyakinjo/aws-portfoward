@@ -38,7 +38,10 @@ export async function selectRegion(
   messages.ui.displaySelectionState(displaySelections);
 
   // Initialize EC2 client with default region to get region list
-  const defaultEc2Client = new EC2Client({ region: "us-east-1" });
+  // Prefer environment variables over hardcoded fallback for GovCloud/China/custom regions
+  const defaultRegion =
+    process.env.AWS_DEFAULT_REGION || process.env.AWS_REGION || "us-east-1";
+  const defaultEc2Client = new EC2Client({ region: defaultRegion });
 
   messages.warning("Getting available AWS regions...");
   const regionsResult = await getAWSRegions(defaultEc2Client);
