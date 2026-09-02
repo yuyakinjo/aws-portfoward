@@ -32,7 +32,8 @@ updates:
       # 開発ツール関連のグループ化（自動マージ対象）
       dev-tools:
         patterns:
-          - "@biomejs/*"
+          - "oxlint"
+          - "oxfmt"
           - "@types/*"
           - "typescript"
 

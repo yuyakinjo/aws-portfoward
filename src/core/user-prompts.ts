@@ -7,7 +7,6 @@ import {
   searchRegions,
   searchTasks,
 } from "../search.js";
-import { parsePort } from "../types/parsers.js";
 import type {
   AWSRegion,
   ECSCluster,
@@ -18,6 +17,7 @@ import type {
   TaskArn,
 } from "../types.js";
 import { isFailure, parseRegionName, parseTaskArn } from "../types.js";
+import { parsePort } from "../types/parsers.js";
 import { messages } from "../utils/index.js";
 import { askText, pickOne } from "../utils/prompt.js";
 

@@ -1,6 +1,6 @@
 import { isDefined } from "remeda";
-import { parsePort } from "../../types/parsers.js";
 import type { Port, SelectionState } from "../../types.js";
+import { parsePort } from "../../types/parsers.js";
 import {
   findAvailablePort,
   getPortRange,

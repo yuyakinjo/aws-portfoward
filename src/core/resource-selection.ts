@@ -16,7 +16,6 @@ import {
   searchRegions,
   searchTasks,
 } from "../search.js";
-import { parsePort } from "../types/parsers.js";
 import type {
   ECSCluster,
   RDSInstance,
@@ -25,6 +24,7 @@ import type {
   ValidatedConnectOptions,
 } from "../types.js";
 import { isFailure, parseRegionName, parseTaskArn } from "../types.js";
+import { parsePort } from "../types/parsers.js";
 import {
   findAvailablePortSafe,
   getDefaultPortForEngine,
