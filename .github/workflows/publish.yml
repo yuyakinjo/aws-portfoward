@@ -31,7 +31,7 @@ jobs:
 
       # Node.js環境のセットアップ (npm publish用)
       - name: Setup Node.js for npm publish
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: '24.x'
           registry-url: 'https://registry.npmjs.org'
