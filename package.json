@@ -21,6 +21,10 @@
   ],
   "author": "",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yuyakinjo/aws-portfoward.git"
+  },
   "scripts": {
     "connect": "bun run build && bun dist/index.js connect",
     "exec": "bun run build && bun dist/index.js exec",
