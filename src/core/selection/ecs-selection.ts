@@ -1,4 +1,3 @@
-import { search } from "@inquirer/prompts";
 import { isEmpty } from "remeda";
 import type { InferenceResult } from "../../inference/index.js";
 import { inferECSTargets } from "../../inference/index.js";
@@ -7,10 +6,10 @@ import { searchInferenceResults } from "../../search.js";
 import type { ECSTargetSelectionParams, TaskArn } from "../../types.js";
 import { unwrapBrandedString } from "../../types.js";
 import { messages } from "../../utils/index.js";
+import { pickOne } from "../../utils/prompt.js";
 import { clearLoadingMessage } from "../ui/display-utils.js";
 
 // UI Configuration constants
-const DEFAULT_PAGE_SIZE = 50;
 
 /**
  * Handle ECS target selection with inference
@@ -82,13 +81,10 @@ export async function selectECSTarget(
   }
 
   // If no matching result or no CLI options provided, show search prompt
-  const selectedInference = await search({
-    message: "Select ECS target:",
-    source: async (input) => {
-      return await searchInferenceResults(inferenceResults, input || "");
-    },
-    pageSize: DEFAULT_PAGE_SIZE,
-  });
+  const selectedInference = await pickOne(
+    "Select ECS target:",
+    await searchInferenceResults(inferenceResults, ""),
+  );
 
   if (
     !selectedInference ||

@@ -1,4 +1,3 @@
-import { input, search } from "@inquirer/prompts";
 import type { InferenceResult } from "../inference/index.js";
 import { isTaskArnShape } from "../regex.js";
 import {
@@ -20,8 +19,7 @@ import type {
 } from "../types.js";
 import { isFailure, parseRegionName, parseTaskArn } from "../types.js";
 import { messages } from "../utils/index.js";
-
-const DEFAULT_PAGE_SIZE = 50;
+import { askText, pickOne } from "../utils/prompt.js";
 
 // Type guards for search results
 function isRegionName(value: unknown): value is RegionName {
@@ -63,13 +61,10 @@ export async function promptForRegion(params: {
   const { regions, defaultRegion } = params;
   messages.info("filtered as you type (↑↓ to select, Enter to confirm)");
 
-  const selectedValue = await search({
-    message: "Search and select AWS region:",
-    source: async (input) => {
-      return await searchRegions(regions, input || "", defaultRegion);
-    },
-    pageSize: DEFAULT_PAGE_SIZE,
-  });
+  const selectedValue = await pickOne(
+    "Search and select AWS region:",
+    await searchRegions(regions, "", defaultRegion),
+  );
 
   if (!isRegionName(selectedValue)) {
     throw new Error("Invalid region selection");
@@ -89,13 +84,10 @@ export async function promptForCluster(params: {
   const { clusters } = params;
   messages.info("filtered as you type (↑↓ to select, Enter to confirm)");
 
-  const selectedValue = await search({
-    message: "Search and select ECS cluster:",
-    source: async (input) => {
-      return await searchClusters(clusters, input || "");
-    },
-    pageSize: DEFAULT_PAGE_SIZE,
-  });
+  const selectedValue = await pickOne(
+    "Search and select ECS cluster:",
+    await searchClusters(clusters, ""),
+  );
 
   if (!isECSCluster(selectedValue)) {
     throw new Error("Invalid cluster selection");
@@ -108,13 +100,10 @@ export async function promptForTask(params: {
   tasks: ECSTask[];
 }): Promise<TaskArn> {
   const { tasks } = params;
-  const selectedValue = await search({
-    message: "Search and select ECS task:",
-    source: async (input) => {
-      return await searchTasks(tasks, input || "");
-    },
-    pageSize: DEFAULT_PAGE_SIZE,
-  });
+  const selectedValue = await pickOne(
+    "Search and select ECS task:",
+    await searchTasks(tasks, ""),
+  );
 
   if (!isTaskArnShape(selectedValue)) {
     throw new Error("Invalid task selection");
@@ -132,13 +121,10 @@ export async function promptForRDS(params: {
   rdsInstances: RDSInstance[];
 }): Promise<RDSInstance> {
   const { rdsInstances } = params;
-  const selectedValue = await search({
-    message: "Search and select RDS instance:",
-    source: async (input) => {
-      return await searchRDS(rdsInstances, input || "");
-    },
-    pageSize: DEFAULT_PAGE_SIZE,
-  });
+  const selectedValue = await pickOne(
+    "Search and select RDS instance:",
+    await searchRDS(rdsInstances, ""),
+  );
 
   if (!isRDSInstance(selectedValue)) {
     throw new Error("Invalid RDS instance selection");
@@ -151,14 +137,10 @@ export async function promptForInferenceResult(params: {
   inferenceResults: InferenceResult[];
 }): Promise<InferenceResult> {
   const { inferenceResults } = params;
-  const selectedValue = await search({
-    message:
-      "Select ECS target (filter with keywords like 'prod web' or 'staging api'):",
-    source: async (input) => {
-      return await searchInferenceResults(inferenceResults, input || "");
-    },
-    pageSize: DEFAULT_PAGE_SIZE,
-  });
+  const selectedValue = await pickOne(
+    "Select ECS target (filter with keywords like 'prod web' or 'staging api'):",
+    await searchInferenceResults(inferenceResults, ""),
+  );
 
   if (!isInferenceResult(selectedValue)) {
     throw new Error("Invalid inference result selection");
@@ -168,8 +150,7 @@ export async function promptForInferenceResult(params: {
 }
 
 export async function promptForLocalPort(): Promise<Port> {
-  const portString = await input({
-    message: "Enter local port number:",
+  const portString = await askText("Enter local port number:", {
     default: "8888",
     validate: (inputValue: string) => {
       const parseResult = parsePort(inputValue || "8888");

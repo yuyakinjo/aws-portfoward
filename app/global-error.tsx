@@ -1,13 +1,13 @@
-import { Danger, type ErrorProps, Line, Text } from "decopin-cli";
+import { CliError, Danger, type ErrorProps, Line, Text } from "decopin-cli";
 import { displayFriendlyError } from "../src/utils/index.js";
 
 /**
- * 使い方の誤り (引数の検証・端末が要る場面) は一行で言う。それ以外の想定外の
- * 失敗は、これまでどおりの丁寧な表示 (AWS 側の確認手順つき) に渡す。
- * exit code は枠組みが決める (使い方の誤りは 2、実行時の失敗は 1)
+ * 直接投げられた CliError は「分かっている失敗」(引数の誤り、端末が要る、断念) なので
+ * 一行で言う。枠組みが包んだ想定外の Error (cause に元が入る) は、これまでどおりの
+ * 丁寧な表示 (AWS 側の確認手順つき) に渡す。exit code は枠組みが決める
  */
 export default function GlobalError({ error }: ErrorProps) {
-  if (error.kind === "validation" || error.kind === "usage") {
+  if (error instanceof CliError && error.cause === undefined) {
     return (
       <>
         <Danger>{error.message}</Danger>
@@ -25,6 +25,6 @@ export default function GlobalError({ error }: ErrorProps) {
       </>
     );
   }
-  displayFriendlyError(error);
+  displayFriendlyError(error.cause ?? error);
   return null;
 }

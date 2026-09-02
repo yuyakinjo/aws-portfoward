@@ -1,5 +1,6 @@
 import { ECSClient } from "@aws-sdk/client-ecs";
 import { RDSClient } from "@aws-sdk/client-rds";
+import { CliError } from "decopin-cli";
 import { isDefined } from "remeda";
 import { startSSMSession } from "../session.js";
 import type { Port, ValidatedConnectOptions } from "../types.js";
@@ -55,8 +56,8 @@ export async function connectToRDS(
         const shouldRetry = await askRetry();
 
         if (!shouldRetry) {
-          messages.info("Process interrupted");
-          return;
+          // 断ったら失敗として終わる (端末が無くて聞けなかった場合も同じ)
+          throw new CliError("Process interrupted", { exitCode: 1 });
         }
 
         messages.info("Retrying...\n");

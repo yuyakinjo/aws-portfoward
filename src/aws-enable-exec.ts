@@ -1,6 +1,5 @@
 import { EC2Client } from "@aws-sdk/client-ec2";
 import { ECSClient } from "@aws-sdk/client-ecs";
-import { search } from "@inquirer/prompts";
 import { isEmpty } from "remeda";
 import {
   enableECSExecForService,
@@ -26,9 +25,9 @@ import {
   unwrapBrandedString,
 } from "./types.js";
 import { displayFriendlyError, messages } from "./utils/index.js";
+import { pickOne } from "./utils/prompt.js";
 
 // UI Configuration constants
-const DEFAULT_PAGE_SIZE = 50;
 
 /**
  * Enable ECS exec for services (direct execution with provided options)
@@ -47,12 +46,10 @@ export async function enableECSExec(
       throw new Error(regionsResult.error);
     }
 
-    const selectedRegionValue = await search({
-      message: "Select AWS region:",
-      source: async (input) =>
-        await searchRegions(regionsResult.data, input || ""),
-      pageSize: DEFAULT_PAGE_SIZE,
-    });
+    const selectedRegionValue = await pickOne(
+      "Select AWS region:",
+      await searchRegions(regionsResult.data, ""),
+    );
 
     if (typeof selectedRegionValue !== "string") {
       throw new Error("Invalid region selection");
@@ -208,13 +205,10 @@ async function enableExecInteractive(
   );
 
   // Step 2: Select services to enable exec
-  const selectedServices = await search({
-    message:
-      "Select services to enable exec (you can select multiple services):",
-    source: async (input) =>
-      await searchServices(servicesWithoutExec, input || ""),
-    pageSize: DEFAULT_PAGE_SIZE,
-  });
+  const selectedServices = await pickOne(
+    "Select services to enable exec (you can select multiple services):",
+    await searchServices(servicesWithoutExec, ""),
+  );
 
   if (
     !selectedServices ||

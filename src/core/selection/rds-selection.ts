@@ -1,13 +1,11 @@
 import type { RDSClient } from "@aws-sdk/client-rds";
-import { search } from "@inquirer/prompts";
 import { getRDSInstances } from "../../aws-services.js";
 import { searchRDS } from "../../search.js";
 import { parseDBInstanceIdentifier, parsePort } from "../../types/parsers.js";
 import type { RDSInstance, SelectionState } from "../../types.js";
 import { getDefaultPortForEngine, messages } from "../../utils/index.js";
+import { pickOne } from "../../utils/prompt.js";
 import { clearLoadingMessage } from "../ui/display-utils.js";
-
-const DEFAULT_PAGE_SIZE = 50;
 
 /**
  * Handle RDS instance selection logic
@@ -57,13 +55,10 @@ export async function selectRDSInstance(
   // Clear the loading message
   clearLoadingMessage();
 
-  const selectedRDS = await search({
-    message: "Search and select RDS instance:",
-    source: async (input) => {
-      return await searchRDS(rdsInstances, input || "");
-    },
-    pageSize: DEFAULT_PAGE_SIZE,
-  });
+  const selectedRDS = await pickOne(
+    "Search and select RDS instance:",
+    await searchRDS(rdsInstances, ""),
+  );
 
   if (
     !selectedRDS ||
