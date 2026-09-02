@@ -6,16 +6,19 @@ export const routes = {
   "connect": {
     command: () => import("../app/connect/command.tsx"),
     argv: () => import("../app/connect/argv.tsx"),
+    complete: () => import("../app/connect/complete.tsx"),
     effects: {"fs.read":"detected","fs.write":"detected","network":"detected","process.spawn":"detected","process.mutate":"unknown"},
   },
   "enable-exec": {
     command: () => import("../app/enable-exec/command.tsx"),
     argv: () => import("../app/enable-exec/argv.tsx"),
+    complete: () => import("../app/enable-exec/complete.tsx"),
     effects: {"fs.read":"detected","fs.write":"detected","network":"detected","process.spawn":"unknown","process.mutate":"unknown"},
   },
   "exec": {
     command: () => import("../app/exec/command.tsx"),
     argv: () => import("../app/exec/argv.tsx"),
+    complete: () => import("../app/exec/complete.tsx"),
     effects: {"fs.read":"detected","fs.write":"detected","network":"detected","process.spawn":"detected","process.mutate":"unknown"},
   },
 } satisfies RouteTable;

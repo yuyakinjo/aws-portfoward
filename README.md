@@ -32,6 +32,11 @@ cp node_modules/ecs-pf/dist/completions/_ecs-pf ~/.zsh/completions/
 # in .zshrc, before compinit:  fpath=(~/.zsh/completions $fpath)
 ```
 
+Values are completed from AWS as you go: `--region <Tab>` lists regions, and once a
+region is typed `--cluster <Tab>` lists clusters, then `--task <Tab>` / `--rds <Tab>` /
+`--service <Tab>` follow (`app/<command>/complete.tsx`). Without credentials, or when the
+prerequisite option is missing, completion silently offers nothing.
+
 `--dry-run` works on every command and is handled by the framework; `--help` on any
 command shows its options, which are declared once in `app/<command>/argv.tsx`.
 
