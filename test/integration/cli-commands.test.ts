@@ -8,8 +8,8 @@ const __dirname = dirname(__filename);
 
 // CLIエントリーポイントのパス（GitHub Actions対応）
 const CLI_PATH = process.env.CI
-  ? join(process.cwd(), "dist/cli.js")
-  : join(__dirname, "../../dist/cli.js");
+  ? join(process.cwd(), "dist/index.js")
+  : join(__dirname, "../../dist/index.js");
 
 // CLIプロセス実行ヘルパー
 function runCLI(
@@ -75,7 +75,7 @@ describe("CLI Commands Integration", () => {
     it("should display help when no command is provided", async () => {
       const { code, stdout, stderr } = await runCLI([]);
 
-      expect(code).toBe(1); // Commanderは引数なしの場合、終了コード1を返す
+      expect(code).toBe(2); // 使い方の誤りは exit 2 (decopin-cli)
       // ヘルプはstdoutまたはstderrのいずれかに出力される
       const output = stdout + stderr;
       expect(output).toContain("Usage:");
@@ -95,15 +95,15 @@ describe("CLI Commands Integration", () => {
 
       expect(code).toBe(0);
       expect(stdout).toContain("Usage:");
-      expect(stdout).toContain("Options:");
+      expect(stdout).toContain("Commands:");
     });
 
     it("should show error for unknown command", async () => {
       const { code, stdout, stderr } = await runCLI(["unknown-command"]);
 
-      expect(code).toBe(1);
+      expect(code).toBe(2);
       const output = stdout + stderr;
-      expect(output).toContain("unknown command");
+      expect(output.toLowerCase()).toContain("unknown command");
     });
   });
 
@@ -130,7 +130,7 @@ describe("CLI Commands Integration", () => {
     });
 
     it("should validate region parameter format", async () => {
-      const { code, stdout } = await runCLI(
+      const { code, stderr } = await runCLI(
         [
           "connect",
           "--region",
@@ -149,12 +149,12 @@ describe("CLI Commands Integration", () => {
         2000,
       );
 
-      expect(code).toBe(1);
-      expect(stdout).toContain("Region name cannot be empty");
+      expect(code).toBe(2);
+      expect(stderr).toContain("--region: Invalid length");
     });
 
     it("should validate cluster parameter format", async () => {
-      const { code, stdout } = await runCLI(
+      const { code, stderr } = await runCLI(
         [
           "connect",
           "--region",
@@ -173,12 +173,12 @@ describe("CLI Commands Integration", () => {
         2000,
       );
 
-      expect(code).toBe(1);
-      expect(stdout).toContain("Cluster name cannot be empty");
+      expect(code).toBe(2);
+      expect(stderr).toContain("--cluster: Invalid length");
     });
 
     it("should validate port number format", async () => {
-      const { code, stdout } = await runCLI(
+      const { code, stderr } = await runCLI(
         [
           "connect",
           "--region",
@@ -197,8 +197,8 @@ describe("CLI Commands Integration", () => {
         2000,
       );
 
-      expect(code).toBe(1);
-      expect(stdout).toContain("Invalid type"); // 統合後のValibot validation error
+      expect(code).toBe(2);
+      expect(stderr).toContain("expected a number");
     });
   });
 
@@ -224,7 +224,7 @@ describe("CLI Commands Integration", () => {
     });
 
     it("should validate task parameter format", async () => {
-      const { code, stdout } = await runCLI(
+      const { code, stderr } = await runCLI(
         [
           "exec",
           "--region",
@@ -241,12 +241,12 @@ describe("CLI Commands Integration", () => {
         2000,
       );
 
-      expect(code === 1 || code === null).toBe(true);
-      expect(stdout).toContain("Task ID cannot be empty");
+      expect(code).toBe(2);
+      expect(stderr).toContain("--task: Invalid length");
     });
 
     it("should validate container parameter format", async () => {
-      const { code, stdout } = await runCLI(
+      const { code, stderr } = await runCLI(
         [
           "exec",
           "--region",
@@ -263,8 +263,8 @@ describe("CLI Commands Integration", () => {
         2000,
       );
 
-      expect(code === 1 || code === null).toBe(true);
-      expect(stdout).toContain("Container name cannot be empty");
+      expect(code).toBe(2);
+      expect(stderr).toContain("--container: Invalid length");
     });
 
     it("should accept valid command parameter", async () => {
@@ -303,7 +303,6 @@ describe("CLI Commands Integration", () => {
       expect(stdout).toContain("--region");
       expect(stdout).toContain("--cluster");
       expect(stdout).toContain("--service");
-      expect(stdout).toContain("--dry-run");
     });
 
     it("should start interactive mode when no region provided", async () => {
@@ -319,13 +318,13 @@ describe("CLI Commands Integration", () => {
     });
 
     it("should validate region parameter format", async () => {
-      const { code, stdout } = await runCLI(
+      const { code, stderr } = await runCLI(
         ["enable-exec", "--region", ""],
         2000,
       );
 
-      expect(code).toBe(1);
-      expect(stdout).toContain("Region name cannot be empty");
+      expect(code).toBe(2);
+      expect(stderr).toContain("--region: Invalid length");
     });
 
     it("should handle dry-run mode", async () => {
@@ -371,20 +370,20 @@ describe("CLI Commands Integration", () => {
   describe("Command validation consistency", () => {
     it("should use consistent validation schemas across commands", async () => {
       // connectコマンドでのリージョンバリデーション
-      const { stdout: connectError } = await runCLI(
+      const { stderr: connectError } = await runCLI(
         ["connect", "--region", ""],
         2000,
       );
 
       // 統合後はconnect-uiコマンドは存在しないので、exec-taskでのバリデーションと比較
-      const { stdout: execTaskError } = await runCLI(
+      const { stderr: execTaskError } = await runCLI(
         ["exec", "--region", ""],
         2000,
       );
 
-      // 両方とも同じバリデーションエラーメッセージを表示するはず
-      expect(connectError).toContain("Region name cannot be empty");
-      expect(execTaskError).toContain("Region name cannot be empty");
+      // 両方とも同じ宣言 (argv.tsx) から同じ検証エラーが出るはず
+      expect(connectError).toContain("--region: Invalid length");
+      expect(execTaskError).toContain("--region: Invalid length");
     });
 
     it("should provide helpful error messages for invalid options", async () => {
@@ -393,9 +392,9 @@ describe("CLI Commands Integration", () => {
         2000,
       );
 
-      expect(code === 1 || code === null).toBe(true);
+      expect(code).toBe(2);
       const output = stdout + stderr;
-      expect(output).toContain("unknown option");
+      expect(output).toContain("Unknown option: --invalid-option");
     });
   });
 
@@ -421,15 +420,14 @@ describe("CLI Commands Integration", () => {
     });
 
     it("should maintain consistent exit codes", async () => {
-      // バリデーションエラーは常に終了コード1を返すはず（タイムアウトの場合はnull）
+      // 使い方の誤り (検証エラー・未知のコマンド) は常に終了コード 2
       const results = await Promise.all([
         runCLI(["connect", "--region", ""], 2000),
         runCLI(["exec-task", "--region", ""], 2000),
       ]);
 
       for (const result of results) {
-        // バリデーションエラーまたはタイムアウトを許可
-        expect(result.code === 1 || result.code === null).toBe(true);
+        expect(result.code).toBe(2);
       }
     });
   });

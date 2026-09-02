@@ -20,6 +20,21 @@ A modern CLI tool for connecting to RDS databases through AWS ECS tasks using SS
 npx ecs-pf connect
 ```
 
+## Shell completion
+
+The CLI is built with [decopin-cli](https://github.com/yuyakinjo/decopin-cli), so a zsh
+completion shim comes out of the build. Put `dist/completions/_ecs-pf` on your `$fpath`
+(before `compinit`) and Tab completes subcommands and options:
+
+```bash
+mkdir -p ~/.zsh/completions
+cp node_modules/ecs-pf/dist/completions/_ecs-pf ~/.zsh/completions/
+# in .zshrc, before compinit:  fpath=(~/.zsh/completions $fpath)
+```
+
+`--dry-run` works on every command and is handled by the framework; `--help` on any
+command shows its options, which are declared once in `app/<command>/argv.tsx`.
+
 ## Example Usage
 
 ### Interactive guided workflow

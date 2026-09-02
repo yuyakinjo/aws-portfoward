@@ -2,7 +2,7 @@ import { describe, expect, it } from "bun:test";
 import { spawn } from "node:child_process";
 import path from "node:path";
 
-const CLI_PATH = path.join(process.cwd(), "dist", "cli.js");
+const CLI_PATH = path.join(process.cwd(), "dist", "index.js");
 
 function runCommand(
   args: string[],
@@ -56,12 +56,12 @@ function runCommand(
 
 describe("Validation and Error Handling", () => {
   describe("connect command validation", () => {
-    it("should show help when --dry-run is used with connect command", async () => {
+    it("should show help for connect command", async () => {
       const result = await runCommand(["connect", "--help"]);
 
       expect(result.exitCode).toBe(0);
-      expect(result.stdout).toContain("--dry-run");
-      expect(result.stdout).toContain("Show commands without execution");
+      expect(result.stdout).toContain("--rds-port");
+      expect(result.stdout).toContain("--local-port");
     });
 
     it("should fail validation when required parameters are missing in dry run", async () => {
@@ -76,12 +76,12 @@ describe("Validation and Error Handling", () => {
   });
 
   describe("exec command validation", () => {
-    it("should show help when --dry-run is used with exec command", async () => {
+    it("should show help for exec command", async () => {
       const result = await runCommand(["exec", "--help"]);
 
       expect(result.exitCode).toBe(0);
-      expect(result.stdout).toContain("--dry-run");
-      expect(result.stdout).toContain("Show commands without execution");
+      expect(result.stdout).toContain("--container");
+      expect(result.stdout).toContain("--command");
     });
 
     it("should show error for missing required parameters in exec dry run", async () => {
