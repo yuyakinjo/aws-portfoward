@@ -3,9 +3,9 @@
   "version": "2.2.27",
   "description": "CLI for port-forwarding to RDS via AWS ECS",
   "type": "module",
-  "main": "dist/cli.js",
+  "main": "dist/index.js",
   "bin": {
-    "ecs-pf": "dist/cli.js"
+    "ecs-pf": "dist/index.js"
   },
   "files": [
     "dist/**/*",
@@ -22,16 +22,15 @@
   "author": "",
   "license": "MIT",
   "scripts": {
-    "connect": "bun run build && bun dist/cli.js connect",
-    "exec": "bun run build && bun dist/cli.js exec",
-    "enable-exec": "bun run build && bun dist/cli.js enable-exec",
-    "build": "./scripts/build.sh",
-    "build:tsc": "bunx tsc --project tsconfig.build.json",
+    "connect": "bun run build && bun dist/index.js connect",
+    "exec": "bun run build && bun dist/index.js exec",
+    "enable-exec": "bun run build && bun dist/index.js enable-exec",
+    "build": "bun run generate-version && bunx decopin build",
     "generate-version": "bun scripts/generate-version.mjs",
     "generate-changelog": "bun scripts/generate-changelog.mjs",
     "changelog:init": "bun scripts/generate-changelog.mjs init",
     "changelog:update": "bun scripts/generate-changelog.mjs generate",
-    "start": "bun dist/cli.js connect",
+    "start": "bun dist/index.js connect",
     "type-check": "tsc --noEmit",
     "test": "bun run type-check && bun run build && bun test",
     "test:unit": "bun test test/unit",
@@ -65,7 +64,7 @@
     "@aws-sdk/client-ssm": "^3.830.0",
     "@inquirer/prompts": "^7.5.3",
     "chalk": "^5.4.1",
-    "commander": "^14.0.0",
+    "decopin-cli": "^2026.902.643",
     "fuse.js": "^7.1.0",
     "inquirer": "^12.6.3",
     "inquirer-search-list": "^1.2.6",

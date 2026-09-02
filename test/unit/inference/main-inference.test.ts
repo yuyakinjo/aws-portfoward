@@ -1,5 +1,5 @@
-import { ECSClient } from "@aws-sdk/client-ecs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "bun:test";
+import { ECSClient } from "@aws-sdk/client-ecs";
 import * as awsServices from "../../../src/aws-services.js";
 import * as clusterInference from "../../../src/inference/cluster-inference.js";
 import { inferECSTargets } from "../../../src/inference/main-inference.js";
@@ -56,10 +56,12 @@ describe("inferECSTargets - All clusters search", () => {
     ]);
 
     // モックの設定
-    vi.spyOn(awsServices, "getECSClustersWithExecCapability").mockResolvedValue({
-      success: true,
-      data: allClusters,
-    });
+    vi.spyOn(awsServices, "getECSClustersWithExecCapability").mockResolvedValue(
+      {
+        success: true,
+        data: allClusters,
+      },
+    );
 
     // 各クラスターに対してタスクを返す
     vi.spyOn(awsServices, "getECSTasksWithExecCapability").mockImplementation(
@@ -203,10 +205,12 @@ describe("inferECSTargets - All clusters search", () => {
       "prod-web",
     ]);
 
-    vi.spyOn(awsServices, "getECSClustersWithExecCapability").mockResolvedValue({
-      success: true,
-      data: allClusters,
-    });
+    vi.spyOn(awsServices, "getECSClustersWithExecCapability").mockResolvedValue(
+      {
+        success: true,
+        data: allClusters,
+      },
+    );
 
     vi.spyOn(awsServices, "getECSTasksWithExecCapability").mockResolvedValue({
       success: true,
@@ -274,10 +278,12 @@ describe("inferECSTargets - All clusters search", () => {
       mockECSClusters[1].clusterName,
     ]);
 
-    vi.spyOn(awsServices, "getECSClustersWithExecCapability").mockResolvedValue({
-      success: true,
-      data: allClusters,
-    });
+    vi.spyOn(awsServices, "getECSClustersWithExecCapability").mockResolvedValue(
+      {
+        success: true,
+        data: allClusters,
+      },
+    );
 
     // 混在したタスクステータスを返す
     const runningTask = { ...mockECSTasks[0], taskStatus: "RUNNING" as const };
@@ -353,10 +359,12 @@ describe("inferECSTargets - All clusters search", () => {
       mockECSClusters[2].clusterName,
     ]);
 
-    vi.spyOn(awsServices, "getECSClustersWithExecCapability").mockResolvedValue({
-      success: true,
-      data: allClusters,
-    });
+    vi.spyOn(awsServices, "getECSClustersWithExecCapability").mockResolvedValue(
+      {
+        success: true,
+        data: allClusters,
+      },
+    );
 
     // 2番目のクラスターでエラーを発生させる
     vi.spyOn(awsServices, "getECSTasksWithExecCapability")
@@ -409,10 +417,12 @@ describe("inferECSTargets - All clusters search", () => {
       mockECSClusters[2].clusterName,
     ]);
 
-    vi.spyOn(awsServices, "getECSClustersWithExecCapability").mockResolvedValue({
-      success: true,
-      data: allClusters,
-    });
+    vi.spyOn(awsServices, "getECSClustersWithExecCapability").mockResolvedValue(
+      {
+        success: true,
+        data: allClusters,
+      },
+    );
 
     // 2番目のクラスターは空のタスクリストを返す
     vi.spyOn(awsServices, "getECSTasksWithExecCapability")

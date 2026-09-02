@@ -6,11 +6,13 @@
     "module": "ESNext",
     "moduleDetection": "force",
     "jsx": "react-jsx",
+    "jsxImportSource": "decopin-cli/jsx",
     "allowJs": true,
 
     // For type checking
     "noEmit": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
 
@@ -26,5 +28,5 @@
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*", "app/**/*", ".decopin/types.d.ts"]
 }

@@ -81,18 +81,18 @@ jobs:
 
       - name: Test CLI help commands
         run: |
-          bun dist/cli.js --help
-          bun dist/cli.js connect --help
-          bun dist/cli.js exec --help
-          bun dist/cli.js enable-exec --help
+          bun dist/index.js --help
+          bun dist/index.js connect --help
+          bun dist/index.js exec --help
+          bun dist/index.js enable-exec --help
 
       - name: Test CLI version
-        run: bun dist/cli.js --version
+        run: bun dist/index.js --version
 
       - name: Test CLI error handling
         run: |
           # テスト: 無効なコマンド
-          if bun dist/cli.js invalid-command 2>/dev/null; then
+          if bun dist/index.js invalid-command 2>/dev/null; then
             echo "Error: Should fail with invalid command"
             exit 1
           else
@@ -100,7 +100,7 @@ jobs:
           fi
 
           # テスト: 無効なオプション
-          if bun dist/cli.js connect --invalid-option 2>/dev/null; then
+          if bun dist/index.js connect --invalid-option 2>/dev/null; then
             echo "Error: Should fail with invalid option"
             exit 1
           else

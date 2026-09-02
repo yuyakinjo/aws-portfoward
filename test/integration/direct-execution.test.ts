@@ -2,7 +2,7 @@ import { describe, expect, it } from "bun:test";
 import { execSync } from "node:child_process";
 
 describe("Direct Execution (Success Path)", () => {
-  const cliPath = "bun dist/cli.js";
+  const cliPath = "bun dist/index.js";
 
   it("should execute dry run directly without interactive prompts when all parameters provided", () => {
     const command = [
@@ -100,5 +100,4 @@ describe("Direct Execution (Success Path)", () => {
     );
     expect(result).toContain("Dry run completed successfully");
   });
-
 });

@@ -62,11 +62,11 @@ jobs:
             # ビルド結果の確認
       - name: Verify build output
         run: |
-          if [ ! -f "dist/cli.js" ]; then
-            echo "❌ Build failed: dist/cli.js not found"
+          if [ ! -f "dist/index.js" ]; then
+            echo "❌ Build failed: dist/index.js not found"
             exit 1
           fi
-          echo "✅ Build successful: dist/cli.js exists"
+          echo "✅ Build successful: dist/index.js exists"
 
       # npmに公開（Provenance + Trusted Publishing）
       - name: Publish to npm with Provenance and Trusted Publishing
