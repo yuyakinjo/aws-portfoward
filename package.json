@@ -62,7 +62,7 @@
     "@aws-sdk/client-ecs": "^3.830.0",
     "@aws-sdk/client-rds": "^3.830.0",
     "@aws-sdk/client-ssm": "^3.830.0",
-    "@inquirer/prompts": "^7.5.3",
+    "@inquirer/prompts": "^8.2.1",
     "chalk": "^5.4.1",
     "decopin-cli": "^2026.902.643",
     "fuse.js": "^7.1.0",
