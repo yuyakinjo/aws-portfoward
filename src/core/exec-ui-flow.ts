@@ -1,6 +1,6 @@
 import { EC2Client } from "@aws-sdk/client-ec2";
 import { ECSClient } from "@aws-sdk/client-ecs";
-import { input, search } from "@inquirer/prompts";
+import { CliError } from "decopin-cli";
 import { isEmpty, isString } from "remeda";
 import {
   getAWSRegions,
@@ -25,10 +25,10 @@ import {
   unwrapBrandedString,
 } from "../types.js";
 import { askRetry, displayFriendlyError, messages } from "../utils/index.js";
+import { askText, pickOne } from "../utils/prompt.js";
 import { displayDryRunResult, generateExecDryRun } from "./dry-run.js";
 
 // UI Configuration constants
-const DEFAULT_PAGE_SIZE = 50;
 
 /**
  * Execute command in ECS task container with Simple UI workflow
@@ -53,8 +53,8 @@ export async function execECSTaskWithSimpleUIInternal(
         const shouldRetry = await askRetry();
 
         if (!shouldRetry) {
-          messages.info("Process interrupted");
-          return;
+          // 断ったら失敗として終わる (端末が無くて聞けなかった場合も同じ)
+          throw new CliError("Process interrupted", { exitCode: 1 });
         }
 
         messages.info("Retrying...\n");
@@ -111,11 +111,10 @@ async function execECSTaskWithSimpleUIFlow(
         process.stdout.write("\x1b[1A");
         process.stdout.write("\x1b[2K");
         process.stdout.write("\r");
-        const selectedRegion = await search({
-          message: "Search and select AWS region:",
-          source: async (input) => await searchRegions(regions, input || ""),
-          pageSize: DEFAULT_PAGE_SIZE,
-        });
+        const selectedRegion = await pickOne(
+          "Search and select AWS region:",
+          await searchRegions(regions, ""),
+        );
         if (!isString(selectedRegion)) {
           throw new Error("Invalid region selection");
         }
@@ -166,11 +165,10 @@ async function execECSTaskWithSimpleUIFlow(
         process.stdout.write("\x1b[1A");
         process.stdout.write("\x1b[2K");
         process.stdout.write("\r");
-        const cluster = await search({
-          message: "Search and select ECS cluster:",
-          source: async (input) => await searchClusters(clusters, input || ""),
-          pageSize: DEFAULT_PAGE_SIZE,
-        });
+        const cluster = await pickOne(
+          "Search and select ECS cluster:",
+          await searchClusters(clusters, ""),
+        );
 
         if (
           !cluster ||
@@ -244,11 +242,10 @@ async function execECSTaskWithSimpleUIFlow(
         process.stdout.write("\x1b[1A");
         process.stdout.write("\x1b[2K");
         process.stdout.write("\r");
-        const selectedTaskArn = await search({
-          message: "Search and select ECS task:",
-          source: async (input) => await searchTasks(tasks, input || ""),
-          pageSize: DEFAULT_PAGE_SIZE,
-        });
+        const selectedTaskArn = await pickOne(
+          "Search and select ECS task:",
+          await searchTasks(tasks, ""),
+        );
         if (typeof selectedTaskArn !== "string") {
           throw new Error("Invalid task selection");
         }
@@ -300,15 +297,13 @@ async function execECSTaskWithSimpleUIFlow(
           process.stdout.write("\x1b[1A");
           process.stdout.write("\x1b[2K");
           process.stdout.write("\r");
-          const selectedContainerName = await search({
-            message: "Search and select container:",
-            source: async (input) =>
-              await searchContainers(
-                containers.map((c) => String(c)),
-                input || "",
-              ),
-            pageSize: DEFAULT_PAGE_SIZE,
-          });
+          const selectedContainerName = await pickOne(
+            "Search and select container:",
+            await searchContainers(
+              containers.map((c) => String(c)),
+              "",
+            ),
+          );
           if (typeof selectedContainerName !== "string") {
             throw new Error("Invalid container selection");
           }
@@ -333,8 +328,7 @@ async function execECSTaskWithSimpleUIFlow(
         return options.command;
       })()
     : await (async () => {
-        const cmd = await input({
-          message: "Enter command to execute:",
+        const cmd = await askText("Enter command to execute:", {
           default: "/bin/bash",
         });
         selections.command = cmd;

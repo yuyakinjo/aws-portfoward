@@ -28,7 +28,7 @@ function getResourceIdentifier(item: unknown): string | undefined {
   return undefined;
 }
 
-interface SearchableItem {
+export interface SearchableItem {
   name: string;
   value: unknown;
   description?: string;

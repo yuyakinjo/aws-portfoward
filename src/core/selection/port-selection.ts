@@ -1,4 +1,3 @@
-import { input } from "@inquirer/prompts";
 import { isDefined } from "remeda";
 import { parsePort } from "../../types/parsers.js";
 import type { Port, SelectionState } from "../../types.js";
@@ -8,6 +7,7 @@ import {
   isPortRange,
   messages,
 } from "../../utils/index.js";
+import { askText } from "../../utils/prompt.js";
 import { clearLoadingMessage } from "../ui/display-utils.js";
 
 /**
@@ -41,8 +41,7 @@ export async function selectLocalPort(
     return `${availablePort}`;
   } catch {
     // If auto-detection fails, ask user for input
-    const port = await input({
-      message: "Enter local port number:",
+    const port = await askText("Enter local port number:", {
       default: "8888",
       validate: (inputValue) => {
         const port = parseInt(inputValue || "8888", 10);

@@ -1,14 +1,12 @@
 import { EC2Client } from "@aws-sdk/client-ec2";
-import { search } from "@inquirer/prompts";
 import { isEmpty } from "remeda";
 import { getAWSRegions } from "../../aws-services.js";
 import { searchRegions } from "../../search.js";
 import { parseRegionName } from "../../types/parsers.js";
 import type { SelectionState } from "../../types.js";
 import { messages } from "../../utils/index.js";
+import { pickOne } from "../../utils/prompt.js";
 import { clearLoadingMessage } from "../ui/display-utils.js";
-
-const DEFAULT_PAGE_SIZE = 50;
 
 /**
  * Handle region selection logic
@@ -54,13 +52,10 @@ export async function selectRegion(
   // Clear the loading message and show search prompt
   clearLoadingMessage();
 
-  const selectedRegion = await search({
-    message: "Search and select AWS region:",
-    source: async (input) => {
-      return await searchRegions(regions, input || "");
-    },
-    pageSize: DEFAULT_PAGE_SIZE,
-  });
+  const selectedRegion = await pickOne(
+    "Search and select AWS region:",
+    await searchRegions(regions, ""),
+  );
 
   if (typeof selectedRegion !== "string") {
     throw new Error("Invalid region selection");

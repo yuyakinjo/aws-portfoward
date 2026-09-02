@@ -1,7 +1,6 @@
 import { EC2Client } from "@aws-sdk/client-ec2";
 import { ECSClient } from "@aws-sdk/client-ecs";
 import { RDSClient } from "@aws-sdk/client-rds";
-import { input, search } from "@inquirer/prompts";
 import { isDefined, isEmpty } from "remeda";
 import {
   getAWSRegions,
@@ -31,8 +30,7 @@ import {
   getDefaultPortForEngine,
   messages,
 } from "../utils/index.js";
-
-const DEFAULT_PAGE_SIZE = 50;
+import { askText, pickOne } from "../utils/prompt.js";
 
 // Type guards for search results
 function isECSCluster(value: unknown): value is ECSCluster {
@@ -106,13 +104,10 @@ export async function selectRegion(
 
   messages.info("filtered as you type (↑↓ to select, Enter to confirm)");
 
-  const selectedValue = await search({
-    message: "Search and select AWS region:",
-    source: async (input) => {
-      return await searchRegions(regions, input || "", defaultRegion);
-    },
-    pageSize: DEFAULT_PAGE_SIZE,
-  });
+  const selectedValue = await pickOne(
+    "Search and select AWS region:",
+    await searchRegions(regions, "", defaultRegion),
+  );
 
   // Parse the selected region to ensure type safety
   if (typeof selectedValue !== "string") {
@@ -168,13 +163,10 @@ export async function selectCluster(
   messages.info(`Found ${clusters.length} clusters with ECS exec capability`);
   messages.info("filtered as you type (↑↓ to select, Enter to confirm)");
 
-  const selectedValue = await search({
-    message: "Search and select ECS cluster:",
-    source: async (input) => {
-      return await searchClusters(clusters, input || "");
-    },
-    pageSize: DEFAULT_PAGE_SIZE,
-  });
+  const selectedValue = await pickOne(
+    "Search and select ECS cluster:",
+    await searchClusters(clusters, ""),
+  );
 
   if (!isECSCluster(selectedValue)) {
     throw new Error("Invalid cluster selection");
@@ -212,13 +204,10 @@ export async function selectTask(
     throw new Error("No running ECS tasks found");
   }
 
-  const selectedValue = await search({
-    message: "Search and select ECS task:",
-    source: async (input) => {
-      return await searchTasks(tasks, input || "");
-    },
-    pageSize: DEFAULT_PAGE_SIZE,
-  });
+  const selectedValue = await pickOne(
+    "Search and select ECS task:",
+    await searchTasks(tasks, ""),
+  );
 
   if (!isTaskArnShape(selectedValue)) {
     throw new Error("Invalid task selection");
@@ -270,13 +259,10 @@ export async function selectRDSInstance(
     throw new Error("No RDS instances found");
   }
 
-  const selectedValue = await search({
-    message: "Search and select RDS instance:",
-    source: async (input) => {
-      return await searchRDS(rdsInstances, input || "");
-    },
-    pageSize: DEFAULT_PAGE_SIZE,
-  });
+  const selectedValue = await pickOne(
+    "Search and select RDS instance:",
+    await searchRDS(rdsInstances, ""),
+  );
 
   if (!isRDSInstance(selectedValue)) {
     throw new Error("Invalid RDS instance selection");
@@ -330,8 +316,7 @@ export async function getLocalPort(
   messages.warning(
     "Could not find available port automatically. Please specify manually:",
   );
-  const localPortInput = await input({
-    message: "Enter local port number:",
+  const localPortInput = await askText("Enter local port number:", {
     default: "8888",
     validate: (inputValue: string) => {
       const parseResult = parsePort(inputValue || "8888");
