@@ -44,7 +44,7 @@ jobs:
       - name: TypeScript type check
         run: bun run type-check
 
-      # Biomeでコード品質チェック
+      # oxlint / oxfmt でコード品質チェック
       - name: Code quality check
         run: bun run ci
 

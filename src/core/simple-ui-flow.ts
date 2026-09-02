@@ -214,9 +214,8 @@ async function handleDirectDryRun(
   messages.info("Running dry run with provided parameters...");
 
   // Import dry run functions
-  const { generateConnectDryRun, displayDryRunResult } = await import(
-    "./dry-run.js"
-  );
+  const { generateConnectDryRun, displayDryRunResult } =
+    await import("./dry-run.js");
   const { parseRegionName, parseClusterName, parseTaskId, parsePort } =
     await import("../types.js");
 

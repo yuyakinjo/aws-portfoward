@@ -42,19 +42,20 @@
     "test:watch": "bun test --watch",
     "test:coverage": "bun test --coverage",
     "prepublishOnly": "bun run check",
-    "format": "biome format --write",
-    "format:check": "biome format",
-    "lint": "biome lint --write",
-    "lint:check": "biome lint",
-    "check": "biome check --write",
-    "check:dry": "biome check",
-    "ci": "biome ci"
+    "format": "oxfmt --ignore-path .gitignore",
+    "format:check": "oxfmt --check --ignore-path .gitignore",
+    "lint": "oxlint --fix",
+    "lint:check": "oxlint",
+    "check": "oxfmt --ignore-path .gitignore && oxlint --fix",
+    "check:dry": "oxfmt --check --ignore-path .gitignore && oxlint",
+    "ci": "oxfmt --check --ignore-path .gitignore && oxlint --max-warnings=0"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.3.5",
     "@types/bun": "^1.3.2",
     "conventional-changelog-cli": "^5.0.0",
     "conventional-changelog-conventionalcommits": "^9.0.0",
+    "oxfmt": "^0.66.0",
+    "oxlint": "^1.81.0",
     "prettier": "^3.6.2"
   },
   "peerDependencies": {

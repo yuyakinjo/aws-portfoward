@@ -63,7 +63,7 @@ function parsePort(input: string): Result<Port, ValidationError> {
 
 ## コードスタイル
 
-- Biomeを使用してフォーマット・リントを統一
+- oxfmt（フォーマット）と oxlint（リント）を使用してスタイルを統一
 - 関数は小さく、単一責任の原則に従う
 - AWS リソース操作は `aws-services.ts` に集約
 - 型定義は `types.ts` に集約し、スキーマと型を一元管理

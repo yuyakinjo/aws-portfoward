@@ -1,0 +1,32 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "unicorn", "oxc", "import", "promise", "node"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn"
+  },
+  "rules": {
+    "no-unused-vars": "warn",
+    "typescript/no-unused-vars": "warn",
+    // Biome の recommended では有効でなかったルール（移行時の挙動を維持）
+    "no-underscore-dangle": "off",
+    "no-shadow": "off",
+    "unicorn/no-array-sort": "off",
+    "unicorn/consistent-function-scoping": "off"
+  },
+  "ignorePatterns": [
+    "dist",
+    "node_modules",
+    "temp",
+    ".decopin",
+    "src/version.ts"
+  ],
+  "overrides": [
+    {
+      "files": ["test/**/*"],
+      "rules": {
+        "typescript/no-explicit-any": "off"
+      }
+    }
+  ]
+}

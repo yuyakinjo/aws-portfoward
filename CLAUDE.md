@@ -36,7 +36,7 @@ npm run type-check
 
 ### Code Quality
 ```bash
-# Biome - formatter and linter combined
+# oxc - oxfmt (formatter) + oxlint (linter)
 npm run check          # Format and lint (with fixes)
 npm run check:dry      # Check without applying fixes
 npm run format         # Format only
@@ -73,4 +73,5 @@ npm run ci             # Run all checks in CI mode
 - **Module System**: ESM modules (`"type": "module"` in package.json)
 - **Build Process**: Custom build script that handles TypeScript compilation and CLI setup
 - **AWS Permissions**: Requires proper IAM permissions for ECS, RDS, EC2, and SSM
-- **Dependencies**: AWS SDK v3, Inquirer for prompts, Commander for CLI, Chalk for output formatting
+- **Dependencies**: AWS SDK v3, decopin-cli for CLI/prompts, Chalk for output formatting
+- **Lint/Format**: oxlint (`.oxlintrc.json`) and oxfmt (`.oxfmtrc.json`); Prettier only handles Markdown/YAML

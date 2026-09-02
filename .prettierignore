@@ -12,8 +12,8 @@ bun.lock
 yarn.lock
 pnpm-lock.yaml
 
-# Biomeがフォーマットするファイル（JS/TS/JSON）
-# これらはBiomeに任せる
+# oxfmt がフォーマットするファイル（JS/TS/JSON）
+# これらは oxfmt に任せる
 *.js
 *.mjs
 *.cjs

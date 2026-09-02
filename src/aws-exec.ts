@@ -99,8 +99,7 @@ export async function execECSTaskWithSimpleUI(
   options: ValidatedExecOptions = { dryRun: false },
 ): Promise<void> {
   // Dynamic import to avoid circular dependency
-  const { execECSTaskWithSimpleUIInternal } = await import(
-    "./core/exec-ui-flow.js"
-  );
+  const { execECSTaskWithSimpleUIInternal } =
+    await import("./core/exec-ui-flow.js");
   await execECSTaskWithSimpleUIInternal(options);
 }

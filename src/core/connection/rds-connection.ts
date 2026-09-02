@@ -1,5 +1,12 @@
 import { safeParse } from "valibot";
 import { startSSMSession } from "../../session.js";
+import type {
+  ClusterName,
+  Port,
+  RDSInstance,
+  RegionName,
+  TaskArn,
+} from "../../types.js";
 import {
   parseClusterName,
   parsePort,
@@ -9,13 +16,6 @@ import {
 } from "../../types/parsers.js";
 import type { HandleConnectionParams } from "../../types/schemas.js";
 import { HandleConnectionParamsSchema } from "../../types/schemas.js";
-import type {
-  ClusterName,
-  Port,
-  RDSInstance,
-  RegionName,
-  TaskArn,
-} from "../../types.js";
 import { messages } from "../../utils/index.js";
 import { generateReproducibleCommand } from "../command-generation.js";
 import { displayDryRunResult, generateConnectDryRun } from "../dry-run.js";
